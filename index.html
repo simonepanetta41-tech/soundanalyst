@@ -404,6 +404,20 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
         </div>
       </div>
       <div class="settings-section">
+        <div class="settings-title">PDF</div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Offset pagine</div>
+            <div class="settings-row-desc">Pagine extra prima della sceneggiatura nel PDF (copertina, frontespizio…). Viene rilevato automaticamente all'analisi.</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;flex-shrink:0">
+            <button onclick="changeOffset(-1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--white);width:32px;height:32px;border-radius:6px;font-size:18px;line-height:1;cursor:pointer;" onmouseover="this.style.borderColor='var(--yellow)'" onmouseout="this.style.borderColor='var(--border)'">−</button>
+            <span id="offsetDisplay" style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--yellow);min-width:28px;text-align:center">1</span>
+            <button onclick="changeOffset(+1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--white);width:32px;height:32px;border-radius:6px;font-size:18px;line-height:1;cursor:pointer;" onmouseover="this.style.borderColor='var(--yellow)'" onmouseout="this.style.borderColor='var(--border)'">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
         <div class="settings-title">Dati</div>
         <div class="danger-zone">
           <div class="settings-row-info">
@@ -828,10 +842,57 @@ function showPage(page) {
   document.getElementById('settingsPage').style.display = page === 'settings' ? '' : 'none';
   document.querySelectorAll('.nav-tab').forEach((t,i) =>
     t.classList.toggle('active', (i===0 && page==='home') || (i===1 && page==='settings')));
-  if (page === 'settings') updateKeyStatus();
+  if (page === 'settings') { updateKeyStatus(); initOffsetDisplay(); }
 }
 
 // ══ API KEY ══
+// ── PAGE OFFSET ──
+let pageOffset = parseInt(localStorage.getItem('sa_offset') ?? '1');
+
+function changeOffset(delta) {
+  pageOffset = Math.max(0, pageOffset + delta);
+  localStorage.setItem('sa_offset', pageOffset);
+  const el = document.getElementById('offsetDisplay');
+  if (el) el.textContent = pageOffset;
+}
+
+function initOffsetDisplay() {
+  const el = document.getElementById('offsetDisplay');
+  if (el) el.textContent = pageOffset;
+}
+
+async function autoDetectOffset() {
+  if (!pdfB64Array.length) return;
+  try {
+    if (!modalPdfDoc) {
+      const bin = atob(pdfB64Array[0]);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      modalPdfDoc = await pdfjsLib.getDocument({ data: arr }).promise;
+    }
+    const max = Math.min(8, modalPdfDoc.numPages);
+    for (let i = 1; i <= max; i++) {
+      const page = await modalPdfDoc.getPage(i);
+      const tc   = await page.getTextContent();
+      const text = tc.items.map(x => x.str).join(' ').toUpperCase();
+      if (/\bINT\b/.test(text) || /\bEXT\b/.test(text) || text.includes('FADE IN')) {
+        const detected = i - 1;
+        if (detected !== pageOffset) {
+          pageOffset = detected;
+          localStorage.setItem('sa_offset', pageOffset);
+          initOffsetDisplay();
+          const toast = document.createElement('div');
+          toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--yellow);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--yellow);z-index:9999;white-space:nowrap;';
+          toast.textContent = `📄 Offset pagine rilevato: ${detected}`;
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 3500);
+        }
+        return;
+      }
+    }
+  } catch(e) { console.log('Offset detect:', e.message); }
+}
+
 function saveKey() {
   const key = document.getElementById('apiKey').value.trim();
   if (!key.startsWith('sk-')) { alert('Chiave non valida — deve iniziare con sk-'); return; }
@@ -1073,6 +1134,7 @@ async function startAnalysis() {
     const pdfs = [];
     for (const f of files) { pdfs.push({ name: f.name, data: await fileToB64(f) }); }
     pdfB64Array = pdfs.map(p => p.data);
+    autoDetectOffset();
 
     setStep(2);
     document.getElementById('progLabel').textContent = 'Invio a Gennaro...';
@@ -1382,14 +1444,26 @@ document.addEventListener('keydown', e => {
 });
 
 document.getElementById('resultsPage').addEventListener('click', e => {
-  const el = e.target.closest('.ref');
-  if (!el) return;
-  const m = el.textContent.match(/\(p\.(\d+)\)/);
-  if (m) openPageModal(parseInt(m[1]));
+  const el = e.target.closest('.ref.clickable');
+  if (!el || !pdfB64Array.length) return;
+
+  const text = el.textContent;
+  const patterns = [/\(p\.?\s*(\d+)\)/i, /pag\.?\s*(\d+)/i, /[-–]\s*p\.?\s*(\d+)\b/i];
+  let pageNum = null;
+  for (const p of patterns) { const m = text.match(p); if (m) { pageNum = parseInt(m[1]); break; } }
+
+  if (pageNum) {
+    openPageModal(pageNum + pageOffset);
+  } else {
+    const input = prompt(`Inserisci il numero di pagina per:\n"${text.substring(0,80)}"`);
+    if (input && parseInt(input) > 0) openPageModal(parseInt(input) + pageOffset);
+  }
 });
 
 function activateRefs() {
-  document.querySelectorAll('.ref').forEach(el => { if(/\(p\.\d+\)/.test(el.textContent)) el.classList.add('clickable'); });
+  document.querySelectorAll('#resultsPage .ref').forEach(el => {
+    if (el.textContent.trim().length > 3) el.classList.add('clickable');
+  });
 }
 </script>
 </body>
