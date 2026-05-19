@@ -856,7 +856,7 @@ function setAppState(state) {
   show('homePage',      state === 'home');
   show('settingsPage',  state === 'settings');
   show('mainNav',       state === 'home' || state === 'settings');
-  show('progressPanel', false); // managed by class
+  // progressPanel managed by CSS class only — don't touch display
   toggle('progressPanel', 'active', state === 'analyzing');
   toggle('resultsPage',   'on',     state === 'results');
   toggle('chatSection',   'on',     state === 'results');
