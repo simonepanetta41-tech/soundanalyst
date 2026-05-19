@@ -822,7 +822,7 @@ function showApp() {
   document.getElementById('app').style.display = 'block';
   document.getElementById('userEmail').textContent = currentUser.email;
   document.getElementById('settingsEmail').textContent = currentUser.email;
-  showPage("home");
+  setAppState('home');
   updateKeyStatus();
   loadHistory();
 }
@@ -842,14 +842,32 @@ sb.auth.getSession().then(({ data: { session } }) => {
   else { showAuth(); }
 });
 
-// ══ PAGE NAV ══
-function showPage(page) {
-  document.getElementById('homePage').style.display    = page === 'home' ? '' : 'none';
-  document.getElementById('settingsPage').style.display = page === 'settings' ? '' : 'none';
+// ══ STATE MANAGEMENT ══
+function setAppState(state) {
+  const show = (id, visible) => {
+    const el = document.getElementById(id);
+    if (el) el.style.setProperty('display', visible ? '' : 'none', 'important');
+  };
+  const toggle = (id, cls, active) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle(cls, active);
+  };
+
+  show('homePage',      state === 'home');
+  show('settingsPage',  state === 'settings');
+  show('mainNav',       state === 'home' || state === 'settings');
+  show('progressPanel', false); // managed by class
+  toggle('progressPanel', 'active', state === 'analyzing');
+  toggle('resultsPage',   'on',     state === 'results');
+  toggle('chatSection',   'on',     state === 'results');
+
   document.querySelectorAll('.nav-tab').forEach((t,i) =>
-    t.classList.toggle('active', (i===0 && page==='home') || (i===1 && page==='settings')));
-  if (page === 'settings') { updateKeyStatus(); getOffsetDisplay(); }
+    t.classList.toggle('active', (i===0 && state==='home') || (i===1 && state==='settings')));
+
+  if (state === 'settings') { updateKeyStatus(); getOffsetDisplay(); }
 }
+
+function showPage(page) { setAppState(page); }
 
 // ══ API KEY ══
 // ══ PAGE OFFSET ══
@@ -1090,8 +1108,7 @@ function setStep(n) {
 function showError(msg) {
   document.getElementById('errorBox').textContent = '⚠ '+msg;
   document.getElementById('errorBox').classList.add('show');
-  document.getElementById('progressPanel').classList.remove('active');
-  document.body.removeAttribute('data-state');
+  setAppState('home');
   document.getElementById('analyzeBtn').disabled = false;
 }
 
@@ -1144,8 +1161,7 @@ async function startAnalysis() {
   const key = getKey();
   document.getElementById('errorBox').classList.remove('show');
   document.getElementById('analyzeBtn').disabled = true;
-  document.body.setAttribute('data-state', 'analyzing');
-  document.getElementById('progressPanel').classList.add('active');
+  setAppState('analyzing');
   document.getElementById('resultsPage').classList.remove('on');
 
   setStep(1);
@@ -1208,8 +1224,7 @@ async function startAnalysis() {
 }
 
 function hideHomeShowResults() {
-  document.getElementById('progressPanel').classList.remove('active');
-  document.body.setAttribute('data-state', 'results');
+  setAppState('results');
 }
 
 // ══ RENDER RESULTS ══
@@ -1284,7 +1299,7 @@ function resetApp() {
   document.getElementById('resultsPage').classList.remove('on');
   document.getElementById('chatSection').classList.remove('on');
   document.getElementById('chatMessages').innerHTML = '';
-  document.body.removeAttribute('data-state');
+  setAppState('home');
   document.getElementById('errorBox').classList.remove('show');
   document.getElementById('riassuntoBox').style.display = 'none';
   document.getElementById('maxInfo').style.display = 'none';
