@@ -385,7 +385,7 @@ body[data-state="results"] #mainNav { display: none !important; }
     </div>
 
     <!-- SETTINGS PAGE -->
-    <div id="settingsPage" style="display:none">
+    <div id="settingsPage">
       <div class="settings-section">
         <div class="settings-title">API</div>
         <div class="settings-row">
@@ -842,32 +842,52 @@ sb.auth.getSession().then(({ data: { session } }) => {
   else { showAuth(); }
 });
 
-// ══ STATE MANAGEMENT ══
-function hideAll() {
-  ['homePage','settingsPage','mainNav','progressPanel','resultsPage','chatSection']
-    .forEach(id => { const e=document.getElementById(id); if(e) e.style.display='none'; });
+// ══ PAGE NAV ══
+function showPage(page) {
+  const hp = document.getElementById('homePage');
+  const sp = document.getElementById('settingsPage');
+  const mn = document.getElementById('mainNav');
+  hp.style.display     = page === 'home'     ? 'block' : 'none';
+  sp.style.display     = page === 'settings' ? 'block' : 'none';
+  mn.style.display     = 'flex';
+  document.querySelectorAll('.nav-tab').forEach((t,i) =>
+    t.classList.toggle('active', (i===0&&page==='home')||(i===1&&page==='settings')));
+  if (page === 'settings') { updateKeyStatus(); getOffsetDisplay(); }
 }
 
 function setAppState(state) {
-  hideAll();
-  const show = id => { const e=document.getElementById(id); if(e) e.style.display=''; };
-  if (state === 'home') {
-    show('homePage'); show('mainNav');
+  const hp = document.getElementById('homePage');
+  const sp = document.getElementById('settingsPage');
+  const mn = document.getElementById('mainNav');
+  const pp = document.getElementById('progressPanel');
+  const rp = document.getElementById('resultsPage');
+  const cs = document.getElementById('chatSection');
+
+  if (state === 'analyzing') {
+    hp.style.display = 'none';
+    sp.style.display = 'none';
+    mn.style.display = 'none';
+    pp.style.display = 'block';
+    rp.style.display = 'none';
+    if(cs) cs.style.display = 'none';
+  } else if (state === 'results') {
+    hp.style.display = 'none';
+    sp.style.display = 'none';
+    mn.style.display = 'none';
+    pp.style.display = 'none';
+    rp.style.display = 'block';
+    if(cs) cs.style.display = 'block';
+  } else if (state === 'home') {
+    hp.style.display = 'block';
+    sp.style.display = 'none';
+    mn.style.display = 'flex';
+    pp.style.display = 'none';
+    rp.style.display = 'none';
+    if(cs) cs.style.display = 'none';
     document.querySelectorAll('.nav-tab')[0]?.classList.add('active');
     document.querySelectorAll('.nav-tab')[1]?.classList.remove('active');
-  } else if (state === 'settings') {
-    show('settingsPage'); show('mainNav');
-    document.querySelectorAll('.nav-tab')[0]?.classList.remove('active');
-    document.querySelectorAll('.nav-tab')[1]?.classList.add('active');
-    updateKeyStatus(); getOffsetDisplay();
-  } else if (state === 'analyzing') {
-    show('progressPanel');
-  } else if (state === 'results') {
-    show('resultsPage'); show('chatSection');
   }
 }
-
-function showPage(page) { setAppState(page); }
 
 // ══ API KEY ══
 // ══ PAGE OFFSET ══
