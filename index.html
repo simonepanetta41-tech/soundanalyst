@@ -380,7 +380,7 @@ body[data-state="results"] #mainNav { display: none !important; }
         </div>
         <div class="file-list" id="fileList"></div>
         <div class="error-box" id="errorBox"></div>
-        <button class="btn-analyze" id="analyzeBtn" disabled onclick="['homePage','settingsPage','mainNav'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.cssText='display:none!important'});startAnalysis()">▶ &nbsp; Avvia Analisi</button>
+        <button class="btn-analyze" id="analyzeBtn" disabled onclick="startAnalysis()">▶ &nbsp; Avvia Analisi</button>
       </div>
     </div>
 
@@ -843,21 +843,28 @@ sb.auth.getSession().then(({ data: { session } }) => {
 });
 
 // ══ STATE MANAGEMENT ══
+function hideAll() {
+  ['homePage','settingsPage','mainNav','progressPanel','resultsPage','chatSection']
+    .forEach(id => { const e=document.getElementById(id); if(e) e.style.display='none'; });
+}
+
 function setAppState(state) {
-  const s = id => document.getElementById(id);
-  const show = (id, v) => { const e=s(id); if(e) e.style.display = v ? 'block' : 'none'; };
-
-  show('homePage',      state === 'home');
-  show('settingsPage',  state === 'settings');
-  show('mainNav',       state === 'home' || state === 'settings');
-  show('progressPanel', state === 'analyzing');
-  show('resultsPage',   state === 'results');
-  show('chatSection',   state === 'results');
-
-  document.querySelectorAll('.nav-tab').forEach((t,i) =>
-    t.classList.toggle('active', (i===0&&state==='home')||(i===1&&state==='settings')));
-
-  if (state === 'settings') { updateKeyStatus(); getOffsetDisplay(); }
+  hideAll();
+  const show = id => { const e=document.getElementById(id); if(e) e.style.display=''; };
+  if (state === 'home') {
+    show('homePage'); show('mainNav');
+    document.querySelectorAll('.nav-tab')[0]?.classList.add('active');
+    document.querySelectorAll('.nav-tab')[1]?.classList.remove('active');
+  } else if (state === 'settings') {
+    show('settingsPage'); show('mainNav');
+    document.querySelectorAll('.nav-tab')[0]?.classList.remove('active');
+    document.querySelectorAll('.nav-tab')[1]?.classList.add('active');
+    updateKeyStatus(); getOffsetDisplay();
+  } else if (state === 'analyzing') {
+    show('progressPanel');
+  } else if (state === 'results') {
+    show('resultsPage'); show('chatSection');
+  }
 }
 
 function showPage(page) { setAppState(page); }
