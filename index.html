@@ -252,6 +252,13 @@ footer .fl { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800;
 footer .fl em { font-style: normal; color: var(--yellow); }
 footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-height: 1.6; }
 
+body[data-state="analyzing"] #homePage,
+body[data-state="analyzing"] #settingsPage,
+body[data-state="analyzing"] #mainNav { display: none !important; }
+body[data-state="results"] #homePage,
+body[data-state="results"] #settingsPage,
+body[data-state="results"] #mainNav { display: none !important; }
+
 @media print {
   body { background:#fff !important; color:#000 !important; font-family: Arial, sans-serif; }
   header, nav, #homePage, #settingsPage, #progressPanel, #chatSection, .res-actions, footer { display: none !important; }
@@ -1084,8 +1091,7 @@ function showError(msg) {
   document.getElementById('errorBox').textContent = '⚠ '+msg;
   document.getElementById('errorBox').classList.add('show');
   document.getElementById('progressPanel').classList.remove('active');
-  document.getElementById('homePage').style.display = '';
-  document.getElementById('mainNav').style.display = '';
+  document.body.removeAttribute('data-state');
   document.getElementById('analyzeBtn').disabled = false;
 }
 
@@ -1138,9 +1144,7 @@ async function startAnalysis() {
   const key = getKey();
   document.getElementById('errorBox').classList.remove('show');
   document.getElementById('analyzeBtn').disabled = true;
-  document.getElementById('homePage').style.display = 'none';
-  document.getElementById('settingsPage').style.display = 'none';
-  document.getElementById('mainNav').style.display = 'none';
+  document.body.setAttribute('data-state', 'analyzing');
   document.getElementById('progressPanel').classList.add('active');
   document.getElementById('resultsPage').classList.remove('on');
 
@@ -1205,9 +1209,7 @@ async function startAnalysis() {
 
 function hideHomeShowResults() {
   document.getElementById('progressPanel').classList.remove('active');
-  document.getElementById('homePage').style.display = 'none';
-  document.getElementById('settingsPage').style.display = 'none';
-  document.getElementById('mainNav').style.display = 'none';
+  document.body.setAttribute('data-state', 'results');
 }
 
 // ══ RENDER RESULTS ══
@@ -1282,8 +1284,7 @@ function resetApp() {
   document.getElementById('resultsPage').classList.remove('on');
   document.getElementById('chatSection').classList.remove('on');
   document.getElementById('chatMessages').innerHTML = '';
-  document.getElementById('homePage').style.display = '';
-  document.getElementById('mainNav').style.display = '';
+  document.body.removeAttribute('data-state');
   document.getElementById('errorBox').classList.remove('show');
   document.getElementById('riassuntoBox').style.display = 'none';
   document.getElementById('maxInfo').style.display = 'none';
