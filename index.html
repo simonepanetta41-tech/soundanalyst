@@ -252,13 +252,6 @@ footer .fl { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800;
 footer .fl em { font-style: normal; color: var(--yellow); }
 footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-height: 1.6; }
 
-body[data-state="analyzing"] #homePage,
-body[data-state="analyzing"] #settingsPage,
-body[data-state="analyzing"] #mainNav { display: none !important; }
-body[data-state="results"] #homePage,
-body[data-state="results"] #settingsPage,
-body[data-state="results"] #mainNav { display: none !important; }
-
 @media print {
   body { background:#fff !important; color:#000 !important; font-family: Arial, sans-serif; }
   header, nav, #homePage, #settingsPage, #progressPanel, #chatSection, .res-actions, footer { display: none !important; }
@@ -385,7 +378,7 @@ body[data-state="results"] #mainNav { display: none !important; }
     </div>
 
     <!-- SETTINGS PAGE -->
-    <div id="settingsPage">
+    <div id="settingsPage" style="display:none">
       <div class="settings-section">
         <div class="settings-title">API</div>
         <div class="settings-row">
@@ -401,19 +394,7 @@ body[data-state="results"] #mainNav { display: none !important; }
         </div>
       </div>
       <div class="settings-section">
-        <div class="settings-title">PDF</div>
-        <div class="settings-row">
-          <div class="settings-row-info">
-            <div class="settings-row-label">Offset pagine</div>
-            <div class="settings-row-desc">Pagine extra all'inizio del PDF prima della sceneggiatura (copertina, frontespizio, ecc.). Di solito 1 o 2.</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
-            <button onclick="changeOffset(-1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--white);width:32px;height:32px;border-radius:6px;font-size:16px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--yellow)'" onmouseout="this.style.borderColor='var(--border)'">−</button>
-            <span id="offsetDisplay" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--yellow);min-width:24px;text-align:center">1</span>
-            <button onclick="changeOffset(+1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--white);width:32px;height:32px;border-radius:6px;font-size:16px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--yellow)'" onmouseout="this.style.borderColor='var(--border)'">+</button>
-          </div>
-        </div>
-      </div>
+        <div class="settings-title">Account</div>
         <div class="settings-row">
           <div class="settings-row-info">
             <div class="settings-row-label" id="settingsEmail"></div>
@@ -822,7 +803,6 @@ function showApp() {
   document.getElementById('app').style.display = 'block';
   document.getElementById('userEmail').textContent = currentUser.email;
   document.getElementById('settingsEmail').textContent = currentUser.email;
-  setAppState('home');
   updateKeyStatus();
   loadHistory();
 }
@@ -844,112 +824,14 @@ sb.auth.getSession().then(({ data: { session } }) => {
 
 // ══ PAGE NAV ══
 function showPage(page) {
-  const hp = document.getElementById('homePage');
-  const sp = document.getElementById('settingsPage');
-  const mn = document.getElementById('mainNav');
-  hp.style.display     = page === 'home'     ? 'block' : 'none';
-  sp.style.display     = page === 'settings' ? 'block' : 'none';
-  mn.style.display     = 'flex';
+  document.getElementById('homePage').style.display    = page === 'home' ? '' : 'none';
+  document.getElementById('settingsPage').style.display = page === 'settings' ? '' : 'none';
   document.querySelectorAll('.nav-tab').forEach((t,i) =>
-    t.classList.toggle('active', (i===0&&page==='home')||(i===1&&page==='settings')));
-  if (page === 'settings') { updateKeyStatus(); getOffsetDisplay(); }
-}
-
-function setAppState(state) {
-  const hp = document.getElementById('homePage');
-  const sp = document.getElementById('settingsPage');
-  const mn = document.getElementById('mainNav');
-  const pp = document.getElementById('progressPanel');
-  const rp = document.getElementById('resultsPage');
-  const cs = document.getElementById('chatSection');
-
-  if (state === 'analyzing') {
-    hp.style.display = 'none';
-    sp.style.display = 'none';
-    mn.style.display = 'none';
-    pp.style.display = 'block';
-    rp.style.display = 'none';
-    if(cs) cs.style.display = 'none';
-  } else if (state === 'results') {
-    hp.style.display = 'none';
-    sp.style.display = 'none';
-    mn.style.display = 'none';
-    pp.style.display = 'none';
-    rp.style.display = 'block';
-    if(cs) cs.style.display = 'block';
-  } else if (state === 'home') {
-    hp.style.display = 'block';
-    sp.style.display = 'none';
-    mn.style.display = 'flex';
-    pp.style.display = 'none';
-    rp.style.display = 'none';
-    if(cs) cs.style.display = 'none';
-    document.querySelectorAll('.nav-tab')[0]?.classList.add('active');
-    document.querySelectorAll('.nav-tab')[1]?.classList.remove('active');
-  }
+    t.classList.toggle('active', (i===0 && page==='home') || (i===1 && page==='settings')));
+  if (page === 'settings') updateKeyStatus();
 }
 
 // ══ API KEY ══
-// ══ PAGE OFFSET ══
-let pageOffset = parseInt(localStorage.getItem('sa_offset') || '1');
-
-function changeOffset(delta) {
-  pageOffset = Math.max(0, pageOffset + delta);
-  localStorage.setItem('sa_offset', pageOffset);
-  getOffsetDisplay();
-}
-
-function getOffsetDisplay() {
-  const el = document.getElementById('offsetDisplay');
-  if (el) el.textContent = pageOffset;
-}
-
-async function autoDetectOffset() {
-  if (!pdfB64Array.length) return;
-  try {
-    // Load PDF if not already loaded
-    if (!modalPdfDoc) {
-      const bin = atob(pdfB64Array[0]);
-      const arr = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-      modalPdfDoc = await pdfjsLib.getDocument({ data: arr }).promise;
-    }
-    const maxPages = Math.min(8, modalPdfDoc.numPages);
-    for (let i = 1; i <= maxPages; i++) {
-      const page = await modalPdfDoc.getPage(i);
-      const tc   = await page.getTextContent();
-      const text = tc.items.map(x => x.str).join(' ').toUpperCase();
-      if (
-        /\bINT\b/.test(text) || /\bEXT\b/.test(text) ||
-        /\bINT\./.test(text) || /\bEXT\./.test(text) ||
-        text.includes('FADE IN') || text.includes('SMASH CUT')
-      ) {
-        const detected = i - 1;
-        if (detected !== pageOffset) {
-          pageOffset = detected;
-          localStorage.setItem('sa_offset', pageOffset);
-          getOffsetDisplay();
-          showOffsetToast(detected);
-        }
-        return;
-      }
-    }
-  } catch(e) { console.log('Offset auto-detect:', e.message); }
-}
-
-function showOffsetToast(n) {
-  let toast = document.getElementById('offsetToast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'offsetToast';
-    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--yellow);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--yellow);z-index:9999;transition:opacity 0.4s;white-space:nowrap;';
-    document.body.appendChild(toast);
-  }
-  toast.textContent = `📄 Offset pagine rilevato automaticamente: ${n}`;
-  toast.style.opacity = '1';
-  setTimeout(() => { toast.style.opacity = '0'; }, 3000);
-}
-
 function saveKey() {
   const key = document.getElementById('apiKey').value.trim();
   if (!key.startsWith('sk-')) { alert('Chiave non valida — deve iniziare con sk-'); return; }
@@ -1128,7 +1010,9 @@ function setStep(n) {
 function showError(msg) {
   document.getElementById('errorBox').textContent = '⚠ '+msg;
   document.getElementById('errorBox').classList.add('show');
-  setAppState('home');
+  document.getElementById('progressPanel').classList.remove('active');
+  document.getElementById('homePage').style.display = '';
+  document.getElementById('mainNav').style.display = '';
   document.getElementById('analyzeBtn').disabled = false;
 }
 
@@ -1181,7 +1065,9 @@ async function startAnalysis() {
   const key = getKey();
   document.getElementById('errorBox').classList.remove('show');
   document.getElementById('analyzeBtn').disabled = true;
-  setAppState('analyzing');
+  document.getElementById('homePage').style.display = 'none';
+  document.getElementById('mainNav').style.display = 'none';
+  document.getElementById('progressPanel').classList.add('active');
   document.getElementById('resultsPage').classList.remove('on');
 
   setStep(1);
@@ -1191,7 +1077,6 @@ async function startAnalysis() {
     const pdfs = [];
     for (const f of files) { pdfs.push({ name: f.name, data: await fileToB64(f) }); }
     pdfB64Array = pdfs.map(p => p.data);
-    autoDetectOffset();
 
     setStep(2);
     document.getElementById('progLabel').textContent = 'Invio a Gennaro...';
@@ -1244,7 +1129,10 @@ async function startAnalysis() {
 }
 
 function hideHomeShowResults() {
-  setAppState('results');
+  document.getElementById('progressPanel').classList.remove('active');
+  document.getElementById('homePage').style.display = 'none';
+  document.getElementById('settingsPage').style.display = 'none';
+  document.getElementById('mainNav').style.display = 'none';
 }
 
 // ══ RENDER RESULTS ══
@@ -1319,7 +1207,8 @@ function resetApp() {
   document.getElementById('resultsPage').classList.remove('on');
   document.getElementById('chatSection').classList.remove('on');
   document.getElementById('chatMessages').innerHTML = '';
-  setAppState('home');
+  document.getElementById('homePage').style.display = '';
+  document.getElementById('mainNav').style.display = '';
   document.getElementById('errorBox').classList.remove('show');
   document.getElementById('riassuntoBox').style.display = 'none';
   document.getElementById('maxInfo').style.display = 'none';
@@ -1498,36 +1387,13 @@ document.addEventListener('keydown', e => {
 
 document.getElementById('resultsPage').addEventListener('click', e => {
   const el = e.target.closest('.ref');
-  if (!el || !el.classList.contains('clickable')) return;
-  if (!pdfB64Array.length) { alert('PDF non disponibile — carica di nuovo la sceneggiatura per usare questa funzione.'); return; }
-
-  const text = el.textContent;
-  // Try multiple page number formats
-  const patterns = [
-    /\(p\.?\s*(\d+)\)/i,
-    /pag\.?\s*(\d+)/i,
-    /pagina\s*(\d+)/i,
-    /[-–]\s*p\.?\s*(\d+)/i,
-  ];
-
-  let pageNum = null;
-  for (const p of patterns) {
-    const m = text.match(p);
-    if (m) { pageNum = parseInt(m[1]); break; }
-  }
-
-  if (pageNum) {
-    openPageModal(pageNum + pageOffset);
-  } else {
-    const input = prompt(`Nessun numero di pagina trovato per:\n"${text.substring(0,80)}"\n\nInserisci il numero di pagina della sceneggiatura:`);
-    if (input && parseInt(input) > 0) openPageModal(parseInt(input) + pageOffset);
-  }
+  if (!el) return;
+  const m = el.textContent.match(/\(p\.(\d+)\)/);
+  if (m) openPageModal(parseInt(m[1]));
 });
 
 function activateRefs() {
-  document.querySelectorAll('#resultsPage .ref').forEach(el => {
-    if (el.textContent.trim().length > 2) el.classList.add('clickable');
-  });
+  document.querySelectorAll('.ref').forEach(el => { if(/\(p\.\d+\)/.test(el.textContent)) el.classList.add('clickable'); });
 }
 </script>
 </body>
