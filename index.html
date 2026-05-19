@@ -1387,13 +1387,36 @@ document.addEventListener('keydown', e => {
 
 document.getElementById('resultsPage').addEventListener('click', e => {
   const el = e.target.closest('.ref');
-  if (!el) return;
-  const m = el.textContent.match(/\(p\.(\d+)\)/);
-  if (m) openPageModal(parseInt(m[1]));
+  if (!el || !el.classList.contains('clickable')) return;
+  if (!pdfB64Array.length) { alert('PDF non disponibile — carica di nuovo la sceneggiatura per usare questa funzione.'); return; }
+
+  const text = el.textContent;
+  // Try multiple page number formats
+  const patterns = [
+    /\(p\.?\s*(\d+)\)/i,
+    /pag\.?\s*(\d+)/i,
+    /pagina\s*(\d+)/i,
+    /[-–]\s*p\.?\s*(\d+)/i,
+  ];
+
+  let pageNum = null;
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m) { pageNum = parseInt(m[1]); break; }
+  }
+
+  if (pageNum) {
+    openPageModal(pageNum);
+  } else {
+    const input = prompt(`Nessun numero di pagina trovato per:\n"${text.substring(0,80)}"\n\nInserisci il numero di pagina manualmente:`);
+    if (input && parseInt(input) > 0) openPageModal(parseInt(input));
+  }
 });
 
 function activateRefs() {
-  document.querySelectorAll('.ref').forEach(el => { if(/\(p\.\d+\)/.test(el.textContent)) el.classList.add('clickable'); });
+  document.querySelectorAll('#resultsPage .ref').forEach(el => {
+    if (el.textContent.trim().length > 2) el.classList.add('clickable');
+  });
 }
 </script>
 </body>
