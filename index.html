@@ -260,6 +260,41 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
   .stat-num { color: #000 !important; }
   .ci { background: #f5f5f5 !important; }
 }
+
+/* ── SHARE MODAL ── */
+.share-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:2000; align-items:center; justify-content:center; padding:24px; }
+.share-modal-overlay.open { display:flex; }
+.share-modal-box { background:var(--surface); border:1px solid var(--border); border-radius:14px; width:100%; max-width:520px; padding:28px; }
+.share-modal-title { font-family:'Syne',sans-serif; font-size:16px; font-weight:800; margin-bottom:6px; }
+.share-modal-sub { font-size:11px; color:var(--muted); margin-bottom:20px; line-height:1.5; }
+.share-link-row { display:flex; gap:8px; margin-bottom:14px; }
+.share-link-input { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:11px 14px; color:var(--yellow); font-family:'DM Mono',monospace; font-size:11px; outline:none; }
+.btn-copy { background:var(--yellow); border:none; color:#000; padding:0 18px; border-radius:8px; font-family:'Syne',sans-serif; font-size:11px; font-weight:800; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+.btn-copy:hover { background:var(--white); }
+.share-copied { font-size:11px; color:var(--green); display:none; margin-bottom:14px; }
+.share-copied.show { display:block; }
+.share-modal-footer { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+.btn-unshare { background:none; border:1px solid rgba(255,85,85,0.3); color:var(--danger); padding:7px 14px; border-radius:8px; font-family:'DM Mono',monospace; font-size:11px; cursor:pointer; transition:all 0.15s; }
+.btn-unshare:hover { background:rgba(255,85,85,0.1); }
+.btn-close-share { background:var(--surface2); border:1px solid var(--border); color:var(--muted); padding:7px 14px; border-radius:8px; font-family:'DM Mono',monospace; font-size:11px; cursor:pointer; transition:all 0.15s; }
+.btn-close-share:hover { border-color:var(--white); color:var(--white); }
+
+/* ── SHARE VIEW ── */
+#shareView { display:none; }
+#shareView.on { display:block; }
+.share-banner { background:rgba(245,230,66,0.08); border:1px solid rgba(245,230,66,0.25); border-radius:10px; padding:14px 18px; display:flex; align-items:center; gap:12px; margin-bottom:28px; flex-wrap:wrap; }
+.share-banner-icon { font-size:20px; }
+.share-banner-text .t { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; color:var(--yellow); }
+.share-banner-text .s { font-size:11px; color:var(--muted); margin-top:2px; }
+.btn-import { padding:10px 22px; background:var(--yellow); color:#000; border:none; border-radius:10px; font-family:'Syne',sans-serif; font-size:12px; font-weight:800; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+.btn-import:hover { background:var(--white); }
+.import-success { font-size:11px; color:var(--green); display:none; }
+.import-success.show { display:block; }
+.share-auth-note { font-size:11px; color:var(--muted); }
+.share-auth-note a { color:var(--yellow); cursor:pointer; }
+.btn-share { background:var(--surface); border:1px solid var(--border); color:var(--white-dim); padding:8px 14px; border-radius:8px; font-family:'DM Mono',monospace; font-size:11px; cursor:pointer; transition:all 0.15s; }
+.btn-share:hover { border-color:var(--yellow); color:var(--yellow); }
+.btn-share.active { border-color:var(--yellow); color:var(--yellow); background:rgba(245,230,66,0.08); }
 </style>
 </head>
 <body>
@@ -406,6 +441,7 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       <div class="res-header">
         <div class="res-title" id="resTitle">Analisi <span>Completata</span></div>
         <div class="res-actions">
+          <button class="btn-share" id="btnShare" onclick="openShareModal()">🔗 Condividi</button>
           <button class="btn-export" onclick="window.print()">⬇ Esporta PDF</button>
           <button class="btn-reset" onclick="resetApp()">↩ Nuova Analisi</button>
         </div>
@@ -448,6 +484,57 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
   </div>
 </div>
 
+<!-- SHARE MODAL -->
+<div class="share-modal-overlay" id="shareModal">
+  <div class="share-modal-box">
+    <div class="share-modal-title">🔗 Condividi Analisi</div>
+    <div class="share-modal-sub">Chiunque abbia questo link può vedere l'analisi. Può anche importarla nel proprio account SoundAnalyst.</div>
+    <div class="share-link-row">
+      <input class="share-link-input" id="shareLinkInput" readonly>
+      <button class="btn-copy" onclick="copyShareLink()">Copia</button>
+    </div>
+    <div class="share-copied" id="shareCopied">✓ Link copiato!</div>
+    <div class="share-modal-footer">
+      <button class="btn-unshare" onclick="disableShare()">🚫 Disattiva link</button>
+      <button class="btn-close-share" onclick="closeShareModal()">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHARE VIEW (pagina pubblica) -->
+<div id="shareView">
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="brand-mark">🎙️</div>
+        <div class="brand-text">
+          <h1>Sound<em>Analyst</em></h1>
+          <div class="tag">Analisi sceneggiatura — Reparto Suono</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--muted)">by ohsfaccimmarosound</div>
+    </header>
+    <div id="shareBanner" class="share-banner">
+      <div class="share-banner-icon">📤</div>
+      <div class="share-banner-text" style="flex:1">
+        <div class="t">Analisi condivisa</div>
+        <div class="s">Questo spoglio è stato condiviso con te. Puoi importarlo nel tuo account SoundAnalyst.</div>
+      </div>
+      <div id="shareImportArea">
+        <button class="btn-import" id="btnImport" onclick="importSharedAnalysis()">⬇ Importa nella mia libreria</button>
+        <div class="import-success" id="importSuccess">✓ Importata! <a onclick="goToApp()">Apri SoundAnalyst</a></div>
+        <div class="share-auth-note" id="shareAuthNote" style="display:none">Per importare devi <a onclick="goToAppLogin()">accedere a SoundAnalyst</a></div>
+      </div>
+    </div>
+    <!-- Results shown here in read-only -->
+    <div id="shareResultsContainer"></div>
+    <footer>
+      <div class="fl">Sound<em>Analyst</em></div>
+      <div class="fr">by ohsfaccimmarosound · Reparto Suono</div>
+    </footer>
+  </div>
+</div>
+
 <!-- PDF MODAL -->
 <div class="modal-overlay" id="pageModal">
   <div class="modal-box">
@@ -468,7 +555,184 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
 </div>
 
 <script>
-// ══ SUPABASE ══
+// ══ ROUTE DETECTION ══
+let currentAnalysisId = null;
+let currentShareToken = null;
+let sharedAnalysisData = null;
+
+async function initApp() {
+  const path = window.location.pathname;
+  if (path.startsWith('/share/')) {
+    const token = path.replace('/share/', '').replace(/\/$/, '');
+    await handleShareRoute(token);
+  }
+  // Normal app init handled by onAuthStateChange
+}
+
+async function handleShareRoute(token) {
+  document.getElementById('authPage').style.display = 'none';
+  document.getElementById('app').style.display = 'none';
+
+  // Check login first
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) {
+    // Save token and redirect to login
+    sessionStorage.setItem('pendingShareToken', token);
+    document.getElementById('authPage').style.display = 'flex';
+    return;
+  }
+
+  currentUser = session.user;
+  document.getElementById('shareView').classList.add('on');
+
+  const { data, error } = await sb
+    .from('analyses')
+    .select('id, data, created_at, share_token')
+    .eq('share_token', token)
+    .eq('is_shared', true)
+    .single();
+
+  if (error || !data) {
+    document.getElementById('shareResultsContainer').innerHTML =
+      `<div style="text-align:center;padding:60px;color:var(--muted);font-size:13px">
+        ⚠ Link non valido o analisi non più condivisa.
+        <br><br><a onclick="goToApp()" style="color:var(--yellow);cursor:pointer">Vai a SoundAnalyst →</a>
+      </div>`;
+    return;
+  }
+
+  sharedAnalysisData = data.data;
+
+  // Always show import button (user is logged in)
+  document.getElementById('shareAuthNote').style.display = 'none';
+  document.getElementById('btnImport').style.display = 'inline-block';
+
+  renderShareResults(data.data);
+}
+
+function renderShareResults(d) {
+  const container = document.getElementById('shareResultsContainer');
+
+  const statsHtml = [
+    { v: d.totale_scene,                     l: 'Scene Totali' },
+    { v: d.scene_interno,                    l: 'Interno' },
+    { v: d.scene_esterno,                    l: 'Esterno' },
+    { v: d.max_attori_parlanti?.numero||'—', l: 'Max Attori\nstessa scena' },
+    { v: d.media_attori_parlanti||'—',        l: 'Media Attori\nper scena' },
+  ].map(s => `<div class="stat-box"><div class="stat-num">${s.v}</div><div class="stat-desc">${s.l}</div></div>`).join('');
+
+  const maxHtml = d.max_attori_parlanti?.scena
+    ? `<div class="max-info"><span class="badge">Scena con + attori parlanti</span><span class="scene-text">${d.max_attori_parlanti.scena}</span></div>` : '';
+
+  const riaHtml = d.riassunto
+    ? `<div id="riassuntoBox"><div class="ria-label">Sinossi</div><div>${d.riassunto}</div></div>` : '';
+
+  const CATS = [
+    { key:'camera_car',ico:'🚗',name:'Camera Car',render:x=>x.scene?.map(s=>`<div class="ci"><span class="ref">${s}</span></div>`).join('')},
+    { key:'location_wild',ico:'🌲',name:'Location Wild',render:x=>x.scene?.map(s=>`<div class="ci"><strong>${s.location}</strong><br><span class="ref">${s.scena}</span></div>`).join('')},
+    { key:'playback',ico:'🎵',name:'Necessità Playback',render:x=>{let h='';if(x.esibizioni_live?.length)h+=`<div class="subsec"><div class="subsec-title">Esibizioni live</div>`+x.esibizioni_live.map(s=>`<div class="ci"><strong>${s.scena}</strong><br><span class="ref">${s.note}</span></div>`).join('')+'</div>';if(x.playback_puro?.length)h+=`<div class="subsec"><div class="subsec-title">Playback puro</div>`+x.playback_puro.map(s=>`<div class="ci"><strong>${s.scena}</strong><br><span class="ref">${s.note}</span></div>`).join('')+'</div>';return h;}},
+    { key:'costume_critico',ico:'🩱',name:'Costume Critico',render:x=>{let h=x.totale_attori_coinvolti?`<div class="ci" style="color:var(--yellow)"><strong>${x.totale_attori_coinvolti} attori coinvolti</strong></div>`:'';h+=x.scene?.map(s=>`<div class="ci"><strong>${s.personaggi}</strong> (${s.attori} att.)<br><span class="ref">${s.scena}</span></div>`).join('');return h;}},
+    { key:'mezzi_movimento',ico:'🚛',name:'Mezzi in Movimento',render:x=>x.scene?.map(s=>`<div class="ci"><strong>${s.mezzo}</strong><br><span class="ref">${s.scena}</span></div>`).join('')},
+    { key:'acqua_pioggia',ico:'🌧️',name:'Acqua / Pioggia',render:x=>x.scene?.map(s=>`<div class="ci"><strong>${s.tipo}</strong><br><span class="ref">${s.scena}</span></div>`).join('')},
+    { key:'subacquee',ico:'🤿',name:'Scene Subacquee',render:x=>x.scene?.map(s=>`<div class="ci"><span class="ref">${s}</span></div>`).join('')},
+    { key:'ambienti_rumorosi',ico:'🏭',name:'Ambienti Rumorosi',render:x=>x.scene?.map(s=>`<div class="ci"><strong>${s.tipo}</strong><br><span class="ref">${s.scena}</span></div>`).join('')},
+    { key:'aerei_elicotteri',ico:'✈️',name:'Aerei / Elicotteri',render:x=>x.scene?.map(s=>`<div class="ci"><strong>${s.tipo}</strong><br><span class="ref">${s.scena}</span></div>`).join('')},
+    { key:'dialoghi_movimento',ico:'🏃',name:'Dialoghi in Movimento',render:x=>x.scene?.map(s=>`<div class="ci"><span class="ref">${s.scena}</span></div>`).join('')},
+    { key:'lingue_straniere',ico:'🌍',name:'Lingue Straniere',render:x=>{let h=x.lingue?.length?`<div class="ci" style="color:var(--yellow)"><strong>${x.lingue.join(', ')}</strong></div>`:'';h+=x.scene?.map(s=>`<div class="ci"><strong>${s.lingua}</strong><br><span class="ref">${s.scena}</span></div>`).join('');return h;}},
+    { key:'dialoghi_mediati',ico:'📞',name:'Dialoghi Mediati',render:x=>x.scene?.map(s=>`<div class="ci"><strong>${s.tipo}</strong><br><span class="ref">${s.scena}</span></div>`).join('')},
+    { key:'voiceover',ico:'🎙️',name:'Voiceover / F.C.',render:x=>x.scene?.map(s=>`<div class="ci"><strong>${s.personaggio||'—'}</strong><br><span class="ref">${s.scena}</span></div>`).join('')},
+    { key:'crowd_parlante',ico:'👥',name:'Crowd Parlante',render:x=>x.scene?.map(s=>`<div class="ci"><span class="ref">${s.scena}</span></div>`).join('')},
+    { key:'animali',ico:'🐾',name:'Scene con Animali',render:x=>x.scene?.map(s=>`<div class="ci"><strong>${s.animale}</strong><br><span class="ref">${s.scena}</span></div>`).join('')},
+    { key:'stunt_effetti',ico:'💥',name:'Stunt / Effetti Sp.',render:x=>x.scene?.map(s=>`<div class="ci"><strong>${s.tipo}</strong><br><span class="ref">${s.scena}</span></div>`).join('')},
+  ];
+
+  const catsHtml = CATS.map(c => {
+    const cd = d[c.key]||{};
+    const on = !!cd.presente;
+    const cnt = cd.scene?.length||(cd.esibizioni_live?.length||0)+(cd.playback_puro?.length||0);
+    const inner = c.render(cd)||'';
+    return `<div class="cat ${on?'active':'inactive'}">
+      <div class="cat-top"><span class="cat-ico">${c.ico}</span><span class="cat-name">${c.name}</span>
+      ${on?`<span class="badge-count">${cnt>0?cnt+' sc.':'sì'}</span>`:`<span class="badge-absent">assente</span>`}</div>
+      ${on&&inner?`<div class="cat-items">${inner}</div>`:''}
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="res-title" style="margin-bottom:24px">${d.titolo||'Analisi'} — <span style="color:var(--yellow)">Spoglio Suono</span></div>
+    <div class="sec-label">Statistiche generali</div>
+    <div class="stats-row">${statsHtml}</div>
+    ${maxHtml}
+    ${riaHtml}
+    <div class="sec-label" style="margin-top:28px">Dettaglio categorie</div>
+    <div class="cats-grid">${catsHtml}</div>
+  `;
+}
+
+async function importSharedAnalysis() {
+  const btn = document.getElementById('btnImport');
+  btn.textContent = 'Importando...';
+  btn.disabled = true;
+  try {
+    await saveAnalysis(sharedAnalysisData);
+    btn.style.display = 'none';
+    document.getElementById('importSuccess').classList.add('show');
+  } catch(e) {
+    btn.textContent = '⚠ Errore — riprova';
+    btn.disabled = false;
+  }
+}
+
+function goToApp()      { window.location.href = '/'; }
+function goToAppLogin() { sessionStorage.setItem('pendingShare', '1'); window.location.href = '/'; }
+
+// ══ SHARE FUNCTIONS ══
+async function openShareModal() {
+  if (!currentAnalysisId) return;
+
+  // Enable sharing if not already
+  const { data } = await sb.from('analyses')
+    .update({ is_shared: true })
+    .eq('id', currentAnalysisId)
+    .select('share_token')
+    .single();
+
+  if (data?.share_token) {
+    currentShareToken = data.share_token;
+    const link = `${window.location.origin}/share/${data.share_token}`;
+    document.getElementById('shareLinkInput').value = link;
+    document.getElementById('shareCopied').classList.remove('show');
+    document.getElementById('shareModal').classList.add('open');
+    document.getElementById('btnShare').classList.add('active');
+    document.getElementById('btnShare').textContent = '🔗 Condivisa';
+  }
+}
+
+function copyShareLink() {
+  const input = document.getElementById('shareLinkInput');
+  navigator.clipboard.writeText(input.value).then(() => {
+    document.getElementById('shareCopied').classList.add('show');
+    setTimeout(() => document.getElementById('shareCopied').classList.remove('show'), 2500);
+  });
+}
+
+async function disableShare() {
+  if (!currentAnalysisId) return;
+  await sb.from('analyses').update({ is_shared: false }).eq('id', currentAnalysisId);
+  closeShareModal();
+  document.getElementById('btnShare').classList.remove('active');
+  document.getElementById('btnShare').textContent = '🔗 Condividi';
+  currentShareToken = null;
+}
+
+function closeShareModal() { document.getElementById('shareModal').classList.remove('open'); }
+
+document.getElementById('shareModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('shareModal')) closeShareModal();
+});
+
+// ══ INIT ══
+initApp();
 const SUPA_URL  = 'https://cmeccqzlkinpwalmehdf.supabase.co';
 const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtZWNjcXpsa2lucHdhbG1laGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMDEwMTIsImV4cCI6MjA5NDY3NzAxMn0.FdamHVdDLkgKSnGgt39eAFE3dXQLgWoQQ1dXrBUxF90';
 const sb = supabase.createClient(SUPA_URL, SUPA_ANON);
@@ -528,6 +792,13 @@ function showAuth() {
 }
 
 function showApp() {
+  // Check if there's a pending share token
+  const pendingToken = sessionStorage.getItem('pendingShareToken');
+  if (pendingToken) {
+    sessionStorage.removeItem('pendingShareToken');
+    window.location.href = '/share/' + pendingToken;
+    return;
+  }
   document.getElementById('authPage').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('userEmail').textContent = currentUser.email;
@@ -636,6 +907,7 @@ async function loadFromHistory(id) {
   const { data, error } = await sb.from('analyses').select('data').eq('id', id).single();
   if (error || !data) { alert('Errore caricamento analisi'); return; }
   pdfB64Array = []; modalPdfDoc = null;
+  currentAnalysisId = id;
   hideHomeShowResults();
   renderResults(data.data);
 }
@@ -666,13 +938,14 @@ async function saveAnalysis(data) {
   // Count versions
   const { count } = await sb.from('analyses').select('id', { count:'exact', head:true }).eq('project_id', projectId);
   const ver = (count || 0) + 1;
-  await sb.from('analyses').insert({
+  const { data: saved } = await sb.from('analyses').insert({
     project_id: projectId,
     user_id: currentUser.id,
     version_number: ver,
     version_label: 'v' + ver,
     data: data
-  });
+  }).select('id').single();
+  currentAnalysisId = saved?.id || null;
   loadHistory();
 }
 
@@ -935,7 +1208,7 @@ function resetApp() {
   document.getElementById('errorBox').classList.remove('show');
   document.getElementById('riassuntoBox').style.display = 'none';
   document.getElementById('maxInfo').style.display = 'none';
-  chatHistory = []; analysisData = null;
+  chatHistory = []; analysisData = null; currentAnalysisId = null;
   checkReady();
   showPage('home');
 }
