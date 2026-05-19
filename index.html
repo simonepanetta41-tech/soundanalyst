@@ -1036,8 +1036,16 @@ async function saveAnalysis(data) {
       for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
       const blob = new Blob([arr], { type: 'application/pdf' });
       const path = `${currentUser.id}/${saved.id}.pdf`;
-      await sb.storage.from('screenplays').upload(path, blob, { upsert: true });
-    } catch(e) { console.log('PDF upload to storage failed:', e.message); }
+      console.log('Uploading PDF to storage, path:', path, 'size:', blob.size);
+      const { data: upData, error: upErr } = await sb.storage.from('screenplays').upload(path, blob, { upsert: true });
+      if (upErr) {
+        console.error('Storage upload error:', upErr.message, upErr);
+      } else {
+        console.log('Storage upload success:', upData);
+      }
+    } catch(e) { console.error('PDF upload exception:', e.message, e); }
+  } else {
+    console.log('Skip upload — saved.id:', saved?.id, 'pdfB64Array.length:', pdfB64Array.length);
   }
 
   loadHistory();
