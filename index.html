@@ -624,28 +624,30 @@ async function handleShareRoute(token) {
     renderShareResults(data.data);
     setTimeout(() => activateShareRefs(), 100);
 
-    // Try to load PDF — first check viewer's own copy, then copy from owner
+    // Try to load PDF — try owner's copy first, then viewer's own copy
     try {
       const ownerId = data.data._owner_id;
       const analysisId = data.id;
       const viewerPath = `${currentUser.id}/${analysisId}.pdf`;
+      const ownerPath = ownerId ? `${ownerId}/${analysisId}.pdf` : null;
 
-      // First try viewer's own copy
-      let { data: blob, error: dlErr } = await sb.storage.from('Screenplays').download(viewerPath);
+      let blob = null;
 
-      // If not found and owner is different, copy from owner
-      if (dlErr && ownerId && ownerId !== currentUser.id) {
-        const ownerPath = `${ownerId}/${analysisId}.pdf`;
-        const { data: ownerBlob, error: ownerErr } = await sb.storage.from('Screenplays').download(ownerPath);
-        if (!ownerErr && ownerBlob) {
-          // Save a copy in viewer's folder
-          await sb.storage.from('Screenplays').upload(viewerPath, ownerBlob, { upsert: true });
-          blob = ownerBlob;
-          dlErr = null;
-        }
+      // Try owner's path first
+      if (ownerPath) {
+        const { data: b, error: e } = await sb.storage.from('Screenplays').download(ownerPath);
+        if (!e && b) blob = b;
       }
 
-      if (!dlErr && blob) {
+      // Fallback to viewer's own copy
+      if (!blob) {
+        const { data: b, error: e } = await sb.storage.from('Screenplays').download(viewerPath);
+        if (!e && b) blob = b;
+      }
+
+      // Save to viewer's folder for next time
+      if (blob) {
+        try { await sb.storage.from('Screenplays').upload(viewerPath, blob, { upsert: true }); } catch(_) {}
         const buf = await blob.arrayBuffer();
         const bytes = new Uint8Array(buf);
         let bin = '';
