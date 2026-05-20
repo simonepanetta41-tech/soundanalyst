@@ -631,6 +631,14 @@ async function handleShareRoute(token) {
       const viewerPath = `${currentUser.id}/${analysisId}.pdf`;
       const ownerPath = ownerId ? `${ownerId}/${analysisId}.pdf` : null;
 
+      console.log('Loading PDF — ownerId:', ownerId, 'analysisId:', analysisId);
+      console.log('currentUser:', currentUser?.id);
+      console.log('ownerPath:', ownerPath);
+
+      // Check auth token
+      const { data: { session } } = await sb.auth.getSession();
+      console.log('Session valid:', !!session, 'token:', session?.access_token?.slice(0,20));
+
       let blob = null;
 
       // Try owner's path first
