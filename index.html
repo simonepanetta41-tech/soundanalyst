@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+  <script>
+  // Handle GitHub Pages SPA redirect
+  var params = new URLSearchParams(window.location.search);
+  var path = params.get('path');
+  if (path) {
+    params.delete('path');
+    var newUrl = window.location.pathname + 
+      (params.toString() ? '?' + params.toString() : '') + 
+      window.location.hash;
+    window.history.replaceState(null, null, newUrl);
+  }
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SoundAnalyst</title>
