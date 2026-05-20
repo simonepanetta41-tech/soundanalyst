@@ -584,44 +584,52 @@ async function initApp() {
 }
 
 async function handleShareRoute(token) {
+  // Hide everything first
   document.getElementById('authPage').style.display = 'none';
   document.getElementById('app').style.display = 'none';
+  const sv = document.getElementById('shareView');
+  sv.style.display = 'none';
 
   // Check login first
   const { data: { session } } = await sb.auth.getSession();
   if (!session) {
-    // Save token and redirect to login
     sessionStorage.setItem('pendingShareToken', token);
     document.getElementById('authPage').style.display = 'flex';
     return;
   }
 
   currentUser = session.user;
-  document.getElementById('shareView').classList.add('on');
+  sv.style.display = 'block';
 
-  const { data, error } = await sb
-    .from('analyses')
-    .select('id, data, created_at, share_token')
-    .eq('share_token', token)
-    .eq('is_shared', true)
-    .single();
+  try {
+    const { data, error } = await sb
+      .from('analyses')
+      .select('id, data, created_at, share_token')
+      .eq('share_token', token)
+      .eq('is_shared', true)
+      .single();
 
-  if (error || !data) {
+    if (error || !data) {
+      document.getElementById('shareResultsContainer').innerHTML =
+        `<div style="text-align:center;padding:60px;color:var(--muted);font-size:13px">
+          ⚠ Link non valido o analisi non più condivisa.
+          <br><br><a onclick="goToApp()" style="color:var(--yellow);cursor:pointer">Vai a SoundAnalyst →</a>
+        </div>`;
+      return;
+    }
+
+    sharedAnalysisData = data.data;
+    document.getElementById('shareAuthNote').style.display = 'none';
+    document.getElementById('btnImport').style.display = 'inline-block';
+    renderShareResults(data.data);
+
+  } catch(e) {
     document.getElementById('shareResultsContainer').innerHTML =
       `<div style="text-align:center;padding:60px;color:var(--muted);font-size:13px">
-        ⚠ Link non valido o analisi non più condivisa.
+        ⚠ Errore: ${e.message}
         <br><br><a onclick="goToApp()" style="color:var(--yellow);cursor:pointer">Vai a SoundAnalyst →</a>
       </div>`;
-    return;
   }
-
-  sharedAnalysisData = data.data;
-
-  // Always show import button (user is logged in)
-  document.getElementById('shareAuthNote').style.display = 'none';
-  document.getElementById('btnImport').style.display = 'inline-block';
-
-  renderShareResults(data.data);
 }
 
 function renderShareResults(d) {
