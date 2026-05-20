@@ -1514,9 +1514,22 @@ async function renderModalPage(n) {
   const page = await modalPdfDoc.getPage(n);
   const canvas = document.getElementById('pdfCanvas');
   const wrap = canvas.parentElement;
-  const scale = Math.min((wrap.clientWidth-32)/page.getViewport({scale:1}).width, 2.2);
+  const naturalWidth = page.getViewport({scale:1}).width;
+  const containerWidth = wrap.clientWidth - 32;
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  // Use at least 1.5x scale, max 3x, always readable
+  const scale = Math.max(1.5, Math.min(containerWidth / naturalWidth * devicePixelRatio, 3));
+  const displayScale = scale / devicePixelRatio;
   const vp = page.getViewport({scale});
-  canvas.width=vp.width; canvas.height=vp.height;
+  // Canvas at full resolution
+  canvas.width  = vp.width;
+  canvas.height = vp.height;
+  // Display at device-adjusted size for crisp rendering
+  canvas.style.width  = (vp.width / devicePixelRatio) + 'px';
+  canvas.style.height = (vp.height / devicePixelRatio) + 'px';
+  // Allow horizontal scroll on mobile instead of compressing
+  wrap.style.overflowX = 'auto';
+  wrap.style.overflowY = 'auto';
   await page.render({ canvasContext:canvas.getContext('2d'), viewport:vp }).promise;
   document.getElementById('modalLoading').style.display = 'none';
   canvas.style.display = 'block';
