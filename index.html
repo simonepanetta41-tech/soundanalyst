@@ -753,13 +753,14 @@ document.getElementById('shareModal').addEventListener('click', e => {
   if (e.target === document.getElementById('shareModal')) closeShareModal();
 });
 
-// ══ INIT ══
-initApp();
 const SUPA_URL  = 'https://cmeccqzlkinpwalmehdf.supabase.co';
 const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtZWNjcXpsa2lucHdhbG1laGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMDEwMTIsImV4cCI6MjA5NDY3NzAxMn0.FdamHVdDLkgKSnGgt39eAFE3dXQLgWoQQ1dXrBUxF90';
 const sb = supabase.createClient(SUPA_URL, SUPA_ANON);
 
 let currentUser = null;
+
+// ══ INIT ══
+initApp();
 
 // ══ AUTH ══
 let authMode = 'login';
