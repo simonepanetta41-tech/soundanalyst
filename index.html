@@ -622,6 +622,39 @@ async function handleShareRoute(token) {
     document.getElementById('shareAuthNote').style.display = 'none';
     document.getElementById('btnImport').style.display = 'inline-block';
     renderShareResults(data.data);
+    setTimeout(() => activateShareRefs(), 100);
+
+    // Try to load PDF — first check viewer's own copy, then copy from owner
+    try {
+      const ownerId = data.data._owner_id;
+      const analysisId = data.id;
+      const viewerPath = `${currentUser.id}/${analysisId}.pdf`;
+
+      // First try viewer's own copy
+      let { data: blob, error: dlErr } = await sb.storage.from('Screenplays').download(viewerPath);
+
+      // If not found and owner is different, copy from owner
+      if (dlErr && ownerId && ownerId !== currentUser.id) {
+        const ownerPath = `${ownerId}/${analysisId}.pdf`;
+        const { data: ownerBlob, error: ownerErr } = await sb.storage.from('Screenplays').download(ownerPath);
+        if (!ownerErr && ownerBlob) {
+          // Save a copy in viewer's folder
+          await sb.storage.from('Screenplays').upload(viewerPath, ownerBlob, { upsert: true });
+          blob = ownerBlob;
+          dlErr = null;
+        }
+      }
+
+      if (!dlErr && blob) {
+        const buf = await blob.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        let bin = '';
+        const chunk = 8192;
+        for (let i = 0; i < bytes.byteLength; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i+chunk));
+        pdfB64Array = [btoa(bin)];
+        console.log('Share PDF loaded OK');
+      }
+    } catch(e) { console.log('Share PDF load:', e.message); }
 
   } catch(e) {
     document.getElementById('shareResultsContainer').innerHTML =
@@ -1035,7 +1068,7 @@ async function saveAnalysis(data) {
     user_id: currentUser.id,
     version_number: ver,
     version_label: 'v' + ver,
-    data: data
+    data: { ...data, _owner_id: currentUser.id }
   }).select('id').single();
   currentAnalysisId = saved?.id || null;
 
@@ -1530,6 +1563,35 @@ function activateRefs() {
     if (el.textContent.trim().length > 3) el.classList.add('clickable');
   });
 }
+
+function activateShareRefs() {
+  document.querySelectorAll('#shareResultsContainer .ref').forEach(el => {
+    if (el.textContent.trim().length > 3) el.classList.add('clickable');
+  });
+}
+
+document.getElementById('shareResultsContainer').addEventListener('click', e => {
+  const el = e.target.closest('.ref.clickable');
+  if (!el) return;
+  if (!pdfB64Array.length) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--muted);z-index:9999;white-space:nowrap;';
+    toast.textContent = '📄 PDF non disponibile per questa analisi condivisa';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+    return;
+  }
+  const text = el.textContent;
+  const patterns = [/\(p\.?\s*(\d+)[-–]?\d*\)/i, /pag\.?\s*(\d+)/i, /[-–]\s*p\.?\s*(\d+)\b/i];
+  let pageNum = null;
+  for (const p of patterns) { const m = text.match(p); if (m) { pageNum = parseInt(m[1]); break; } }
+  if (pageNum) {
+    openPageModal(pageNum + pageOffset);
+  } else {
+    const input = prompt(`Inserisci il numero di pagina per:\n"${text.substring(0,80)}"`);
+    if (input && parseInt(input) > 0) openPageModal(parseInt(input) + pageOffset);
+  }
+});
 </script>
 </body>
 </html>
