@@ -822,6 +822,7 @@ function showApp() {
 }
 
 sb.auth.onAuthStateChange((event, session) => {
+  if (window.location.pathname.startsWith('/share/')) return;
   if (session) {
     currentUser = session.user;
     showApp();
@@ -832,6 +833,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 sb.auth.getSession().then(({ data: { session } }) => {
+  if (window.location.pathname.startsWith('/share/')) return;
   if (session) { currentUser = session.user; showApp(); }
   else { showAuth(); }
 });
