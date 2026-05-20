@@ -1498,7 +1498,11 @@ document.getElementById('resultsPage').addEventListener('click', e => {
   }
 
   const text = el.textContent;
-  const patterns = [/\(p\.?\s*(\d+)\)/i, /pag\.?\s*(\d+)/i, /[-–]\s*p\.?\s*(\d+)\b/i];
+  const patterns = [
+    /\(p\.?\s*(\d+)[-–]?\d*\)/i,
+    /pag\.?\s*(\d+)/i,
+    /[-–]\s*p\.?\s*(\d+)\b/i
+  ];
   let pageNum = null;
   for (const p of patterns) { const m = text.match(p); if (m) { pageNum = parseInt(m[1]); break; } }
 
