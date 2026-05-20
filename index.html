@@ -1193,7 +1193,7 @@ async function startAnalysis() {
       resp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type':'application/json', 'x-api-key':key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-        body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:4096, system:SYSPROMPT, messages:[{ role:'user', content:blocks }] })
+        body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:16000, system:SYSPROMPT, messages:[{ role:'user', content:blocks }] })
       });
       if (resp.status === 429) {
         if (attempt === 3) throw new Error('Rate limit superato. Aspetta un minuto e riprova.');
