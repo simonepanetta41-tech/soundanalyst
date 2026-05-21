@@ -127,6 +127,68 @@ header { padding: 28px 0 24px; border-bottom: 1px solid var(--border); margin-bo
 /* ── RESULTS ── */
 #resultsPage { display: none; }
 #resultsPage.on { display: block; }
+
+/* ── RESULT TABS ── */
+.result-tabs { display: flex; gap: 0; margin-bottom: 28px; background: var(--surface2); border-radius: 10px; padding: 4px; }
+.result-tab { flex: 1; background: none; border: none; color: var(--muted); font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; padding: 10px; border-radius: 7px; cursor: pointer; transition: all 0.15s; text-transform: uppercase; letter-spacing: 0.05em; }
+.result-tab.active { background: var(--yellow); color: #000; }
+.result-tab:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── PDL TAB ── */
+#pdlSection { display: none; }
+#pdlSection.on { display: block; }
+.pdl-upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 36px 24px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; margin-bottom: 16px; }
+.pdl-upload-zone:hover, .pdl-upload-zone.over { border-color: var(--yellow); background: rgba(245,230,66,0.03); }
+.pdl-upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+/* Calendar (reuse from PDL standalone) */
+.cal-nav { display:flex;align-items:center;justify-content:space-between;margin-bottom:20px; }
+.cal-month { font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:800; }
+.cal-nav-btn { background:var(--surface2);border:1px solid var(--border);color:var(--white);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.15s; }
+.cal-nav-btn:hover { border-color:var(--yellow);color:var(--yellow); }
+.cal-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:3px; }
+.cal-dow { text-align:center;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:6px 0; }
+.cal-cell { min-height:80px;border-radius:8px;padding:6px;position:relative;cursor:default;transition:all 0.15s; }
+.cal-cell.empty { background:transparent; }
+.cal-cell.has-shooting { cursor:pointer; }
+.cal-cell.has-shooting:hover { transform:translateY(-1px);filter:brightness(1.15); }
+.cal-cell-day { font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;margin-bottom:3px; }
+.cal-cell.is-today .cal-cell-day { color:var(--yellow); }
+.cal-cell-giorno { font-size:9px;font-weight:700;margin-bottom:2px;opacity:0.85; }
+.cal-cell-loc { font-size:8px;opacity:0.65;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical; }
+.cal-cell-scenes { display:flex;flex-wrap:wrap;gap:2px;margin-top:3px; }
+.cal-cell-sc { font-size:7px;padding:1px 4px;border-radius:3px;font-weight:600;background:rgba(0,0,0,0.3); }
+.cal-cell-note { font-size:8px;color:rgba(255,255,255,0.55);margin-top:2px;font-style:italic;overflow:hidden;white-space:nowrap;text-overflow:ellipsis; }
+.cal-cell.status-complete { border:2px solid var(--green); }
+.cal-cell.status-partial { border:2px solid var(--orange); }
+.cal-cell.status-pending { border:1px solid rgba(255,255,255,0.06); }
+.cal-cell.is-today { box-shadow:0 0 0 2px var(--yellow); }
+.bg-light { background:rgba(110,231,183,0.12); }
+.bg-medium { background:rgba(245,166,35,0.15); }
+.bg-heavy { background:rgba(255,85,85,0.15); }
+
+/* Day modal for PDL */
+.pdl-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:1000;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto; }
+.pdl-overlay.open { display:flex; }
+.pdl-modal { background:var(--surface);border:1px solid var(--border);border-radius:14px;max-width:620px;width:100%;padding:28px;margin:auto; }
+.pdl-modal-header { display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:12px; }
+.pdl-modal-title { font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:800;line-height:1.2; }
+.pdl-modal-title span { color:var(--yellow); }
+.pdl-modal-sub { font-size:11px;color:var(--muted);margin-top:3px; }
+.pdl-chip-hint { font-size:10px;color:var(--muted);margin-bottom:10px; }
+.pdl-scene-chips { display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px; }
+.pdl-chip { display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.15s;border:2px solid transparent;user-select:none; }
+.pdl-chip:hover { filter:brightness(1.2); }
+.pdl-chip.girato { opacity:0.4;text-decoration:line-through; }
+.pdl-chip.standby { border-style:dashed!important;opacity:0.75; }
+.pdl-chip.critical::after { content:'🎙️';font-size:8px;margin-left:2px; }
+.pdl-chip-num { font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:12px; }
+.type-int-day { background:rgba(245,230,66,0.15);color:#f5e642;border-color:rgba(245,230,66,0.5); }
+.type-ext-day { background:rgba(245,166,35,0.15);color:#f5a623;border-color:rgba(245,166,35,0.5); }
+.type-int-night { background:rgba(123,156,204,0.15);color:#7b9ccc;border-color:rgba(123,156,204,0.5); }
+.type-ext-night { background:rgba(42,74,127,0.3);color:#a8c4e8;border-color:rgba(42,74,127,0.7); }
+.type-mixed { background:rgba(136,136,136,0.15);color:#aaa;border-color:rgba(136,136,136,0.4); }
+.type-morning { background:rgba(240,192,112,0.15);color:#f0c070;border-color:rgba(240,192,112,0.5); }
 .res-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
 .res-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 800; }
 .res-title span { color: var(--yellow); }
@@ -460,6 +522,15 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
           <button class="btn-reset" onclick="resetApp()">↩ Nuova Analisi</button>
         </div>
       </div>
+
+      <!-- RESULT TABS -->
+      <div class="result-tabs">
+        <button class="result-tab active" id="tabSpoglio" onclick="switchResultTab('spoglio')">📄 Spoglio Suono</button>
+        <button class="result-tab" id="tabPdl" onclick="switchResultTab('pdl')">📋 Piano di Lavorazione</button>
+      </div>
+
+      <!-- SPOGLIO TAB -->
+      <div id="spoglioSection">
       <div class="sec-label">Statistiche generali</div>
       <div class="stats-row" id="statsRow"></div>
       <div class="max-info" id="maxInfo" style="display:none"></div>
@@ -489,12 +560,104 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
           <span class="sugg" onclick="fillSugg(this)">Riassumi le criticità principali</span>
         </div>
       </div>
-    </div>
+      </div><!-- end spoglioSection -->
+
+      <!-- PDL TAB -->
+      <div id="pdlSection">
+        <div id="pdlUploadArea">
+          <div class="panel" style="text-align:center;padding:40px 24px">
+            <div style="font-size:32px;margin-bottom:12px">📋</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;margin-bottom:6px">Carica il Piano di Lavorazione</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:20px">Il PDL verrà incrociato con lo spoglio — le scene critiche per il suono appariranno evidenziate nel calendario</div>
+            <label style="display:inline-flex;align-items:center;gap:8px;background:var(--yellow);color:#000;padding:12px 24px;border-radius:10px;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:800;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='#fff'" onmouseout="this.style.background='var(--yellow)'">
+              📋 Seleziona PDF
+              <input type="file" accept=".pdf" style="display:none" onchange="loadPdlFile(this)">
+            </label>
+          </div>
+        </div>
+
+        <div id="pdlDashboard" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+            <div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:800" id="pdlFilmTitle">—</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px" id="pdlFilmInfo">—</div>
+            </div>
+            <label style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:8px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--yellow)';this.style.color='var(--yellow)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+              📋 Carica PDL aggiornato
+              <input type="file" accept=".pdf" style="display:none" onchange="loadUpdatedPdlFile(this)">
+            </label>
+          </div>
+
+          <!-- STATS -->
+          <div class="stats-row" id="pdlStatsRow" style="margin-bottom:16px"></div>
+
+          <!-- PROGRESS BARS -->
+          <div class="panel" style="margin-bottom:16px">
+            <div class="panel-label">Avanzamento Riprese</div>
+            <div style="display:flex;flex-direction:column;gap:10px" id="pdlProgBars"></div>
+          </div>
+
+          <!-- LEGENDA -->
+          <div class="panel" style="margin-bottom:16px">
+            <div class="panel-label">Legenda</div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px" id="pdlLegenda">
+              <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted)"><div style="width:10px;height:10px;border-radius:3px;background:rgba(110,231,183,0.5)"></div>≤75% media (leggero)</div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted)"><div style="width:10px;height:10px;border-radius:3px;background:rgba(245,166,35,0.6)"></div>Nella media</div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted)"><div style="width:10px;height:10px;border-radius:3px;background:rgba(255,85,85,0.5)"></div>Sopra media (pesante)</div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted)"><div style="width:10px;height:10px;border-radius:50%;background:var(--green)"></div>Completa</div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted)"><div style="width:10px;height:10px;border-radius:50%;background:var(--orange)"></div>Parziale</div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--yellow)" id="pdlAvgLabel"></div>
+            </div>
+          </div>
+
+          <!-- STANDBY -->
+          <div class="panel" id="pdlStandbyPanel" style="display:none;margin-bottom:16px">
+            <div class="panel-label">Scene in Stand-by</div>
+            <div style="display:flex;flex-direction:column;gap:6px" id="pdlStandbyList"></div>
+          </div>
+
+          <!-- CALENDAR -->
+          <div class="panel" style="margin-bottom:16px">
+            <div class="panel-label">Calendario di Lavorazione</div>
+            <div class="cal-nav">
+              <button class="cal-nav-btn" onclick="pdlChangeMonth(-1)">‹</button>
+              <div class="cal-month" id="pdlCalMonth">—</div>
+              <button class="cal-nav-btn" onclick="pdlChangeMonth(+1)">›</button>
+            </div>
+            <div class="cal-grid" id="pdlCalGrid"></div>
+          </div>
+        </div>
+      </div><!-- end pdlSection -->
+
+    </div><!-- end resultsPage -->
 
     <footer>
       <div class="fl">Sound<em>Analyst</em></div>
       <div class="fr">by ohsfaccimmarosound · Reparto Suono</div>
     </footer>
+  </div>
+</div>
+
+<!-- PDL DAY MODAL -->
+<div class="pdl-overlay" id="pdlDayModal">
+  <div class="pdl-modal">
+    <div class="pdl-modal-header">
+      <div>
+        <div class="pdl-modal-title" id="pdlModalTitle">Giorno <span>—</span></div>
+        <div class="pdl-modal-sub" id="pdlModalSub">—</div>
+      </div>
+      <button style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:0 4px;line-height:1" onclick="closePdlDayModal()">✕</button>
+    </div>
+    <div class="pdl-chip-hint">Click = girata ✓ · 2× = stand-by ⏸ · 3× = reset &nbsp;·&nbsp; 🎙️ = critica suono</div>
+    <div class="pdl-scene-chips" id="pdlModalChips"></div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Note giornata</div>
+      <textarea id="pdlModalNotes" placeholder="Es: persa mezz'ora per meteo, recuperata SC.12 ma non SC.14..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--white);font-family:'DM Mono',monospace;font-size:12px;outline:none;resize:none;min-height:70px;transition:border-color 0.15s"></textarea>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div id="pdlModalStatusLabel" style="font-size:11px;color:var(--muted)"></div>
+      <button onclick="savePdlDayModal()" style="background:var(--yellow);border:none;color:#000;padding:10px 24px;border-radius:8px;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:800;cursor:pointer;transition:all 0.15s">Salva</button>
+    </div>
   </div>
 </div>
 
@@ -1205,7 +1368,7 @@ Struttura JSON richiesta:
 
 Regole importanti:
 - media_attori_parlanti: arrotonda PER ECCESSO al numero intero
-- location_wild: SOLO scene dove la troupe gira fisicamente all'aperto in ambienti naturali — boschi, spiagge, cascate, montagne, fiumi, canyon, grotte, laghi, campi aperti, litorali. NON includere: interni con finestre su paesaggi naturali, riferimenti visivi a elementi naturali, scenografie che simulano ambienti naturali, riprese da veicoli che attraversano zone naturali.
+- location_wild: scene in ambienti naturali che presentano difficoltà logistiche per il reparto suono (trasporto attrezzatura, alimentazione, spostamenti) — boschi, spiagge, fiumi, laghi, cascate, montagne, canyon, grotte, campi aperti, litorali. L'ambiente naturale deve essere fisicamente presente nella scena. NON includere: interni di edifici con vista su paesaggi naturali (finestra sul mare, finestra sul bosco), riferimenti visivi o dialoghi su luoghi naturali, scenografie che simulano ambienti naturali. Criterio pratico: il reparto suono deve trasportare l'attrezzatura in un luogo difficile da raggiungere o senza infrastrutture?
 - costume_critico: petto nudo, bikini, costume bagno, body, etc.
 - camera_car: scene girate su veicoli con ripresa dall'auto
 - mezzi_movimento: escludi camera car, includi camion/moto/apecar/barca/treno/etc.
@@ -1615,6 +1778,332 @@ document.getElementById('shareResultsContainer').addEventListener('click', e => 
     if (input && parseInt(input) > 0) openPageModal(parseInt(input) + pageOffset);
   }
 });
+
+// ══ RESULT TABS ══
+function switchResultTab(tab) {
+  document.getElementById('spoglioSection').style.display = tab === 'spoglio' ? '' : 'none';
+  document.getElementById('pdlSection').style.display    = tab === 'pdl'     ? '' : 'none';
+  document.getElementById('tabSpoglio').classList.toggle('active', tab === 'spoglio');
+  document.getElementById('tabPdl').classList.toggle('active', tab === 'pdl');
+}
+
+// ══ PDL STATE ══
+let pdlData = null;
+let pdlShootingData = {};
+let pdlCurrentMonth = new Date().getMonth();
+let pdlCurrentYear  = new Date().getFullYear();
+let pdlModalDayNum  = null;
+let pdlModalSceneStates = {};
+let pdlModalStatus  = 'pending';
+
+const PDL_SYSPROMPT = `Sei un esperto analizzatore di piani di lavorazione cinematografici (PDL).
+Analizza il PDL e restituisci SOLO un JSON valido. Nessun testo. Nessun backtick. JSON COMPATTO.
+
+Struttura:
+{"titolo":"string","regista":"string","versione":"string","totale_giorni":0,"totale_scene":0,"data_inizio":"YYYY-MM-DD","data_fine":"YYYY-MM-DD","settimane":[{"numero":1,"label":"string","giorni":[{"numero_giorno":1,"data":"YYYY-MM-DD","giorno_settimana":"Monday","ora_inizio":"08:00","ora_fine":"18:00","location_principale":"string","pagine_giorno":"string","scene":[{"numero":"string","int_ext":"INT/EXT/INT-EXT","momento":"D/N/M/E","location":"string","cast":["1","2"],"pagine":"string","stunt":false}]}]}]}
+
+Regole: momento D=Day N=Night M=Morning E=Evening. cast solo numeri. JSON minificato. Rispondi SOLO con il JSON.`;
+
+function getPdlKey() { return localStorage.getItem('sa_key') || ''; }
+
+function parsePdlPagine(str) {
+  if (!str) return 0;
+  const s = str.toString().trim();
+  let total = 0;
+  s.split(/\s+/).forEach(p => {
+    if (p.includes('/')) { const [n,d]=p.split('/').map(Number); if(!isNaN(n)&&!isNaN(d)&&d>0) total+=n/d; }
+    else { const n=parseFloat(p); if(!isNaN(n)) total+=n; }
+  });
+  return total;
+}
+
+function getPdlAvgPages() {
+  const g = getPdlAllGiorni().filter(g=>g.pagine_giorno);
+  if (!g.length) return 4;
+  return g.reduce((s,gi)=>s+parsePdlPagine(gi.pagine_giorno),0)/g.length;
+}
+
+function getPdlCellBgClass(pagine_giorno) {
+  const p = parsePdlPagine(pagine_giorno);
+  const avg = getPdlAvgPages();
+  if (p < avg*0.75) return 'bg-light';
+  if (p <= avg*1.25) return 'bg-medium';
+  return 'bg-heavy';
+}
+
+function getPdlSceneTypeClass(ie, m) {
+  const ie2=(ie||'').toUpperCase(), m2=(m||'').toUpperCase();
+  if (m2==='M'||m2==='E') return 'type-morning';
+  if (ie2.includes('EXT')&&m2==='D') return 'type-ext-day';
+  if (ie2.includes('EXT')&&m2==='N') return 'type-ext-night';
+  if (ie2.includes('EXT')) return 'type-ext-day';
+  if (ie2.includes('INT')&&m2==='D') return 'type-int-day';
+  if (ie2.includes('INT')&&m2==='N') return 'type-int-night';
+  return 'type-mixed';
+}
+
+function getPdlAllGiorni() { return (pdlData?.settimane||[]).flatMap(s=>s.giorni||[]); }
+function getPdlGiorno(num) { return getPdlAllGiorni().find(g=>g.numero_giorno===num); }
+function savePdlShootingData() { if(pdlData) localStorage.setItem('pdl_sd_'+pdlData.titolo, JSON.stringify(pdlShootingData)); }
+
+// Check if a scene number is critical for sound (from analysisData)
+function isSceneCritical(scNum) {
+  if (!analysisData) return false;
+  const criticalCategories = ['camera_car','playback','costume_critico','mezzi_movimento','acqua_pioggia','subacquee','ambienti_rumorosi','aerei_elicotteri','location_wild'];
+  const scStr = String(scNum);
+  for (const cat of criticalCategories) {
+    const d = analysisData[cat];
+    if (!d?.presente) continue;
+    const scenes = d.scene || [...(d.esibizioni_live||[]), ...(d.playback_puro||[])];
+    if (scenes.some(s => { const sStr = String(s.scena||s||''); return sStr.includes('SC.'+scStr) || sStr.includes(' '+scStr+' ') || sStr.startsWith(scStr+' ') || sStr.includes('.'+scStr+' ') || sStr.includes('.'+scStr+')'); })) return true;
+  }
+  return false;
+}
+
+async function loadPdlFile(input) {
+  const f = input.files[0];
+  if (!f) return;
+  input.value = '';
+  const key = getPdlKey();
+  if (!key.startsWith('sk-')) { alert('Inserisci prima la API key nelle Impostazioni.'); return; }
+  const label = input.parentElement;
+  label.innerHTML = '⏳ Analisi PDL...';
+  try {
+    const buf = await f.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let bin=''; const chunk=8192;
+    for(let i=0;i<bytes.byteLength;i+=chunk) bin+=String.fromCharCode(...bytes.subarray(i,i+chunk));
+    const b64 = btoa(bin);
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:16000,system:PDL_SYSPROMPT,messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:'Analizza questo Piano di Lavorazione.'}]}]})
+    });
+    if(!resp.ok) throw new Error('Errore API '+resp.status);
+    const data = await resp.json();
+    const raw = data.content.map(b=>b.text||'').join('');
+    let newPdl;
+    try { newPdl = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
+    catch(e) {
+      const lb=raw.lastIndexOf('}'); let attempt=raw.substring(0,lb+1);
+      let o=0,s=0; for(const c of attempt){if(c==='{')o++;else if(c==='}')o--;else if(c==='[')s++;else if(c===']')s--;} 
+      attempt+=']'.repeat(Math.max(0,s))+'}' .repeat(Math.max(0,o));
+      newPdl = JSON.parse(attempt);
+    }
+    pdlData = newPdl;
+    const saved = localStorage.getItem('pdl_sd_'+pdlData.titolo);
+    pdlShootingData = saved ? JSON.parse(saved) : {};
+    localStorage.setItem('pdl_full_bk_'+pdlData.titolo, JSON.stringify(pdlData));
+    if(pdlData.data_inizio){const d=new Date(pdlData.data_inizio);pdlCurrentMonth=d.getMonth();pdlCurrentYear=d.getFullYear();}
+    document.getElementById('pdlUploadArea').style.display='none';
+    document.getElementById('pdlDashboard').style.display='block';
+    renderPdlDashboard();
+  } catch(err) {
+    label.innerHTML = '⚠ '+err.message;
+    setTimeout(()=>{label.innerHTML='📋 Seleziona PDF<input type="file" accept=".pdf" style="display:none" onchange="loadPdlFile(this)">';},3000);
+  }
+}
+
+async function loadUpdatedPdlFile(input) {
+  const f = input.files[0]; if(!f) return; input.value='';
+  const key = getPdlKey();
+  const btn = input.parentElement;
+  btn.innerHTML = '⏳ Analisi...';
+  try {
+    const buf=await f.arrayBuffer(); const bytes=new Uint8Array(buf);
+    let bin=''; const chunk=8192;
+    for(let i=0;i<bytes.byteLength;i+=chunk) bin+=String.fromCharCode(...bytes.subarray(i,i+chunk));
+    const b64=btoa(bin);
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:16000,system:PDL_SYSPROMPT,messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:'Analizza.'}]}]})});
+    if(!resp.ok) throw new Error('Errore API '+resp.status);
+    const data=await resp.json();
+    const raw=data.content.map(b=>b.text||'').join('');
+    const newPdl=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    const oldGiorni=getPdlAllGiorni();
+    const newPdlMinDay=Math.min(...newPdl.settimane.flatMap(s=>s.giorni||[]).map(g=>g.numero_giorno));
+    const oldDays=oldGiorni.filter(g=>g.numero_giorno<newPdlMinDay);
+    const oldBk=JSON.parse(localStorage.getItem('pdl_full_bk_'+pdlData.titolo)||'null');
+    if(oldBk) {
+      const oldSetts=oldBk.settimane.filter(s=>(s.giorni||[]).some(g=>g.numero_giorno<newPdlMinDay)).map(s=>({...s,giorni:(s.giorni||[]).filter(g=>g.numero_giorno<newPdlMinDay)})).filter(s=>s.giorni.length>0);
+      pdlData={...newPdl,settimane:[...oldSetts,...newPdl.settimane]};
+    } else {
+      pdlData={...newPdl,settimane:oldDays.length>0?[{numero:0,label:'Settimane precedenti',giorni:oldDays},...newPdl.settimane]:newPdl.settimane};
+    }
+    localStorage.setItem('pdl_full_bk_'+pdlData.titolo,JSON.stringify(pdlData));
+    renderPdlDashboard();
+    const toast=document.createElement('div');
+    toast.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--yellow);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--yellow);z-index:9999;white-space:nowrap;';
+    toast.textContent='✓ PDL aggiornato — '+(pdlData.versione||'nuova versione');
+    document.body.appendChild(toast); setTimeout(()=>toast.remove(),4000);
+  } catch(err) { alert('⚠ '+err.message); }
+  btn.innerHTML='📋 Carica PDL aggiornato<input type="file" accept=".pdf" style="display:none" onchange="loadUpdatedPdlFile(this)">';
+}
+
+function renderPdlDashboard() {
+  document.getElementById('pdlFilmTitle').textContent = pdlData.titolo||'Piano di Lavorazione';
+  document.getElementById('pdlFilmInfo').textContent = [pdlData.regista?'Regia: '+pdlData.regista:'',pdlData.versione||'',pdlData.data_inizio||'',pdlData.totale_giorni+' giorni · '+pdlData.totale_scene+' scene'].filter(Boolean).join(' · ');
+  renderPdlStats(); renderPdlCalendar(); renderPdlStandby();
+  const avg=getPdlAvgPages();
+  document.getElementById('pdlAvgLabel').textContent='Media: '+avg.toFixed(1)+' pgs/giorno';
+}
+
+function renderPdlStats() {
+  const allSc=getPdlAllGiorni().flatMap(g=>g.scene||[]);
+  const girate=Object.values(pdlShootingData).reduce((a,d)=>a+Object.values(d.scenes||{}).filter(v=>v==='done').length,0);
+  const standby=Object.values(pdlShootingData).reduce((a,d)=>a+Object.values(d.scenes||{}).filter(v=>v==='standby').length,0);
+  const completi=Object.values(pdlShootingData).filter(d=>d.status==='complete').length;
+  document.getElementById('pdlStatsRow').innerHTML=[
+    {v:pdlData.totale_giorni,l:'Giorni Totali'},{v:completi,l:'Completati'},{v:girate,l:'Scene Girate'},{v:standby,l:'Stand-by'}
+  ].map(s=>`<div class="stat-box"><div class="stat-num">${s.v}</div><div class="stat-desc">${s.l}</div></div>`).join('');
+  const pct=allSc.length>0?Math.round(girate/allSc.length*100):0;
+  const gPct=pdlData.totale_giorni>0?Math.round(completi/pdlData.totale_giorni*100):0;
+  document.getElementById('pdlProgBars').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:4px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>Scene girate</span><span style="color:var(--yellow)">${girate}/${allSc.length} — ${pct}%</span></div><div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden"><div style="height:100%;border-radius:3px;background:var(--green);width:${pct}%"></div></div></div>
+    <div style="display:flex;flex-direction:column;gap:4px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>Giorni completati</span><span style="color:var(--yellow)">${completi}/${pdlData.totale_giorni} — ${gPct}%</span></div><div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden"><div style="height:100%;border-radius:3px;background:var(--yellow);width:${gPct}%"></div></div></div>`;
+}
+
+function renderPdlStandby() {
+  const items=[];
+  getPdlAllGiorni().forEach(g=>{
+    const sd=pdlShootingData[g.numero_giorno]||{};
+    Object.entries(sd.scenes||{}).forEach(([scNum,stato])=>{ if(stato==='standby'){const sc=(g.scene||[]).find(s=>s.numero===scNum);items.push({dayNum:g.numero_giorno,scNum,sc});}});
+  });
+  const panel=document.getElementById('pdlStandbyPanel');
+  const list=document.getElementById('pdlStandbyList');
+  if(!items.length){panel.style.display='none';return;}
+  panel.style.display='block';
+  list.innerHTML=items.map(({dayNum,scNum,sc})=>`<div style="background:var(--surface2);border:1px dashed rgba(245,166,35,0.4);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:11px"><span style="font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--orange);min-width:60px">SC.${scNum}</span><span style="color:var(--white-dim);flex:1;font-size:10px">${sc?sc.int_ext+' '+sc.momento+' — '+sc.location:''}</span><span style="font-size:10px;color:var(--muted)">G.${dayNum}</span></div>`).join('');
+}
+
+function pdlChangeMonth(delta) {
+  pdlCurrentMonth+=delta;
+  if(pdlCurrentMonth>11){pdlCurrentMonth=0;pdlCurrentYear++;}
+  if(pdlCurrentMonth<0){pdlCurrentMonth=11;pdlCurrentYear--;}
+  renderPdlCalendar();
+}
+
+function renderPdlCalendar() {
+  const months=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  document.getElementById('pdlCalMonth').textContent=months[pdlCurrentMonth]+' '+pdlCurrentYear;
+  const grid=document.getElementById('pdlCalGrid');
+  grid.innerHTML='';
+  ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].forEach(d=>{const el=document.createElement('div');el.className='cal-dow';el.textContent=d;grid.appendChild(el);});
+  const dateMap={};
+  getPdlAllGiorni().forEach(g=>{if(g.data)dateMap[g.data]=g;});
+  const firstDay=new Date(pdlCurrentYear,pdlCurrentMonth,1);
+  const lastDay=new Date(pdlCurrentYear,pdlCurrentMonth+1,0);
+  const todayStr=new Date().toISOString().split('T')[0];
+  let startDow=firstDay.getDay()-1; if(startDow<0)startDow=6;
+  for(let i=0;i<startDow;i++){const el=document.createElement('div');el.className='cal-cell empty';grid.appendChild(el);}
+  for(let day=1;day<=lastDay.getDate();day++){
+    const dateStr=`${pdlCurrentYear}-${String(pdlCurrentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const g=dateMap[dateStr];
+    const isToday=dateStr===todayStr;
+    const el=document.createElement('div');
+    if(g){
+      const sd=pdlShootingData[g.numero_giorno]||{};
+      const status=sd.status||'pending';
+      const bgClass=getPdlCellBgClass(g.pagine_giorno);
+      el.className=`cal-cell has-shooting ${bgClass} status-${status} ${isToday?'is-today':''}`;
+      el.onclick=()=>openPdlDayModal(g.numero_giorno);
+      const sceneDone=Object.values(sd.scenes||{}).filter(v=>v==='done').length;
+      const sceneTotal=(g.scene||[]).length;
+      el.innerHTML=`<div class="cal-cell-day">${day}</div><div class="cal-cell-giorno">G.${g.numero_giorno}</div><div class="cal-cell-loc">${g.location_principale||''}</div><div class="cal-cell-scenes">${(g.scene||[]).slice(0,4).map(sc=>{const stato=(sd.scenes||{})[sc.numero]||'pending';const col=stato==='done'?'rgba(110,231,183,0.6)':stato==='standby'?'rgba(245,166,35,0.6)':'rgba(255,255,255,0.2)';const crit=isSceneCritical(sc.numero)?'🎙️':'';return`<div class="cal-cell-sc" style="background:${col}">${sc.numero}${crit}</div>`;}).join('')}${sceneTotal>4?`<div class="cal-cell-sc" style="background:rgba(255,255,255,0.1)">+${sceneTotal-4}</div>`:''}</div>${sd.notes?`<div class="cal-cell-note">${sd.notes}</div>`:''}`;
+    } else {
+      el.className=`cal-cell ${isToday?'is-today':''}`;
+      el.style.background='rgba(255,255,255,0.02)'; el.style.border='1px solid rgba(255,255,255,0.04)';
+      el.innerHTML=`<div class="cal-cell-day" style="color:var(--muted)">${day}</div>`;
+    }
+    grid.appendChild(el);
+  }
+}
+
+function openPdlDayModal(dayNum) {
+  pdlModalDayNum=dayNum;
+  const g=getPdlGiorno(dayNum); if(!g) return;
+  const sd=pdlShootingData[dayNum]||{};
+  pdlModalSceneStates={...(sd.scenes||{})};
+  pdlModalStatus=sd.status||'pending';
+  const dateStr=g.data?new Date(g.data+'T12:00:00').toLocaleDateString('it-IT',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):'';
+  document.getElementById('pdlModalTitle').innerHTML=`Giorno <span>${dayNum}</span>`;
+  document.getElementById('pdlModalSub').textContent=`${dateStr} · ${g.ora_inizio||''}–${g.ora_fine||''} · ${g.location_principale||''} · ${g.pagine_giorno||''} pgs`;
+  document.getElementById('pdlModalNotes').value=sd.notes||'';
+  renderPdlModalChips(g);
+  document.getElementById('pdlDayModal').classList.add('open');
+}
+
+function renderPdlModalChips(g) {
+  document.getElementById('pdlModalChips').innerHTML=(g.scene||[]).map(sc=>{
+    const stato=pdlModalSceneStates[sc.numero]||'pending';
+    const typeClass=getPdlSceneTypeClass(sc.int_ext,sc.momento);
+    const icon=stato==='done'?'✓':stato==='standby'?'⏸':'';
+    const crit=isSceneCritical(sc.numero);
+    return`<div class="pdl-chip ${typeClass} ${stato==='done'?'girato':''} ${stato==='standby'?'standby':''} ${crit?'critical':''}" onclick="cyclePdlSceneModal('${sc.numero}')" title="${sc.location||''} — ${sc.int_ext||''} ${sc.momento||''}">${icon?`<span style="font-size:11px;font-weight:700">${icon}</span>`:''}<span class="pdl-chip-num" onclick="openSceneFromPdl('${sc.numero}',event)" style="text-decoration:underline;text-decoration-color:rgba(255,255,255,0.3);text-underline-offset:2px">${sc.numero}</span><span style="font-size:9px;opacity:0.7">${sc.int_ext||''} ${sc.momento||''}</span></div>`;
+  }).join('');
+  updatePdlModalStatus(g);
+}
+
+function cyclePdlSceneModal(scNum) {
+  const cur=pdlModalSceneStates[scNum]||'pending';
+  pdlModalSceneStates[scNum]=cur==='pending'?'done':cur==='done'?'standby':'pending';
+  const g=getPdlGiorno(pdlModalDayNum); if(g) renderPdlModalChips(g);
+}
+
+function updatePdlModalStatus(g) {
+  const total=(g.scene||[]).length;
+  const done=Object.values(pdlModalSceneStates).filter(v=>v==='done').length;
+  const sb=Object.values(pdlModalSceneStates).filter(v=>v==='standby').length;
+  if(done===total) pdlModalStatus='complete';
+  else if(done>0||sb>0) pdlModalStatus='partial';
+  else pdlModalStatus='pending';
+  const el=document.getElementById('pdlModalStatusLabel');
+  if(!el) return;
+  if(pdlModalStatus==='complete') el.innerHTML='<span style="color:var(--green)">✓ Giornata completa</span>';
+  else if(pdlModalStatus==='partial') el.innerHTML=`<span style="color:var(--orange)">〰 Parziale — ${done}/${total} scene girate${sb>0?' · '+sb+' stand-by':''}</span>`;
+  else el.innerHTML='<span style="color:var(--muted)">○ Non ancora girata</span>';
+}
+
+function openSceneFromPdl(scNum, e) {
+  e.stopPropagation();
+  // Lookup page from analysisData (the spoglio has page numbers)
+  if (!analysisData) { alert('Carica prima una sceneggiatura e fai lo spoglio'); return; }
+  if (!pdfB64Array.length) { alert('PDF non disponibile — ricarica la sceneggiatura'); return; }
+  // Search scene number in all categories
+  let pageNum = null;
+  const allCategories = Object.values(analysisData).filter(v => v && typeof v === 'object');
+  const allSceneTexts = [];
+  allCategories.forEach(cat => {
+    if (cat.scene) cat.scene.forEach(s => allSceneTexts.push(String(s.scena||s||'')));
+    if (cat.esibizioni_live) cat.esibizioni_live.forEach(s => allSceneTexts.push(String(s.scena||'')));
+    if (cat.playback_puro) cat.playback_puro.forEach(s => allSceneTexts.push(String(s.scena||'')));
+  });
+  const patterns = [/\(p\.?\s*(\d+)[-–]?\d*\)/i, /pag\.?\s*(\d+)/i];
+  for (const txt of allSceneTexts) {
+    if (txt.includes(scNum) || txt.includes('SC.'+scNum)) {
+      for (const p of patterns) { const m=txt.match(p); if(m){pageNum=parseInt(m[1]);break;} }
+      if(pageNum) break;
+    }
+  }
+  if(pageNum) openPageModal(pageNum+pageOffset);
+  else {
+    const inp=prompt(`Nessuna pagina trovata per SC.${scNum}.\nInserisci il numero di pagina manualmente:`);
+    if(inp&&parseInt(inp)>0) openPageModal(parseInt(inp)+pageOffset);
+  }
+}
+
+function savePdlDayModal() {
+  if(!pdlModalDayNum) return;
+  if(!pdlShootingData[pdlModalDayNum]) pdlShootingData[pdlModalDayNum]={scenes:{},notes:'',status:'pending'};
+  pdlShootingData[pdlModalDayNum].scenes={...pdlModalSceneStates};
+  pdlShootingData[pdlModalDayNum].notes=document.getElementById('pdlModalNotes').value;
+  pdlShootingData[pdlModalDayNum].status=pdlModalStatus;
+  savePdlShootingData();
+  closePdlDayModal();
+  renderPdlCalendar(); renderPdlStats(); renderPdlStandby();
+}
+
+function closePdlDayModal() { document.getElementById('pdlDayModal').classList.remove('open'); pdlModalDayNum=null; }
+document.getElementById('pdlDayModal').addEventListener('click',e=>{if(e.target===document.getElementById('pdlDayModal'))closePdlDayModal();});
 </script>
 </body>
 </html>
