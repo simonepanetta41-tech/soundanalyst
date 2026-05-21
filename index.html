@@ -1028,10 +1028,11 @@ function showApp() {
 
 sb.auth.onAuthStateChange((event, session) => {
   if (window.location.pathname.startsWith('/share/')) return;
-  if (session) {
+  // Only handle sign-in/sign-out events, not initial session
+  if (event === 'SIGNED_IN') {
     currentUser = session.user;
     showApp();
-  } else {
+  } else if (event === 'SIGNED_OUT') {
     currentUser = null;
     showAuth();
   }
