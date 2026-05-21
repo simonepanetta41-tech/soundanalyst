@@ -626,6 +626,10 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
             </div>
             <div class="cal-grid" id="pdlCalGrid"></div>
           </div>
+          <!-- DELETE PDL -->
+          <div style="margin-top:32px;padding-top:20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;">
+            <button onclick="deletePdl()" style="background:none;border:1px solid rgba(255,85,85,0.3);color:rgba(255,85,85,0.6);padding:7px 16px;border-radius:8px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--danger)';this.style.color='var(--danger)'" onmouseout="this.style.borderColor='rgba(255,85,85,0.3)';this.style.color='rgba(255,85,85,0.6)'">🗑 Elimina PDL</button>
+          </div>
         </div>
       </div><!-- end pdlSection -->
 
@@ -2170,6 +2174,30 @@ function savePdlDayModal() {
   savePdlShootingData();
   closePdlDayModal();
   renderPdlCalendar(); renderPdlStats(); renderPdlStandby();
+}
+
+async function deletePdl() {
+  if (!confirm('Eliminare il PDL associato a questa analisi? I dati di avanzamento andranno persi.')) return;
+  try {
+    if (currentAnalysisId) {
+      await sb.from('pdl_versions').delete().eq('analysis_id', currentAnalysisId);
+    }
+    // Clear localStorage
+    if (pdlData) {
+      localStorage.removeItem('pdl_sd_' + pdlData.titolo);
+      localStorage.removeItem('pdl_full_bk_' + pdlData.titolo);
+    }
+    // Reset PDL state
+    pdlData = null; pdlShootingData = {};
+    document.getElementById('pdlDashboard').style.display = 'none';
+    document.getElementById('pdlUploadArea').style.display = 'block';
+    // Toast
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--muted);z-index:9999;white-space:nowrap;';
+    toast.textContent = '🗑 PDL eliminato';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  } catch(e) { alert('Errore eliminazione: ' + e.message); }
 }
 
 function closePdlDayModal() { document.getElementById('pdlDayModal').classList.remove('open'); pdlModalDayNum=null; }
