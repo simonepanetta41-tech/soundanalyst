@@ -1781,8 +1781,15 @@ document.getElementById('shareResultsContainer').addEventListener('click', e => 
 
 // ══ RESULT TABS ══
 function switchResultTab(tab) {
-  document.getElementById('spoglioSection').style.display = tab === 'spoglio' ? '' : 'none';
-  document.getElementById('pdlSection').style.display    = tab === 'pdl'     ? '' : 'none';
+  const spoglio = document.getElementById('spoglioSection');
+  const pdl = document.getElementById('pdlSection');
+  if (tab === 'spoglio') {
+    spoglio.style.display = '';
+    pdl.classList.remove('on');
+  } else {
+    spoglio.style.display = 'none';
+    pdl.classList.add('on');
+  }
   document.getElementById('tabSpoglio').classList.toggle('active', tab === 'spoglio');
   document.getElementById('tabPdl').classList.toggle('active', tab === 'pdl');
 }
