@@ -1809,7 +1809,7 @@ Analizza il PDL e restituisci SOLO un JSON valido. Nessun testo. Nessun backtick
 Struttura:
 {"titolo":"string","regista":"string","versione":"string","totale_giorni":0,"totale_scene":0,"data_inizio":"YYYY-MM-DD","data_fine":"YYYY-MM-DD","settimane":[{"numero":1,"label":"string","giorni":[{"numero_giorno":1,"data":"YYYY-MM-DD","giorno_settimana":"Monday","ora_inizio":"08:00","ora_fine":"18:00","location_principale":"string","pagine_giorno":"string","scene":[{"numero":"string","int_ext":"INT/EXT/INT-EXT","momento":"D/N/M/E","location":"string","cast":["1","2"],"pagine":"string","stunt":false}]}]}]}
 
-Regole: momento D=Day N=Night M=Morning E=Evening. cast solo numeri. JSON minificato. Rispondi SOLO con il JSON.`;
+Regole: momento D=Day N=Night M=Morning E=Evening. cast solo numeri. JSON minificato. ORARI: ogni giorno può avere l'orario scritto in formati diversi — "H: 08:00/18:00", "ORARIO 08-18", "09.00 - 17.00", "ORARIO PREVISTO 9:00-17:00", "ALBA 07:30 - TRAMONTO 18:12" — può apparire prima o dopo le scene del giorno, come header di sezione, o come riga separata. Associa sempre l'orario al giorno a cui si riferisce. Se non trovi orari usa "TBD". Rispondi SOLO con il JSON.`;
 
 function getPdlKey() { return localStorage.getItem('sa_key') || ''; }
 
