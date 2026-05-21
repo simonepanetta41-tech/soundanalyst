@@ -1143,6 +1143,24 @@ function getKey() {
   return localStorage.getItem('sa_key') || '';
 }
 
+async function getAuthToken() {
+  const { data: { session } } = await sb.auth.getSession();
+  return session?.access_token || null;
+}
+
+async function callApi(endpoint, body) {
+  const token = await getAuthToken();
+  if (!token) throw new Error('Non sei autenticato');
+  const resp = await fetch('/' + endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify(body)
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error || 'Errore API ' + resp.status);
+  return data;
+}
+
 // ══ HISTORY (Supabase) ══
 async function loadHistory() {
   const grid = document.getElementById('historyGrid');
@@ -1422,27 +1440,20 @@ async function startAnalysis() {
 
     let resp;
     for (let attempt = 1; attempt <= 3; attempt++) {
-      resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json', 'x-api-key':key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-        body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:16000, system:SYSPROMPT, messages:[{ role:'user', content:blocks }] })
-      });
-      if (resp.status === 429) {
-        if (attempt === 3) throw new Error('Rate limit superato. Aspetta un minuto e riprova.');
-        for (let s = 65; s > 0; s--) {
-          document.getElementById('progLabel').textContent = `Rate limit — riprovo tra ${s}s... (tentativo ${attempt}/3)`;
-          await new Promise(r => setTimeout(r, 1000));
-        }
-        document.getElementById('progLabel').textContent = 'Gennaro sta analizzando...';
+      try {
+        const apiData = await callApi('api/analyze', { model:'claude-sonnet-4-6', max_tokens:16000, system:SYSPROMPT, messages:[{ role:'user', content:blocks }] });
+        resp = { ok: true, _data: apiData };
+        break;
+      } catch(e) {
+        if (e.message.includes('Limite') || e.message.includes('429')) throw e;
+        if (attempt === 3) throw e;
+        await new Promise(r => setTimeout(r, 2000));
         continue;
       }
-      break;
     }
 
     if (!resp.ok) {
-      let msg = `Errore API ${resp.status}`;
-      try { const e = await resp.json(); msg = e.error?.message || msg; } catch(_){}
-      throw new Error(msg);
+      throw new Error('Errore analisi');
     }
 
     setStep(4);
@@ -1630,22 +1641,7 @@ Rispondi in italiano, tecnico e pratico. Cita scene specifiche. Sii conciso.`;
   let reply = '';
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:1024, system:SYS, messages:chatHistory })
-      });
-      if (resp.status===429) {
-        if (attempt===3) throw new Error('Rate limit. Aspetta un minuto e riprova.');
-        for (let s=62;s>0;s--) {
-          const ti=document.getElementById('typingIndicator');
-          if(ti) ti.querySelector('.msg-bubble').innerHTML=`<span style="color:var(--muted);font-size:11px">Rate limit — riprovo tra ${s}s...</span>`;
-          await new Promise(r=>setTimeout(r,1000));
-        }
-        continue;
-      }
-      if (!resp.ok) { let m=`Errore ${resp.status}`; try{const e=await resp.json();m=e.error?.message||m;}catch(_){} throw new Error(m); }
-      const data = await resp.json();
+      const data = await callApi('api/chat', { model:'claude-sonnet-4-6', max_tokens:1024, system:SYS, messages:chatHistory });
       reply = data.content.map(b=>b.text||'').join('').trim();
       break;
     } catch(err) {
@@ -1923,8 +1919,7 @@ async function loadPdlFile(input) {
   const f = input.files[0];
   if (!f) return;
   input.value = '';
-  const key = getPdlKey();
-  if (!key.startsWith('sk-')) { alert('Inserisci prima la API key nelle Impostazioni.'); return; }
+
   const label = input.parentElement;
   label.innerHTML = '⏳ Analisi PDL...';
   try {
@@ -1933,13 +1928,11 @@ async function loadPdlFile(input) {
     let bin=''; const chunk=8192;
     for(let i=0;i<bytes.byteLength;i+=chunk) bin+=String.fromCharCode(...bytes.subarray(i,i+chunk));
     const b64 = btoa(bin);
-    const resp = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:16000,system:PDL_SYSPROMPT,messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:'Analizza questo Piano di Lavorazione.'}]}]})
+    const data = await callApi('api/pdl', {
+      system: PDL_SYSPROMPT,
+      max_tokens: 16000,
+      messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:'Analizza questo Piano di Lavorazione.'}]}]
     });
-    if(!resp.ok) throw new Error('Errore API '+resp.status);
-    const data = await resp.json();
     const raw = data.content.map(b=>b.text||'').join('');
     let newPdl;
     try { newPdl = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
@@ -1967,7 +1960,6 @@ async function loadPdlFile(input) {
 
 async function loadUpdatedPdlFile(input) {
   const f = input.files[0]; if(!f) return; input.value='';
-  const key = getPdlKey();
   const btn = input.parentElement;
   btn.innerHTML = '⏳ Analisi...';
   try {
@@ -1975,9 +1967,10 @@ async function loadUpdatedPdlFile(input) {
     let bin=''; const chunk=8192;
     for(let i=0;i<bytes.byteLength;i+=chunk) bin+=String.fromCharCode(...bytes.subarray(i,i+chunk));
     const b64=btoa(bin);
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:16000,system:PDL_SYSPROMPT,messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:'Analizza.'}]}]})});
-    if(!resp.ok) throw new Error('Errore API '+resp.status);
-    const data=await resp.json();
+    const data = await callApi('api/pdl', {
+      system: PDL_SYSPROMPT, max_tokens: 16000,
+      messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:'Analizza.'}]}]
+    });
     const raw=data.content.map(b=>b.text||'').join('');
     const newPdl=JSON.parse(raw.replace(/```json|```/g,'').trim());
     const oldGiorni=getPdlAllGiorni();
