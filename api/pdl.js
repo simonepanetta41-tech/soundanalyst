@@ -20,7 +20,7 @@ export default async function handler(req) {
   const plan = data?.plan || 'free';
   const count = data?.analyses_count || 0;
   const limit = PLAN_LIMITS[plan] || 3;
-  if (count >= limit) return json({ error: `Limite giornaliero raggiunto (${limit} analisi/giorno).${plan === 'free' ? ' Passa a Pro per 20 analisi/giorno!' : ''}` }, 429);
+  if (plan !== 'founder' && count >= limit) return json({ error: `Limite giornaliero raggiunto (${limit} analisi/giorno).` }, 429);
 
   // Increment
   await sb.from('usage_limits').upsert({ user_id: user.id, date: today, analyses_count: count + 1, plan }, { onConflict: 'user_id,date' });

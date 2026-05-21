@@ -62,7 +62,7 @@ async function checkAndIncrement(sb, userId) {
   const plan = data?.plan || 'free';
   const count = data?.analyses_count || 0;
   const limit = PLAN_LIMITS[plan] || 3;
-  if (count >= limit) return { error: `Limite giornaliero raggiunto (${limit} analisi/giorno).${plan === 'free' ? ' Passa a Pro per 20 analisi/giorno!' : ''}` };
+  if (plan !== 'founder' && count >= limit) return { error: `Limite giornaliero raggiunto (${limit} analisi/giorno).` };
   // Increment
   await sb.from('usage_limits').upsert({ user_id: userId, date: today, analyses_count: count + 1, plan }, { onConflict: 'user_id,date' });
   return { ok: true, remaining: limit - count - 1 };
