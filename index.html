@@ -155,6 +155,17 @@ header { padding: 28px 0 24px; border-bottom: 1px solid var(--border); margin-bo
 .cal-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:3px; }
 .cal-dow { text-align:center;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:6px 0; }
 .cal-cell { min-height:80px;border-radius:8px;padding:6px;position:relative;cursor:default;transition:all 0.15s; }
+@media(max-width:600px) {
+  .cal-grid { gap:2px; }
+  .cal-cell { min-height:52px; padding:4px; }
+  .cal-cell-day { font-size:12px; }
+  .cal-cell-giorno { font-size:8px; }
+  .cal-cell-loc { display:none; }
+  .cal-cell-scenes { display:none; }
+  .cal-cell-note { display:none; }
+  .cal-cell.status-complete { border-width:2px; }
+  .cal-cell.status-partial { border-width:2px; }
+}
 .cal-cell.empty { background:transparent; }
 .cal-cell.has-shooting { cursor:pointer; }
 .cal-cell.has-shooting:hover { transform:translateY(-1px);filter:brightness(1.15); }
