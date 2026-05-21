@@ -1156,8 +1156,9 @@ async function callApi(endpoint, body) {
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
     body: JSON.stringify(body)
   });
-  const data = await resp.json();
-  if (!resp.ok) throw new Error(data.error || 'Errore API ' + resp.status);
+  let data;
+  try { data = await resp.json(); } catch(_) { throw new Error('Errore API ' + resp.status); }
+  if (!resp.ok) throw new Error(data?.error || 'Errore API ' + resp.status);
   return data;
 }
 
