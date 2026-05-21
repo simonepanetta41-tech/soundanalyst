@@ -442,20 +442,6 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
     <!-- SETTINGS PAGE -->
     <div id="settingsPage" style="display:none">
       <div class="settings-section">
-        <div class="settings-title">API</div>
-        <div class="settings-row">
-          <div class="settings-row-info">
-            <div class="settings-row-label">Anthropic API Key</div>
-            <div class="settings-row-desc">Salvata nel tuo browser. Non inviata ad alcun server.</div>
-            <div class="key-status empty" id="keyStatus"><div class="key-dot"></div><span id="keyStatusText">Nessuna chiave salvata</span></div>
-          </div>
-          <div class="settings-input-wrap">
-            <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off">
-            <button class="btn-save-key" onclick="saveKey()">Salva</button>
-          </div>
-        </div>
-      </div>
-      <div class="settings-section">
         <div class="settings-title">Account</div>
         <div class="settings-row">
           <div class="settings-row-info">
@@ -1063,7 +1049,7 @@ function showPage(page) {
   document.getElementById('settingsPage').style.display = page === 'settings' ? '' : 'none';
   document.querySelectorAll('.nav-tab').forEach((t,i) =>
     t.classList.toggle('active', (i===0 && page==='home') || (i===1 && page==='settings')));
-  if (page === 'settings') { updateKeyStatus(); initOffsetDisplay(); }
+  if (page === 'settings') { initOffsetDisplay(); }
 }
 
 // ══ API KEY ══
@@ -1114,30 +1100,7 @@ async function autoDetectOffset() {
   } catch(e) { console.log('Offset detect:', e.message); }
 }
 
-function saveKey() {
-  const key = document.getElementById('apiKey').value.trim();
-  if (!key.startsWith('sk-')) { alert('Chiave non valida — deve iniziare con sk-'); return; }
-  localStorage.setItem('sa_key', key);
-  updateKeyStatus();
-  const btn = event.currentTarget;
-  btn.textContent = '✓ Salvata'; btn.style.color = 'var(--green)';
-  setTimeout(() => { btn.textContent = 'Salva'; btn.style.color = ''; }, 2000);
-}
 
-function updateKeyStatus() {
-  const k  = localStorage.getItem('sa_key');
-  const el = document.getElementById('keyStatus');
-  const tx = document.getElementById('keyStatusText');
-  if (!el) return;
-  if (k) {
-    el.className = 'key-status saved';
-    tx.textContent = 'Chiave salvata (' + k.slice(0,14) + '...)';
-    if (document.getElementById('apiKey')) document.getElementById('apiKey').value = k;
-  } else {
-    el.className = 'key-status empty';
-    tx.textContent = 'Nessuna chiave salvata';
-  }
-}
 
 function getKey() {
   return localStorage.getItem('sa_key') || '';
@@ -1330,7 +1293,7 @@ function renderFiles() {
 function removeFile(i) { files.splice(i,1); renderFiles(); checkReady(); }
 
 function checkReady() {
-  document.getElementById('analyzeBtn').disabled = !(getKey().startsWith('sk-') && files.length > 0);
+  document.getElementById('analyzeBtn').disabled = files.length === 0;
 }
 
 async function fileToB64(file) {
