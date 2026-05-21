@@ -1189,6 +1189,17 @@ async function loadFromHistory(id) {
   hideHomeShowResults();
   renderResults(data.data);
 
+  // Try to load PDL from Supabase in background
+  loadPdlFromSupabase(id).then(loaded => {
+    if (loaded) {
+      const toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:64px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--muted);z-index:9999;white-space:nowrap;';
+      toast.textContent = '📋 PDL caricato automaticamente';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+  });
+
   // Try to load PDF from Storage in background
   try {
     const path = `${currentUser.id}/${id}.pdf`;
@@ -1851,7 +1862,44 @@ function getPdlSceneTypeClass(ie, m) {
 
 function getPdlAllGiorni() { return (pdlData?.settimane||[]).flatMap(s=>s.giorni||[]); }
 function getPdlGiorno(num) { return getPdlAllGiorni().find(g=>g.numero_giorno===num); }
-function savePdlShootingData() { if(pdlData) localStorage.setItem('pdl_sd_'+pdlData.titolo, JSON.stringify(pdlShootingData)); }
+function savePdlShootingData() {
+  if(pdlData) localStorage.setItem('pdl_sd_'+pdlData.titolo, JSON.stringify(pdlShootingData));
+  // Also save to Supabase if we have an analysis ID
+  if(pdlData && currentAnalysisId) savePdlToSupabase();
+}
+
+async function savePdlToSupabase() {
+  if (!pdlData || !currentAnalysisId) return;
+  try {
+    // Check if record exists
+    const { data: existing } = await sb.from('pdl_versions').select('id').eq('analysis_id', currentAnalysisId).single();
+    if (existing) {
+      await sb.from('pdl_versions').update({ data: pdlData, shooting_data: pdlShootingData }).eq('analysis_id', currentAnalysisId);
+    } else {
+      await sb.from('pdl_versions').insert({ analysis_id: currentAnalysisId, user_id: currentUser.id, data: pdlData, shooting_data: pdlShootingData });
+    }
+    console.log('PDL saved to Supabase');
+  } catch(e) { console.log('PDL save error:', e.message); }
+}
+
+async function loadPdlFromSupabase(analysisId) {
+  try {
+    const { data, error } = await sb.from('pdl_versions').select('data, shooting_data').eq('analysis_id', analysisId).single();
+    if (error || !data) return false;
+    pdlData = data.data;
+    pdlShootingData = data.shooting_data || {};
+    // Set calendar to PDL start month
+    if (pdlData.data_inizio) {
+      const d = new Date(pdlData.data_inizio);
+      pdlCurrentMonth = d.getMonth();
+      pdlCurrentYear = d.getFullYear();
+    }
+    document.getElementById('pdlUploadArea').style.display = 'none';
+    document.getElementById('pdlDashboard').style.display = 'block';
+    renderPdlDashboard();
+    return true;
+  } catch(e) { console.log('PDL load error:', e.message); return false; }
+}
 
 // Check if a scene number is critical for sound (from analysisData)
 function isSceneCritical(scNum) {
@@ -1905,6 +1953,8 @@ async function loadPdlFile(input) {
     document.getElementById('pdlUploadArea').style.display='none';
     document.getElementById('pdlDashboard').style.display='block';
     renderPdlDashboard();
+    // Save to Supabase
+    if (currentAnalysisId) savePdlToSupabase();
   } catch(err) {
     label.innerHTML = '⚠ '+err.message;
     setTimeout(()=>{label.innerHTML='📋 Seleziona PDF<input type="file" accept=".pdf" style="display:none" onchange="loadPdlFile(this)">';},3000);
@@ -1938,6 +1988,7 @@ async function loadUpdatedPdlFile(input) {
     }
     localStorage.setItem('pdl_full_bk_'+pdlData.titolo,JSON.stringify(pdlData));
     renderPdlDashboard();
+    if(currentAnalysisId) savePdlToSupabase();
     const toast=document.createElement('div');
     toast.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--yellow);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--yellow);z-index:9999;white-space:nowrap;';
     toast.textContent='✓ PDL aggiornato — '+(pdlData.versione||'nuova versione');
