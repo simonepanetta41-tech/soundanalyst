@@ -206,9 +206,9 @@ header { padding: 28px 0 24px; border-bottom: 1px solid var(--border); margin-bo
 .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 14px; }
 .stat-num { font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 800; color: var(--yellow); line-height: 1; margin-bottom: 5px; }
 .stat-desc { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); line-height: 1.4; }
-.max-info { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-bottom: 28px; display: flex; align-items: center; gap: 12px; font-size: 12px; }
+.max-info { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 28px; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; text-align: center; }
 .max-info .badge { background: rgba(245,230,66,0.12); color: var(--yellow); border-radius: 6px; padding: 3px 10px; font-size: 10px; white-space: nowrap; }
-.max-info .scene-text { color: var(--white-dim); flex: 1; }
+.max-info .scene-text { color: var(--white-dim); }
 
 #riassuntoBox { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--yellow); border-radius: 10px; padding: 18px 20px; margin-bottom: 28px; font-size: 12px; line-height: 1.8; color: var(--white-dim); }
 #riassuntoBox .ria-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; font-weight: 500; }
@@ -850,7 +850,7 @@ function renderShareResults(d) {
   ].map(s => `<div class="stat-box"><div class="stat-num">${s.v}</div><div class="stat-desc">${s.l}</div></div>`).join('');
 
   const maxHtml = d.max_attori_parlanti?.scena
-    ? `<div class="max-info"><span class="badge">Scena con + attori parlanti</span><span class="scene-text">${d.max_attori_parlanti.scena}</span></div>` : '';
+    ? `<div class="max-info"><span class="badge">Scena con + attori parlanti</span><span class="scene-text ref" style="cursor:pointer">${d.max_attori_parlanti.scena}</span></div>` : '';
 
   const riaHtml = d.riassunto
     ? `<div id="riassuntoBox"><div class="ria-label">Sinossi</div><div>${d.riassunto}</div></div>` : '';
@@ -1468,7 +1468,7 @@ function renderResults(d) {
   const mi = document.getElementById('maxInfo');
   if (d.max_attori_parlanti?.scena) {
     mi.style.display = 'flex';
-    mi.innerHTML = `<span class="badge">Scena con + attori parlanti</span><span class="scene-text">${d.max_attori_parlanti.scena}</span>`;
+    mi.innerHTML = `<span class="badge">Scena con + attori parlanti</span><span class="scene-text ref" style="cursor:pointer">${d.max_attori_parlanti.scena}</span>`;
   }
 
   // Riassunto
