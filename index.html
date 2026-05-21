@@ -1459,7 +1459,7 @@ async function startAnalysis() {
     setStep(4);
     document.getElementById('progLabel').textContent = 'Salvataggio...';
 
-    const res  = await resp.json();
+    const res  = resp._data;
     const raw  = res.content.map(b=>b.text||'').join('');
     const data = JSON.parse(raw.replace(/```json|```/g,'').trim());
 
