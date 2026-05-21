@@ -1,4 +1,4 @@
-const CACHE = 'soundanalyst-v1';
+const CACHE = 'soundanalyst-v2';
 const STATIC = [
   '/',
   '/index.html',
