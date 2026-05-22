@@ -155,7 +155,8 @@ header { padding: 28px 0 24px; border-bottom: 1px solid var(--border); margin-bo
 .cal-nav-btn:hover { border-color:var(--yellow);color:var(--yellow); }
 .cal-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:3px; }
 .cal-dow { text-align:center;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:6px 0; }
-.cal-cell { min-height:80px;border-radius:8px;padding:6px;position:relative;cursor:default;transition:all 0.15s; }
+.cal-cell { min-height:80px;border-radius:8px;padding:6px;position:relative;cursor:default;transition:all 0.15s;touch-action:manipulation; }
+.cal-cell.has-shooting { cursor:pointer; }
 @media(max-width:600px) {
   .cal-grid { gap:1px; }
   .cal-cell { min-height:52px; padding:3px; }
@@ -2140,6 +2141,20 @@ function renderPdlCalendarWeekly() {
   const dateMap = {};
   getPdlAllGiorni().forEach(g => { if (g.data) dateMap[g.data] = g; });
   const todayStr = new Date().toISOString().split('T')[0];
+
+  // On mobile, make empty columns narrower
+  const isMobile = window.innerWidth <= 600;
+  if (isMobile) {
+    const cols = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(ws); d.setDate(ws.getDate() + i);
+      const dateStr = d.toISOString().split('T')[0];
+      cols.push(dateMap[dateStr] ? '1fr' : '28px');
+    }
+    grid.style.gridTemplateColumns = cols.join(' ');
+  } else {
+    grid.style.gridTemplateColumns = '';
+  }
 
   ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].forEach(d => {
     const el = document.createElement('div'); el.className='cal-dow'; el.textContent=d; grid.appendChild(el);
