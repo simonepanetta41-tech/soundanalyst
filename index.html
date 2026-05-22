@@ -2271,6 +2271,10 @@ async function openSceneFromPdl(scNum, e) {
   });
   const patterns = [/\(p\.?\s*(\d+)[-–]?\d*\)/i, /pag\.?\s*(\d+)/i];
   const scRegex = new RegExp('(?:SC\\.?' + scNum.replace('.', '\\.') + '\\b|\\bSC\\.?' + scNum.replace('.', '\\.') + '(?=[^0-9]))', 'i');
+  console.log('scRegex:', scRegex.toString());
+  console.log('allSceneTexts sample:', allSceneTexts.slice(0,5));
+  const matchingTexts = allSceneTexts.filter(t => scRegex.test(t));
+  console.log('matching texts:', matchingTexts);
   for (const txt of allSceneTexts) {
     if (scRegex.test(txt)) {
       for (const p of patterns) { const m=txt.match(p); if(m){pageNum=parseInt(m[1]);break;} }
