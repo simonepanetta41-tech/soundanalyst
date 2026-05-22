@@ -2116,7 +2116,7 @@ function renderPdlCalendar() {
         const oraStr = (g.ora_inizio && g.ora_inizio !== 'TBD') ? ' ' + g.ora_inizio : '';
         el.innerHTML = '<div class="cal-cell-day">' + day + '</div><div class="cal-cell-giorno" style="font-size:8px;opacity:0.8">D' + g.numero_giorno + oraStr + '</div>';
       } else {
-        el.innerHTML=`<div class="cal-cell-day">${day}</div><div class="cal-cell-giorno">DAY ${g.numero_giorno} ${g.ora_inizio&&g.ora_inizio!='TBD'?'· <span style="color:'+(g.ora_incerta?'var(--orange)':'inherit')+'">'+(g.ora_inizio)+(g.ora_incerta?' ?':'')+'</span>':''} ${g.unita_secondarie?.length?'📷':''}</div><div class="cal-cell-loc">${g.location_principale||''}</div><div class="cal-cell-scenes">${(g.scene||[]).slice(0,4).map(sc=>{const stato=(sd.scenes||{})[sc.numero]||'pending';const col=stato==='done'?'rgba(110,231,183,0.6)':stato==='standby'?'rgba(245,166,35,0.6)':'rgba(255,255,255,0.2)';const crit=isSceneCritical(sc.numero)?'🎙️':'';return`<div class="cal-cell-sc" style="background:${col}">${sc.numero}${crit}</div>`;}).join('')}${sceneTotal>4?`<div class="cal-cell-sc" style="background:rgba(255,255,255,0.1)">+${sceneTotal-4}</div>`:''}</div>${sd.notes?`<div class="cal-cell-note">${sd.notes}</div>`:''}`;
+        el.innerHTML=`<div class="cal-cell-day">${day}</div><div class="cal-cell-giorno">DAY ${g.numero_giorno} ${g.ora_inizio&&g.ora_inizio!='TBD'?'<span style="color:'+(g.ora_incerta?'var(--orange)':'inherit')+'">'+(g.ora_inizio)+(g.ora_incerta?' ?':'')+'</span>':''}</div><div class="cal-cell-loc">${g.location_principale||''}</div><div class="cal-cell-scenes">${(g.scene||[]).slice(0,4).map(sc=>{const stato=(sd.scenes||{})[sc.numero]||'pending';const col=stato==='done'?'rgba(110,231,183,0.6)':stato==='standby'?'rgba(245,166,35,0.6)':'rgba(255,255,255,0.2)';const crit=isSceneCritical(sc.numero)?'🎙️':'';return`<div class="cal-cell-sc" style="background:${col}">${sc.numero}${crit}</div>`;}).join('')}${sceneTotal>4?`<div class="cal-cell-sc" style="background:rgba(255,255,255,0.1)">+${sceneTotal-4}</div>`:''}</div>${sd.notes?`<div class="cal-cell-note">${sd.notes}</div>`:''}`;
       }
     } else {
       el.className=`cal-cell ${isToday?'is-today':''}`;
@@ -2174,7 +2174,7 @@ function renderPdlCalendarWeekly() {
       const bgClass = getPdlCellBgClass(g.pagine_giorno);
       el.className = `cal-cell has-shooting ${bgClass} status-${status} ${isToday?'is-today':''}`;
       el.style.minHeight = window.innerWidth <= 600 ? '100px' : '140px';
-      const oraStr = (g.ora_inizio && g.ora_inizio !== 'TBD') ? ' · ' + g.ora_inizio : '';
+      const oraStr = (g.ora_inizio && g.ora_inizio !== 'TBD') ? (g.ora_incerta ? g.ora_inizio + ' ?' : g.ora_inizio) : '';
       const unitaIcon = g.unita_secondarie?.length ? ' 📷' : '';
       const oraColor = g.ora_incerta ? 'var(--orange)' : 'inherit';
       const sceneHtml = (g.scene||[]).map(sc => {
@@ -2186,9 +2186,11 @@ function renderPdlCalendarWeekly() {
       const locHtml = isMobile ? '' : `<div class="cal-cell-loc">${g.location_principale||''}</div>`;
       el.innerHTML = `
         <div class="cal-cell-day">${d.getDate()}</div>
-        <div class="cal-cell-giorno">DAY ${g.numero_giorno}<span style="color:${oraColor}">${oraStr}</span>${unitaIcon}</div>
+        <div class="cal-cell-giorno">DAY ${g.numero_giorno}</div>
+        ${oraStr ? `<div class="cal-cell-giorno" style="color:${oraColor};margin-top:-2px">${oraStr.replace(' · ','')}</div>` : ''}
         ${locHtml}
         <div class="cal-cell-scenes" style="display:flex">${sceneHtml}</div>
+        ${g.unita_secondarie?.length ? `<div style="font-size:8px;color:var(--muted);margin-top:3px;letter-spacing:0.05em">2° UNIT</div>` : ''}
         ${sd.notes ? `<div class="cal-cell-note">${sd.notes}</div>` : ''}`;
     } else {
       el.className = `cal-cell ${isToday?'is-today':''}`;
