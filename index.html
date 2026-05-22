@@ -2252,12 +2252,6 @@ async function openSceneFromPdl(scNum, e) {
       const { data } = await sb.from('analyses').select('data').eq('id', currentAnalysisId).single();
       if (data?.data) analysisData = data.data;
       console.log('Loaded analysisData from Supabase, keys:', Object.keys(analysisData||{}));
-    } catch(e) { console.log('Could not load analysis data:', e.message); }
-  }
-
-  console.log('analysisData:', !!analysisData, 'currentAnalysisId:', currentAnalysisId);
-  console.log('allSceneTexts count:', Object.values(analysisData||{}).filter(v=>v&&typeof v==='object').length);
-  console.log('scNum:', scNum);
 
   if (!analysisData) { alert('Carica prima una sceneggiatura e fai lo spoglio'); return; }
 
@@ -2270,11 +2264,7 @@ async function openSceneFromPdl(scNum, e) {
     if (cat.playback_puro) cat.playback_puro.forEach(s => allSceneTexts.push(String(s.scena||'')));
   });
   const patterns = [/\(p\.?\s*(\d+)[-–]?\d*\)/i, /pag\.?\s*(\d+)/i];
-  const scRegex = new RegExp('(?:SC\\.?' + scNum.replace('.', '\\.') + '\\b|\\bSC\\.?' + scNum.replace('.', '\\.') + '(?=[^0-9]))', 'i');
-  console.log('scRegex:', scRegex.toString());
-  console.log('allSceneTexts sample:', allSceneTexts.slice(0,5));
-  const matchingTexts = allSceneTexts.filter(t => scRegex.test(t));
-  console.log('matching texts:', matchingTexts);
+  const scRegex = new RegExp('SC\\.?\\s*' + scNum.replace('.', '\\.') + '(?:[^0-9]|$)', 'i');
   for (const txt of allSceneTexts) {
     if (scRegex.test(txt)) {
       for (const p of patterns) { const m=txt.match(p); if(m){pageNum=parseInt(m[1]);break;} }
