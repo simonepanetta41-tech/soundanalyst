@@ -624,9 +624,15 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
           <div class="panel" style="margin-bottom:16px">
             <div class="panel-label">Calendario di Lavorazione</div>
             <div class="cal-nav">
-              <button class="cal-nav-btn" onclick="pdlChangeMonth(-1)">‹</button>
-              <div class="cal-month" id="pdlCalMonth">—</div>
-              <button class="cal-nav-btn" onclick="pdlChangeMonth(+1)">›</button>
+              <button class="cal-nav-btn" onclick="pdlChangeNav(-1)">‹</button>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                <div class="cal-month" id="pdlCalMonth">—</div>
+                <div style="display:flex;gap:4px">
+                  <button id="btnViewMonthly" onclick="setPdlView('monthly')" style="font-size:9px;padding:3px 10px;border-radius:5px;border:1px solid var(--border);background:var(--yellow);color:#000;font-family:'DM Mono',monospace;cursor:pointer;font-weight:700">Mese</button>
+                  <button id="btnViewWeekly" onclick="setPdlView('weekly')" style="font-size:9px;padding:3px 10px;border-radius:5px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:'DM Mono',monospace;cursor:pointer">Settimana</button>
+                </div>
+              </div>
+              <button class="cal-nav-btn" onclick="pdlChangeNav(+1)">›</button>
             </div>
             <div class="cal-grid" id="pdlCalGrid"></div>
           </div>
@@ -1929,6 +1935,11 @@ async function loadPdlFile(input) {
     pdlShootingData = saved ? JSON.parse(saved) : {};
     localStorage.setItem('pdl_full_bk_'+pdlData.titolo, JSON.stringify(pdlData));
     if(pdlData.data_inizio){const d=new Date(pdlData.data_inizio);pdlCurrentMonth=d.getMonth();pdlCurrentYear=d.getFullYear();}
+    // Init week view to today or first shooting day
+    const today = new Date();
+    const dow = today.getDay()===0?6:today.getDay()-1;
+    pdlCurrentWeekStart = new Date(today);
+    pdlCurrentWeekStart.setDate(today.getDate()-dow);
     document.getElementById('pdlUploadArea').style.display='none';
     document.getElementById('pdlDashboard').style.display='block';
     renderPdlDashboard();
@@ -2012,14 +2023,43 @@ function renderPdlStandby() {
   list.innerHTML=items.map(({dayNum,scNum,sc})=>`<div style="background:var(--surface2);border:1px dashed rgba(245,166,35,0.4);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:11px"><span style="font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--orange);min-width:60px">SC.${scNum}</span><span style="color:var(--white-dim);flex:1;font-size:10px">${sc?sc.int_ext+' '+sc.momento+' — '+sc.location:''}</span><span style="font-size:10px;color:var(--muted)">G.${dayNum}</span></div>`).join('');
 }
 
-function pdlChangeMonth(delta) {
-  pdlCurrentMonth+=delta;
-  if(pdlCurrentMonth>11){pdlCurrentMonth=0;pdlCurrentYear++;}
-  if(pdlCurrentMonth<0){pdlCurrentMonth=11;pdlCurrentYear--;}
+let pdlCalView = 'monthly'; // 'monthly' | 'weekly'
+let pdlCurrentWeekStart = null; // Date of Monday of current week
+
+function setPdlView(view) {
+  pdlCalView = view;
+  document.getElementById('btnViewMonthly').style.background = view === 'monthly' ? 'var(--yellow)' : 'var(--surface2)';
+  document.getElementById('btnViewMonthly').style.color = view === 'monthly' ? '#000' : 'var(--muted)';
+  document.getElementById('btnViewWeekly').style.background = view === 'weekly' ? 'var(--yellow)' : 'var(--surface2)';
+  document.getElementById('btnViewWeekly').style.color = view === 'weekly' ? '#000' : 'var(--muted)';
+  if (view === 'weekly' && !pdlCurrentWeekStart) {
+    // Default to current week (or first shooting week)
+    const today = new Date();
+    const dow = today.getDay() === 0 ? 6 : today.getDay() - 1;
+    pdlCurrentWeekStart = new Date(today);
+    pdlCurrentWeekStart.setDate(today.getDate() - dow);
+  }
   renderPdlCalendar();
 }
 
+function pdlChangeNav(delta) {
+  if (pdlCalView === 'monthly') {
+    pdlCurrentMonth += delta;
+    if (pdlCurrentMonth > 11) { pdlCurrentMonth = 0; pdlCurrentYear++; }
+    if (pdlCurrentMonth < 0)  { pdlCurrentMonth = 11; pdlCurrentYear--; }
+  } else {
+    // Move by 7 days
+    const d = new Date(pdlCurrentWeekStart);
+    d.setDate(d.getDate() + delta * 7);
+    pdlCurrentWeekStart = d;
+  }
+  renderPdlCalendar();
+}
+
+function pdlChangeMonth(delta) { pdlChangeNav(delta); }
+
 function renderPdlCalendar() {
+  if (pdlCalView === 'weekly') { renderPdlCalendarWeekly(); return; }
   const months=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
   document.getElementById('pdlCalMonth').textContent=months[pdlCurrentMonth]+' '+pdlCurrentYear;
   const grid=document.getElementById('pdlCalGrid');
@@ -2056,6 +2096,63 @@ function renderPdlCalendar() {
       el.className=`cal-cell ${isToday?'is-today':''}`;
       el.style.background='rgba(255,255,255,0.02)'; el.style.border='1px solid rgba(255,255,255,0.04)';
       el.innerHTML=`<div class="cal-cell-day" style="color:var(--muted)">${day}</div>`;
+    }
+    grid.appendChild(el);
+  }
+}
+
+function renderPdlCalendarWeekly() {
+  const months=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  const ws = new Date(pdlCurrentWeekStart);
+  const we = new Date(ws); we.setDate(ws.getDate() + 6);
+  const label = ws.getDate() + ' ' + months[ws.getMonth()] + (ws.getMonth() !== we.getMonth() ? ' – ' + we.getDate() + ' ' + months[we.getMonth()] : ' – ' + we.getDate()) + ' ' + ws.getFullYear();
+  document.getElementById('pdlCalMonth').textContent = label;
+
+  const grid = document.getElementById('pdlCalGrid');
+  grid.innerHTML = '';
+  const dateMap = {};
+  getPdlAllGiorni().forEach(g => { if (g.data) dateMap[g.data] = g; });
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].forEach(d => {
+    const el = document.createElement('div'); el.className='cal-dow'; el.textContent=d; grid.appendChild(el);
+  });
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(ws); d.setDate(ws.getDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+    const g = dateMap[dateStr];
+    const isToday = dateStr === todayStr;
+    const el = document.createElement('div');
+
+    if (g) {
+      const sd = pdlShootingData[g.numero_giorno] || {};
+      const status = sd.status || 'pending';
+      const bgClass = getPdlCellBgClass(g.pagine_giorno);
+      el.className = `cal-cell has-shooting ${bgClass} status-${status} ${isToday?'is-today':''}`;
+      el.style.minHeight = '140px';
+      el.onclick = () => openPdlDayModal(g.numero_giorno);
+      const oraStr = (g.ora_inizio && g.ora_inizio !== 'TBD') ? ' · ' + g.ora_inizio : '';
+      const unitaIcon = g.unita_secondarie?.length ? ' 📷' : '';
+      const oraColor = g.ora_incerta ? 'var(--orange)' : 'inherit';
+      const sceneHtml = (g.scene||[]).map(sc => {
+        const stato = (sd.scenes||{})[sc.numero] || 'pending';
+        const col = stato==='done' ? 'rgba(110,231,183,0.6)' : stato==='standby' ? 'rgba(245,166,35,0.6)' : 'rgba(255,255,255,0.2)';
+        const crit = isSceneCritical(sc.numero) ? '🎙️' : '';
+        return `<div class="cal-cell-sc" style="background:${col}">${sc.numero}${crit}</div>`;
+      }).join('');
+      el.innerHTML = `
+        <div class="cal-cell-day">${d.getDate()}</div>
+        <div class="cal-cell-giorno">DAY ${g.numero_giorno}<span style="color:${oraColor}">${oraStr}</span>${unitaIcon}</div>
+        <div class="cal-cell-loc">${g.location_principale||''}</div>
+        <div class="cal-cell-scenes" style="display:flex">${sceneHtml}</div>
+        ${sd.notes ? `<div class="cal-cell-note">${sd.notes}</div>` : ''}`;
+    } else {
+      el.className = `cal-cell ${isToday?'is-today':''}`;
+      el.style.background = 'rgba(255,255,255,0.02)';
+      el.style.border = '1px solid rgba(255,255,255,0.04)';
+      el.style.minHeight = '140px';
+      el.innerHTML = `<div class="cal-cell-day" style="color:var(--muted)">${d.getDate()}</div>`;
     }
     grid.appendChild(el);
   }
