@@ -2251,8 +2251,13 @@ async function openSceneFromPdl(scNum, e) {
     try {
       const { data } = await sb.from('analyses').select('data').eq('id', currentAnalysisId).single();
       if (data?.data) analysisData = data.data;
+      console.log('Loaded analysisData from Supabase, keys:', Object.keys(analysisData||{}));
     } catch(e) { console.log('Could not load analysis data:', e.message); }
   }
+
+  console.log('analysisData:', !!analysisData, 'currentAnalysisId:', currentAnalysisId);
+  console.log('allSceneTexts count:', Object.values(analysisData||{}).filter(v=>v&&typeof v==='object').length);
+  console.log('scNum:', scNum);
 
   if (!analysisData) { alert('Carica prima una sceneggiatura e fai lo spoglio'); return; }
 
