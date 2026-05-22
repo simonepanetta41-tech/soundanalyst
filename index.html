@@ -2117,7 +2117,7 @@ function renderPdlCalendar() {
         const oraStr = (g.ora_inizio && g.ora_inizio !== 'TBD') ? ' ' + g.ora_inizio : '';
         el.innerHTML = '<div class="cal-cell-day">' + day + '</div><div class="cal-cell-giorno" style="font-size:8px;opacity:0.8">D' + g.numero_giorno + oraStr + '</div>';
       } else {
-        el.innerHTML=`<div class="cal-cell-day">${day}</div><div class="cal-cell-giorno">DAY ${g.numero_giorno} ${g.ora_inizio&&g.ora_inizio!='TBD'?'<span style="color:'+(g.ora_incerta?'var(--orange)':'inherit')+'">'+(g.ora_inizio)+(g.ora_incerta?' ?':'')+'</span>':''}</div><div class="cal-cell-loc">${g.location_principale||''}</div><div class="cal-cell-scenes">${(g.scene||[]).slice(0,4).map(sc=>{const stato=(sd.scenes||{})[sc.numero]||'pending';const col=stato==='done'?'rgba(110,231,183,0.6)':stato==='standby'?'rgba(245,166,35,0.6)':'rgba(255,255,255,0.2)';const crit=isSceneCritical(sc.numero)?'🎙️':'';return`<div class="cal-cell-sc" style="background:${col}">${sc.numero}${crit}</div>`;}).join('')}${sceneTotal>4?`<div class="cal-cell-sc" style="background:rgba(255,255,255,0.1)">+${sceneTotal-4}</div>`:''}</div>${sd.notes?`<div class="cal-cell-note">${sd.notes}</div>`:''}`;
+        el.innerHTML=`<div class="cal-cell-day">${day}</div><div class="cal-cell-giorno">DAY ${g.numero_giorno} ${g.ora_inizio&&g.ora_inizio!='TBD'?'<span style="color:'+(g.ora_incerta?'var(--orange)':'inherit')+'">'+(g.ora_inizio)+(g.ora_incerta?' ?':'')+'</span>':''}</div><div class="cal-cell-loc">${g.location_principale||''}</div><div class="cal-cell-scenes">${(g.scene||[]).slice(0,4).map(sc=>{const stato=(sd.scenes||{})[sc.numero]||'pending';const col=stato==='done'?'rgba(110,231,183,0.6)':stato==='standby'?'rgba(245,166,35,0.6)':'rgba(255,255,255,0.2)';const crit=isSceneCritical(sc.numero);return`<div class="cal-cell-sc" style="background:${col};${crit?'box-shadow:0 0 0 1.5px #e53e3e':''}">${sc.numero}</div>`;}).join('')}${sceneTotal>4?`<div class="cal-cell-sc" style="background:rgba(255,255,255,0.1)">+${sceneTotal-4}</div>`:''}</div>${sd.notes?`<div class="cal-cell-note">${sd.notes}</div>`:''}`;
       }
     } else {
       el.className=`cal-cell ${isToday?'is-today':''}`;
@@ -2185,8 +2185,8 @@ function renderPdlCalendarWeekly() {
       const sceneHtml = (g.scene||[]).map(sc => {
         const stato = (sd.scenes||{})[sc.numero] || 'pending';
         const col = stato==='done' ? 'rgba(110,231,183,0.6)' : stato==='standby' ? 'rgba(245,166,35,0.6)' : 'rgba(255,255,255,0.2)';
-        const crit = isSceneCritical(sc.numero) ? '🎙️' : '';
-        return `<div class="cal-cell-sc" style="background:${col}">${sc.numero}${crit}</div>`;
+        const crit = isSceneCritical(sc.numero);
+        return `<div class="cal-cell-sc" style="background:${col};${crit?'box-shadow:0 0 0 1.5px #e53e3e':''}">` + sc.numero + `</div>`;
       }).join('');
       const locHtml = isMobile ? '' : `<div class="cal-cell-loc">${g.location_principale||''}</div>`;
       el.innerHTML = `
@@ -2240,7 +2240,7 @@ function renderPdlModalChips(g) {
     const typeClass=getPdlSceneTypeClass(sc.int_ext,sc.momento);
     const icon=stato==='done'?'✓':stato==='standby'?'⏸':'';
     const crit=isSceneCritical(sc.numero);
-    return`<div class="pdl-chip ${typeClass} ${stato==='done'?'girato':''} ${stato==='standby'?'standby':''} ${crit?'critical':''}" onclick="cyclePdlSceneModal('${sc.numero}')" title="${sc.location||''} — ${sc.int_ext||''} ${sc.momento||''}">${icon?`<span style="font-size:11px;font-weight:700">${icon}</span>`:''}<span class="pdl-chip-num" onclick="openSceneFromPdl('${sc.numero}',event)" style="text-decoration:underline;text-decoration-color:rgba(255,255,255,0.3);text-underline-offset:2px">${sc.numero}</span><span style="font-size:9px;opacity:0.7">${sc.int_ext||''} ${sc.momento||''}</span></div>`;
+    return`<div class="pdl-chip ${typeClass} ${stato==='done'?'girato':''} ${stato==='standby'?'standby':''} ${crit?'critical':''}" style="${crit?'box-shadow:0 0 0 1.5px #e53e3e':''}" onclick="cyclePdlSceneModal('${sc.numero}')" title="${sc.location||''} — ${sc.int_ext||''} ${sc.momento||''}">${icon?`<span style="font-size:11px;font-weight:700">${icon}</span>`:''}<span class="pdl-chip-num" onclick="openSceneFromPdl('${sc.numero}',event)" style="text-decoration:underline;text-decoration-color:rgba(255,255,255,0.3);text-underline-offset:2px">${sc.numero}</span><span style="font-size:9px;opacity:0.7">${sc.int_ext||''} ${sc.momento||''}</span></div>`;
   }).join('');
   updatePdlModalStatus(g);
 }
