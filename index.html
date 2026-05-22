@@ -157,15 +157,14 @@ header { padding: 28px 0 24px; border-bottom: 1px solid var(--border); margin-bo
 .cal-dow { text-align:center;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:6px 0; }
 .cal-cell { min-height:80px;border-radius:8px;padding:6px;position:relative;cursor:default;transition:all 0.15s; }
 @media(max-width:600px) {
-  .cal-grid { gap:2px; }
-  .cal-cell { min-height:52px; padding:4px; }
-  .cal-cell-day { font-size:12px; }
-  .cal-cell-giorno { font-size:8px; }
-  .cal-cell-loc { display:none; }
-  .cal-cell-scenes { display:none; }
-  .cal-cell-note { display:none; }
-  .cal-cell.status-complete { border-width:2px; }
-  .cal-cell.status-partial { border-width:2px; }
+  .cal-grid { gap:1px; }
+  .cal-cell { min-height:52px; padding:3px; }
+  .cal-cell-day { font-size:11px; }
+  .cal-cell-giorno { font-size:7px; line-height:1.2; }
+  .cal-cell-loc { font-size:7px; line-height:1.2; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .cal-cell-scenes { flex-wrap:wrap; gap:1px; }
+  .cal-cell-sc { font-size:8px; padding:1px 3px; }
+  .cal-dow { font-size:7px; padding:4px 0; letter-spacing:0; }
 }
 .cal-cell.empty { background:transparent; }
 .cal-cell.has-shooting { cursor:pointer; }
@@ -2158,8 +2157,7 @@ function renderPdlCalendarWeekly() {
       const status = sd.status || 'pending';
       const bgClass = getPdlCellBgClass(g.pagine_giorno);
       el.className = `cal-cell has-shooting ${bgClass} status-${status} ${isToday?'is-today':''}`;
-      el.style.minHeight = '140px';
-      el.onclick = () => openPdlDayModal(g.numero_giorno);
+      el.style.minHeight = window.innerWidth <= 600 ? '100px' : '140px';
       const oraStr = (g.ora_inizio && g.ora_inizio !== 'TBD') ? ' · ' + g.ora_inizio : '';
       const unitaIcon = g.unita_secondarie?.length ? ' 📷' : '';
       const oraColor = g.ora_incerta ? 'var(--orange)' : 'inherit';
@@ -2179,7 +2177,7 @@ function renderPdlCalendarWeekly() {
       el.className = `cal-cell ${isToday?'is-today':''}`;
       el.style.background = 'rgba(255,255,255,0.02)';
       el.style.border = '1px solid rgba(255,255,255,0.04)';
-      el.style.minHeight = '140px';
+      el.style.minHeight = window.innerWidth <= 600 ? '100px' : '140px';
       el.innerHTML = `<div class="cal-cell-day" style="color:var(--muted)">${d.getDate()}</div>`;
     }
     grid.appendChild(el);
