@@ -796,6 +796,7 @@ async function handleShareRoute(token) {
     }
 
     sharedAnalysisData = data.data;
+    window._sharedAnalysisId = data.id;
     document.getElementById('shareAuthNote').style.display = 'none';
     document.getElementById('btnImport').style.display = 'inline-block';
     renderShareResults(data.data);
@@ -916,7 +917,29 @@ async function importSharedAnalysis() {
   btn.textContent = 'Importando...';
   btn.disabled = true;
   try {
-    await saveAnalysis(sharedAnalysisData);
+    // Save analysis and get the new analysis ID
+    const newId = await saveAnalysis(sharedAnalysisData);
+
+    // Also import PDL if available
+    if (newId && sharedAnalysisData._owner_id) {
+      try {
+        // Find PDL from original owner's analysis
+        const { data: pdlRow } = await sb
+          .from('pdl_versions')
+          .select('data, shooting_data')
+          .eq('analysis_id', window._sharedAnalysisId)
+          .single();
+        if (pdlRow) {
+          await sb.from('pdl_versions').insert({
+            analysis_id: newId,
+            user_id: currentUser.id,
+            data: pdlRow.data,
+            shooting_data: {} // fresh shooting data for new user
+          });
+        }
+      } catch(e) { console.log('PDL import skipped:', e.message); }
+    }
+
     btn.style.display = 'none';
     document.getElementById('importSuccess').classList.add('show');
   } catch(e) {
@@ -1287,6 +1310,7 @@ async function saveAnalysis(data) {
   }
 
   loadHistory();
+  return saved?.id || null;
 }
 
 // ══ FILES ══
