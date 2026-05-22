@@ -2105,7 +2105,10 @@ function renderPdlCalendarWeekly() {
   const months=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
   const ws = new Date(pdlCurrentWeekStart);
   const we = new Date(ws); we.setDate(ws.getDate() + 6);
-  const label = ws.getDate() + ' ' + months[ws.getMonth()] + (ws.getMonth() !== we.getMonth() ? ' – ' + we.getDate() + ' ' + months[we.getMonth()] : ' – ' + we.getDate()) + ' ' + ws.getFullYear();
+  const sameMonth = ws.getMonth() === we.getMonth();
+  const label = sameMonth
+    ? `${ws.getDate()}–${we.getDate()} ${months[ws.getMonth()]} ${ws.getFullYear()}`
+    : `${ws.getDate()} ${months[ws.getMonth()]} – ${we.getDate()} ${months[we.getMonth()]} ${ws.getFullYear()}`;
   document.getElementById('pdlCalMonth').textContent = label;
 
   const grid = document.getElementById('pdlCalGrid');
