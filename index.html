@@ -2107,8 +2107,10 @@ function renderPdlCalendar() {
       const status=sd.status||'pending';
       const bgClass=getPdlCellBgClass(g.pagine_giorno);
       el.className=`cal-cell has-shooting ${bgClass} status-${status} ${isToday?'is-today':''}`;
-      el.onclick=()=>openPdlDayModal(g.numero_giorno);
-      el.ontouchend=(e)=>{ e.preventDefault(); e.stopPropagation(); openPdlDayModal(g.numero_giorno); };
+      el.addEventListener('click', ()=>openPdlDayModal(g.numero_giorno));
+      el.addEventListener('touchstart', (e)=>{ el._touchMoved=false; }, {passive:true});
+      el.addEventListener('touchmove', ()=>{ el._touchMoved=true; }, {passive:true});
+      el.addEventListener('touchend', (e)=>{ if(!el._touchMoved){ e.preventDefault(); openPdlDayModal(g.numero_giorno); } });
       const sceneDone=Object.values(sd.scenes||{}).filter(v=>v==='done').length;
       const sceneTotal=(g.scene||[]).length;
       const isMobile = window.innerWidth <= 600;
@@ -2174,6 +2176,10 @@ function renderPdlCalendarWeekly() {
       const bgClass = getPdlCellBgClass(g.pagine_giorno);
       el.className = `cal-cell has-shooting ${bgClass} status-${status} ${isToday?'is-today':''}`;
       el.style.minHeight = window.innerWidth <= 600 ? '100px' : '140px';
+      el.addEventListener('click', ()=>openPdlDayModal(g.numero_giorno));
+      el.addEventListener('touchstart', ()=>{ el._touchMoved=false; }, {passive:true});
+      el.addEventListener('touchmove', ()=>{ el._touchMoved=true; }, {passive:true});
+      el.addEventListener('touchend', (e)=>{ if(!el._touchMoved){ e.preventDefault(); openPdlDayModal(g.numero_giorno); } });
       const oraStr = (g.ora_inizio && g.ora_inizio !== 'TBD') ? (g.ora_incerta ? g.ora_inizio + ' ?' : g.ora_inizio) : '';
       const unitaIcon = g.unita_secondarie?.length ? ' 📷' : '';
       const oraColor = g.ora_incerta ? 'var(--orange)' : 'inherit';
