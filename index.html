@@ -2233,8 +2233,10 @@ function openSceneFromPdl(scNum, e) {
     if (cat.playback_puro) cat.playback_puro.forEach(s => allSceneTexts.push(String(s.scena||'')));
   });
   const patterns = [/\(p\.?\s*(\d+)[-–]?\d*\)/i, /pag\.?\s*(\d+)/i];
+  // Use word boundary regex to avoid SC.3 matching SC.33
+  const scRegex = new RegExp('(?:SC\\.?' + scNum.replace('.', '\\.') + '\\b|\\bSC\\.?' + scNum.replace('.', '\\.') + '(?=[^0-9]))', 'i');
   for (const txt of allSceneTexts) {
-    if (txt.includes(scNum) || txt.includes('SC.'+scNum)) {
+    if (scRegex.test(txt)) {
       for (const p of patterns) { const m=txt.match(p); if(m){pageNum=parseInt(m[1]);break;} }
       if(pageNum) break;
     }
