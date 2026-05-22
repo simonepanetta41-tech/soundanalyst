@@ -58,14 +58,17 @@ async function validateUser(req) {
 
 async function checkAndIncrement(sb, userId) {
   const today = new Date().toISOString().split('T')[0];
+  // Check permanent founder status across all rows
+  const { data: rows } = await sb.from('usage_limits').select('permanent_plan').eq('user_id', userId).limit(1);
+  const isFounder = rows?.[0]?.permanent_plan === 'founder';
   const { data } = await sb.from('usage_limits').select('analyses_count, plan').eq('user_id', userId).eq('date', today).single();
-  const plan = data?.plan || 'free';
+  const plan = isFounder ? 'founder' : (data?.plan || 'free');
   const count = data?.analyses_count || 0;
   const limit = PLAN_LIMITS[plan] || 3;
-  if (plan !== 'founder' && count >= limit) return { error: `Limite giornaliero raggiunto (${limit} analisi/giorno).` };
+  if (!isFounder && count >= limit) return { error: `Limite giornaliero raggiunto (${limit} analisi/giorno).` };
   // Increment
-  await sb.from('usage_limits').upsert({ user_id: userId, date: today, analyses_count: count + 1, plan }, { onConflict: 'user_id,date' });
-  return { ok: true, remaining: limit - count - 1 };
+  await sb.from('usage_limits').upsert({ user_id: userId, date: today, analyses_count: count + 1, plan, permanent_plan: isFounder ? 'founder' : null }, { onConflict: 'user_id,date' });
+  return { ok: true, remaining: isFounder ? 999 : limit - count - 1 };
 }
 
 function corsHeaders() {

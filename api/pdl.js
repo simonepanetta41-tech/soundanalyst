@@ -16,14 +16,16 @@ export default async function handler(req) {
 
   // Check rate limit
   const today = new Date().toISOString().split('T')[0];
+  const { data: pRows } = await sb.from('usage_limits').select('permanent_plan').eq('user_id', user.id).limit(1);
+  const isFounder = pRows?.[0]?.permanent_plan === 'founder';
   const { data } = await sb.from('usage_limits').select('analyses_count, plan').eq('user_id', user.id).eq('date', today).single();
-  const plan = data?.plan || 'free';
+  const plan = isFounder ? 'founder' : (data?.plan || 'free');
   const count = data?.analyses_count || 0;
   const limit = PLAN_LIMITS[plan] || 3;
-  if (plan !== 'founder' && count >= limit) return json({ error: `Limite giornaliero raggiunto (${limit} analisi/giorno).` }, 429);
+  if (!isFounder && count >= limit) return json({ error: `Limite giornaliero raggiunto (${limit} analisi/giorno).` }, 429);
 
   // Increment
-  await sb.from('usage_limits').upsert({ user_id: user.id, date: today, analyses_count: count + 1, plan }, { onConflict: 'user_id,date' });
+  await sb.from('usage_limits').upsert({ user_id: user.id, date: today, analyses_count: count + 1, plan: isFounder ? 'founder' : plan, permanent_plan: isFounder ? 'founder' : null }, { onConflict: 'user_id,date' });
 
   const body = await req.json();
   const { messages, system, max_tokens } = body;
