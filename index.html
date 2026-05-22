@@ -1408,7 +1408,8 @@ Struttura JSON richiesta:
   "voiceover": { "presente": false, "scene": [{ "scena": "string", "personaggio": "string" }] },
   "crowd_parlante": { "presente": false, "scene": [{ "scena": "string", "note": "string" }] },
   "animali": { "presente": false, "scene": [{ "scena": "string", "animale": "string" }] },
-  "stunt_effetti": { "presente": false, "scene": [{ "scena": "string", "tipo": "string" }] }
+  "stunt_effetti": { "presente": false, "scene": [{ "scena": "string", "tipo": "string" }] },
+  "scene_index": { "1": 1, "2": 3 }
 }
 
 Regole importanti:
@@ -2256,6 +2257,12 @@ async function openSceneFromPdl(scNum, e) {
   }
 
   if (!analysisData) { alert('Carica prima una sceneggiatura e fai lo spoglio'); return; }
+
+  // Fast lookup via scene_index
+  if (analysisData.scene_index) {
+    const page = analysisData.scene_index[String(scNum)];
+    if (page) { openPageModal(page + pageOffset); return; }
+  }
 
   let pageNum = null;
   const allCategories = Object.values(analysisData).filter(v => v && typeof v === 'object');
