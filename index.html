@@ -1387,6 +1387,7 @@ Analizza la sceneggiatura e rispondi SOLO con un oggetto JSON valido. Nessun tes
 Struttura JSON richiesta:
 {
   "titolo": "string",
+  "scene_index": { "1": 1, "2": 3 },
   "riassunto": "string (circa 15 righe: genere, trama principale con archi narrativi, personaggi chiave, tono, ambientazione, colpi di scena principali — scritto in italiano)",
   "totale_scene": 0,
   "scene_interno": 0,
@@ -1408,8 +1409,7 @@ Struttura JSON richiesta:
   "voiceover": { "presente": false, "scene": [{ "scena": "string", "personaggio": "string" }] },
   "crowd_parlante": { "presente": false, "scene": [{ "scena": "string", "note": "string" }] },
   "animali": { "presente": false, "scene": [{ "scena": "string", "animale": "string" }] },
-  "stunt_effetti": { "presente": false, "scene": [{ "scena": "string", "tipo": "string" }] },
-  "scene_index": { "1": 1, "2": 3 }
+  "stunt_effetti": { "presente": false, "scene": [{ "scena": "string", "tipo": "string" }] }
 }
 
 Regole importanti:
@@ -1454,7 +1454,7 @@ async function startAnalysis() {
     let resp;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        const apiData = await callApi('api/analyze', { model:'claude-sonnet-4-6', max_tokens:16000, system:SYSPROMPT, messages:[{ role:'user', content:blocks }] });
+        const apiData = await callApi('api/analyze', { model:'claude-sonnet-4-6', max_tokens:20000, system:SYSPROMPT, messages:[{ role:'user', content:blocks }] });
         resp = { ok: true, _data: apiData };
         break;
       } catch(e) {
