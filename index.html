@@ -2242,12 +2242,20 @@ function updatePdlModalStatus(g) {
   else el.innerHTML='<span style="color:var(--muted)">○ Non ancora girata</span>';
 }
 
-function openSceneFromPdl(scNum, e) {
+async function openSceneFromPdl(scNum, e) {
   e.stopPropagation();
-  // Lookup page from analysisData (the spoglio has page numbers)
-  if (!analysisData) { alert('Carica prima una sceneggiatura e fai lo spoglio'); return; }
   if (!pdfB64Array.length) { alert('PDF non disponibile — ricarica la sceneggiatura'); return; }
-  // Search scene number in all categories
+
+  // Load analysisData from Supabase if not in memory
+  if (!analysisData && currentAnalysisId) {
+    try {
+      const { data } = await sb.from('analyses').select('data').eq('id', currentAnalysisId).single();
+      if (data?.data) analysisData = data.data;
+    } catch(e) { console.log('Could not load analysis data:', e.message); }
+  }
+
+  if (!analysisData) { alert('Carica prima una sceneggiatura e fai lo spoglio'); return; }
+
   let pageNum = null;
   const allCategories = Object.values(analysisData).filter(v => v && typeof v === 'object');
   const allSceneTexts = [];
@@ -2257,7 +2265,6 @@ function openSceneFromPdl(scNum, e) {
     if (cat.playback_puro) cat.playback_puro.forEach(s => allSceneTexts.push(String(s.scena||'')));
   });
   const patterns = [/\(p\.?\s*(\d+)[-–]?\d*\)/i, /pag\.?\s*(\d+)/i];
-  // Use word boundary regex to avoid SC.3 matching SC.33
   const scRegex = new RegExp('(?:SC\\.?' + scNum.replace('.', '\\.') + '\\b|\\bSC\\.?' + scNum.replace('.', '\\.') + '(?=[^0-9]))', 'i');
   for (const txt of allSceneTexts) {
     if (scRegex.test(txt)) {
