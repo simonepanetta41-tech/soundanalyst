@@ -2108,6 +2108,7 @@ function renderPdlCalendar() {
       const bgClass=getPdlCellBgClass(g.pagine_giorno);
       el.className=`cal-cell has-shooting ${bgClass} status-${status} ${isToday?'is-today':''}`;
       el.onclick=()=>openPdlDayModal(g.numero_giorno);
+      el.ontouchend=(e)=>{ e.preventDefault(); e.stopPropagation(); openPdlDayModal(g.numero_giorno); };
       const sceneDone=Object.values(sd.scenes||{}).filter(v=>v==='done').length;
       const sceneTotal=(g.scene||[]).length;
       const isMobile = window.innerWidth <= 600;
@@ -2182,10 +2183,11 @@ function renderPdlCalendarWeekly() {
         const crit = isSceneCritical(sc.numero) ? '🎙️' : '';
         return `<div class="cal-cell-sc" style="background:${col}">${sc.numero}${crit}</div>`;
       }).join('');
+      const locHtml = isMobile ? '' : `<div class="cal-cell-loc">${g.location_principale||''}</div>`;
       el.innerHTML = `
         <div class="cal-cell-day">${d.getDate()}</div>
         <div class="cal-cell-giorno">DAY ${g.numero_giorno}<span style="color:${oraColor}">${oraStr}</span>${unitaIcon}</div>
-        <div class="cal-cell-loc">${g.location_principale||''}</div>
+        ${locHtml}
         <div class="cal-cell-scenes" style="display:flex">${sceneHtml}</div>
         ${sd.notes ? `<div class="cal-cell-note">${sd.notes}</div>` : ''}`;
     } else {
