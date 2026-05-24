@@ -395,6 +395,7 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
 .btn-share:hover { border-color:var(--yellow); color:var(--yellow); }
 .btn-share.active { border-color:var(--yellow); color:var(--yellow); background:rgba(245,230,66,0.08); }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
@@ -551,7 +552,7 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
         <div class="res-title" id="resTitle">Analisi <span>Completata</span></div>
         <div class="res-actions">
           <button class="btn-share" id="btnShare" onclick="openShareModal()">🔗 Condividi</button>
-          <button class="btn-export" onclick="window.print()">⬇ Esporta PDF</button>
+          <button class="btn-export" onclick="exportPdf()">⬇ Esporta PDF</button>
           <button class="btn-reset" onclick="resetApp()">↩ Nuova Analisi</button>
         </div>
       </div>
@@ -1176,6 +1177,125 @@ async function autoDetectOffset() {
 }
 
 
+
+function exportPdf() {
+  if (!analysisData) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const d = analysisData;
+  const W = 210, ml = 18, mr = 18, cw = W - ml - mr;
+  let y = 20;
+  const YELLOW = [245, 230, 66];
+  const DARK = [30, 30, 30];
+  const MUTED = [100, 100, 100];
+  const LINE = [220, 220, 220];
+
+  function checkPage(need = 10) {
+    if (y + need > 277) { doc.addPage(); y = 18; }
+  }
+  function hline() {
+    doc.setDrawColor(...LINE); doc.setLineWidth(0.3);
+    doc.line(ml, y, W - mr, y); y += 5;
+  }
+
+  // HEADER
+  doc.setFillColor(0, 0, 0); doc.rect(0, 0, W, 32, 'F');
+  doc.setFillColor(...YELLOW); doc.rect(0, 32, W, 1.5, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(22);
+  doc.setTextColor(255, 255, 255); doc.text('Sound', ml, 19);
+  doc.setTextColor(...YELLOW); doc.text('Analyst', ml + doc.getTextWidth('Sound') + 1, 19);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+  doc.setTextColor(150, 150, 150); doc.text('Spoglio Suono', ml, 26);
+  doc.text(new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' }), W - mr, 26, { align: 'right' });
+  y = 42;
+
+  // TITLE
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(...DARK);
+  doc.text(d.titolo || 'Senza titolo', ml, y); y += 8;
+  if (d.regia) { doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...MUTED); doc.text(`Regia: ${d.regia}`, ml, y); y += 6; }
+  hline();
+
+  // STATS
+  const stats = [['Scene', d.totale_scene||'—'], ['INT', d.scene_interno||'—'], ['EXT', d.scene_esterno||'—'], ['Max attori', d.max_attori_parlanti?.numero||'—']];
+  const sw = cw / stats.length;
+  stats.forEach(([label, val], i) => {
+    const x = ml + i * sw;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(...DARK); doc.text(String(val), x, y + 8);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...MUTED); doc.text(label.toUpperCase(), x, y + 14);
+  });
+  y += 22; hline();
+
+  if (d.max_attori_parlanti?.scena) {
+    doc.setFontSize(8); doc.setTextColor(...MUTED); doc.text('Scena più affollata: ', ml, y);
+    doc.setTextColor(...DARK);
+    const t = doc.splitTextToSize(d.max_attori_parlanti.scena, cw - 42);
+    doc.text(t, ml + 42, y); y += t.length * 4 + 4; hline();
+  }
+
+  // CATEGORIES
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...DARK);
+  doc.text('CATEGORIE CRITICHE SUONO', ml, y); y += 8;
+
+  const CATS_DEF = [
+    { key: 'camera_car', name: 'Camera Car', fn: x => x.scene?.map(s => typeof s==='object'?s.scena:s) },
+    { key: 'location_wild', name: 'Location Wild', fn: x => x.scene?.map(s => `${s.location}: ${s.scena}`) },
+    { key: 'playback', name: 'Playback', fn: x => [...(x.esibizioni_live||[]).map(s=>s.scena), ...(x.playback_puro||[]).map(s=>s.scena)] },
+    { key: 'costume_critico', name: 'Costume Critico', fn: x => x.scene?.map(s => `${s.personaggi}: ${s.scena}`) },
+    { key: 'mezzi_movimento', name: 'Mezzi Movimento', fn: x => x.scene?.map(s => `${s.mezzo}: ${s.scena}`) },
+    { key: 'acqua_pioggia', name: 'Acqua / Pioggia', fn: x => x.scene?.map(s => `${s.tipo}: ${s.scena}`) },
+    { key: 'subacquee', name: 'Subacquee', fn: x => x.scene?.map(s => typeof s==='object'?s.scena:s) },
+    { key: 'ambienti_rumorosi', name: 'Ambienti Rumorosi', fn: x => x.scene?.map(s => `${s.tipo}: ${s.scena}`) },
+    { key: 'aerei_elicotteri', name: 'Aerei / Elicotteri', fn: x => x.scene?.map(s => `${s.tipo}: ${s.scena}`) },
+    { key: 'dialoghi_movimento', name: 'Dialoghi in Movimento', fn: x => x.scene?.map(s => s.scena) },
+    { key: 'lingue_straniere', name: 'Lingue Straniere', fn: x => x.scene?.map(s => `${s.lingua}: ${s.scena}`) },
+    { key: 'dialoghi_mediati', name: 'Dialoghi Mediati', fn: x => x.scene?.map(s => `${s.tipo}: ${s.scena}`) },
+    { key: 'voiceover', name: 'Voiceover', fn: x => x.scene?.map(s => `${s.personaggio}: ${s.scena}`) },
+    { key: 'crowd_parlante', name: 'Crowd Parlante', fn: x => x.scene?.map(s => s.scena) },
+    { key: 'animali', name: 'Animali', fn: x => x.scene?.map(s => `${s.animale}: ${s.scena}`) },
+    { key: 'stunt_effetti', name: 'Stunt / Effetti', fn: x => x.scene?.map(s => `${s.tipo}: ${s.scena}`) },
+  ];
+
+  CATS_DEF.forEach(cat => {
+    const cd = d[cat.key]; if (!cd?.presente) return;
+    checkPage(20);
+    doc.setFillColor(245, 245, 240); doc.roundedRect(ml, y - 4, cw, 8, 1, 1, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...DARK);
+    doc.text(cat.name.toUpperCase(), ml + 3, y + 1);
+    const scenes = (cat.fn(cd)||[]).filter(Boolean);
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(...MUTED);
+    doc.text(`${scenes.length} sc.`, W - mr, y + 1, { align: 'right' });
+    y += 9;
+    scenes.forEach(scene => {
+      checkPage(6);
+      const lines = doc.splitTextToSize(`• ${scene}`, cw - 4);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...DARK);
+      doc.text(lines, ml + 3, y); y += lines.length * 4 + 1;
+    });
+    y += 3;
+  });
+
+  // SINOSSI
+  if (d.riassunto) {
+    checkPage(30); hline();
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...DARK);
+    doc.text('SINOSSI', ml, y); y += 7;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(60,60,60);
+    const lines = doc.splitTextToSize(d.riassunto, cw);
+    lines.forEach(l => { checkPage(5); doc.text(l, ml, y); y += 4.5; });
+  }
+
+  // FOOTER
+  const pages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+    doc.setDrawColor(...LINE); doc.setLineWidth(0.3); doc.line(ml, 285, W - mr, 285);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...MUTED);
+    doc.text('SoundAnalyst · ohsfaccimmarosound · Reparto Suono', ml, 290);
+    doc.text(`${i} / ${pages}`, W - mr, 290, { align: 'right' });
+  }
+
+  doc.save(`Spoglio_${(d.titolo||'film').replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+}
 
 function setTheme(theme) {
   document.body.classList.toggle('light', theme === 'light');
