@@ -481,7 +481,6 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
         <div class="settings-row">
           <div class="settings-row-info">
             <div class="settings-row-label">Tema</div>
-            <div class="settings-row-desc">Scegli tra tema scuro e tema chiaro</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center">
             <button id="btnThemeDark" onclick="setTheme('dark')" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--white);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.15s">🌙 Scuro</button>
@@ -494,7 +493,6 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
         <div class="settings-row">
           <div class="settings-row-info">
             <div class="settings-row-label" id="settingsEmail"></div>
-            <div class="settings-row-desc">Account connesso via Supabase</div>
           </div>
           <button class="btn-danger" onclick="logout()">Esci dall'account</button>
         </div>
@@ -518,7 +516,6 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
         <div class="danger-zone">
           <div class="settings-row-info">
             <div class="settings-row-label" style="color:var(--danger)">Cancella tutte le analisi</div>
-            <div class="settings-row-desc">Rimuove tutto lo storico dal database. Irreversibile.</div>
           </div>
           <button class="btn-danger" onclick="clearAllHistory()">🗑 Cancella tutto</button>
         </div>
@@ -528,7 +525,6 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
         <div class="settings-row">
           <div class="settings-row-info">
             <div class="settings-row-label">SoundAnalyst</div>
-            <div class="settings-row-desc">by ohsfaccimmarosound · Reparto Suono<br>Modello: claude-sonnet-4-6 · PDF.js 3.11.174 · Supabase</div>
           </div>
         </div>
       </div>
@@ -1619,15 +1615,16 @@ function renderResults(d) {
   document.getElementById('catsGrid').innerHTML = CATS.map(c => {
     const cd = d[c.key] || {};
     const on = !!cd.presente;
+    if (!on) return ''; // hide absent categories
     const cnt = cd.scene?.length || (cd.esibizioni_live?.length||0)+(cd.playback_puro?.length||0);
     const inner = c.render(cd)||'';
-    return `<div class="cat ${on?'active':'inactive'}">
+    return `<div class="cat active">
       <div class="cat-top">
         <span class="cat-ico">${c.ico}</span>
         <span class="cat-name">${c.name}</span>
-        ${on?`<span class="badge-count">${cnt>0?cnt+' sc.':'sì'}</span>`:`<span class="badge-absent">assente</span>`}
+        <span class="badge-count">${cnt>0?cnt+' sc.':'sì'}</span>
       </div>
-      ${on&&inner?`<div class="cat-items">${inner}</div>`:''}
+      ${inner?`<div class="cat-items">${inner}</div>`:''}
     </div>`;
   }).join('');
 
