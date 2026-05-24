@@ -28,6 +28,22 @@
   --muted: #666;
   --danger: #ff5555;
   --green: #6ee7b7;
+  --orange: #f5a623;
+}
+
+body.light {
+  --bg: #f0ede6;
+  --surface: #ffffff;
+  --surface2: #f5f2ec;
+  --border: #e0dbd0;
+  --border-l: #ccc8be;
+  --yellow: #a07828;
+  --white: #1a1a1a;
+  --white-dim: #444444;
+  --muted: #999;
+  --danger: #cc3333;
+  --green: #2d7a4f;
+  --orange: #c07020;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--bg); color: var(--white); font-family: 'DM Mono', monospace; min-height: 100vh; }
@@ -460,6 +476,19 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
 
     <!-- SETTINGS PAGE -->
     <div id="settingsPage" style="display:none">
+      <div class="settings-section">
+        <div class="settings-title">Aspetto</div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Tema</div>
+            <div class="settings-row-desc">Scegli tra tema scuro e tema chiaro</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button id="btnThemeDark" onclick="setTheme('dark')" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--white);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.15s">🌙 Scuro</button>
+            <button id="btnThemeLight" onclick="setTheme('light')" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--white);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.15s">☀️ Chiaro</button>
+          </div>
+        </div>
+      </div>
       <div class="settings-section">
         <div class="settings-title">Account</div>
         <div class="settings-row">
@@ -1149,9 +1178,24 @@ async function autoDetectOffset() {
 
 
 
-function getKey() {
-  return localStorage.getItem('sa_key') || '';
+function setTheme(theme) {
+  document.body.classList.toggle('light', theme === 'light');
+  localStorage.setItem('sa_theme', theme);
+  const btnDark = document.getElementById('btnThemeDark');
+  const btnLight = document.getElementById('btnThemeLight');
+  if (btnDark && btnLight) {
+    btnDark.style.background = theme === 'dark' ? 'var(--yellow)' : 'var(--surface2)';
+    btnDark.style.color = theme === 'dark' ? '#000' : 'var(--white)';
+    btnLight.style.background = theme === 'light' ? 'var(--yellow)' : 'var(--surface2)';
+    btnLight.style.color = theme === 'light' ? '#000' : 'var(--white)';
+  }
 }
+
+// Apply saved theme on load
+(function() {
+  const saved = localStorage.getItem('sa_theme') || 'dark';
+  setTheme(saved);
+})();
 
 async function getAuthToken() {
   const { data: { session } } = await sb.auth.getSession();
@@ -1633,6 +1677,15 @@ function rotateChatPlaceholder() {
 setInterval(rotateChatPlaceholder, 4000);
 let chatTyping   = false;
 
+function buildPdlContext() {
+  if (!pdlData) return '';
+  const giorni = getPdlAllGiorni().slice(0, 40); // limit to avoid token overflow
+  return giorni.map(g => {
+    const scene = (g.scene||[]).map(s=>s.numero).join(',');
+    return `G.${g.numero_giorno} ${g.data||''} ${g.ora_inizio||''} ${g.location_principale||''} [${scene}]`;
+  }).join('\n');
+}
+
 function buildChatContext(d) {
   const lines = [`FILM: ${d.titolo} | Scene: ${d.totale_scene} (INT:${d.scene_interno} EXT:${d.scene_esterno}) | Max att: ${d.max_attori_parlanti?.numero} | Media: ${d.media_attori_parlanti}`];
   const cats = [
@@ -1707,7 +1760,7 @@ async function sendChat() {
 
 Gergo del set: "orata" = un'ora di straordinario, "cestini" = pasti sul set, "craft" = tavolo snack e caffè, "split" = seconda unità.
 
-Spoglio:\n${buildChatContext(analysisData)}
+Spoglio:\n${buildChatContext(analysisData)}${pdlData ? "\n\nPIANO DI LAVORAZIONE:\n" + buildPdlContext() : ""}
 
 Regole: risposte BREVI max 3-4 righe. Se ti fanno domande scherzose rispondi al gioco con humour napoletano. Parla da collega di set, non da professore.`;
 
