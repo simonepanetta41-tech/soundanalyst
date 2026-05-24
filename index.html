@@ -247,7 +247,7 @@ header { padding: 28px 0 24px; border-bottom: 1px solid var(--border); margin-bo
 #riassuntoBox { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--yellow); border-radius: 10px; padding: 18px 20px; margin-bottom: 28px; font-size: 12px; line-height: 1.8; color: var(--white-dim); }
 #riassuntoBox .ria-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; font-weight: 500; }
 
-.cats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 32px; }
+.cats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 32px; align-items: start; }
 @media(max-width:560px) { .cats-grid { grid-template-columns: 1fr; } }
 .cat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px; transition: border-color 0.15s; }
 .cat.active { border-color: #3a3a1a; }
