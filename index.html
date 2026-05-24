@@ -554,7 +554,7 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
         </div>
         <div class="chat-messages" id="chatMessages"></div>
         <div class="chat-input-row">
-          <textarea id="chatInput" placeholder="Es: quali sono le scene più critiche per i radiomicrofoni?" rows="1"></textarea>
+          <textarea id="chatInput" placeholder="A che ora arrivano i cestini?" rows="1"></textarea>
           <button class="btn-send" id="sendBtn" onclick="sendChat()">➤</button>
         </div>
         <div class="chat-suggestions">
@@ -573,7 +573,7 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
           <div class="panel" style="text-align:center;padding:40px 24px">
             <div style="font-size:32px;margin-bottom:12px">📋</div>
             <div style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;margin-bottom:6px">Carica il Piano di Lavorazione</div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:20px">Il PDL verrà incrociato con lo spoglio — le scene critiche per il suono appariranno evidenziate nel calendario</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:20px"></div>
             <label style="display:inline-flex;align-items:center;gap:8px;background:var(--yellow);color:#000;padding:12px 24px;border-radius:10px;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:800;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='#fff'" onmouseout="this.style.background='var(--yellow)'">
               📋 Seleziona PDF
               <input type="file" accept=".pdf" style="display:none" onchange="loadPdlFile(this)">
@@ -1611,6 +1611,26 @@ function resetApp() {
 // ══ CHAT ══
 let analysisData = null;
 let chatHistory  = [];
+
+const GENNARO_PLACEHOLDERS = [
+  'A che ora arrivano i cestini?',
+  'Oggi faremo un\'orata?',
+  'Quando arriva la pizza?',
+  'Il caffè del craft com\'è?',
+  'Dobbiamo per forza girare domani?',
+  'Ho paura della scena nel bosco di notte...',
+  'Perché sul set dicono tutti grazie a te?',
+  'Perché molti non dicono mai buongiorno la mattina?',
+  'Ma non potevo scegliere un altro lavoro?',
+  'Alle poste si lavora meglio?',
+];
+function rotateChatPlaceholder() {
+  const el = document.getElementById('chatInput');
+  if (!el || document.activeElement === el) return;
+  const idx = Math.floor(Math.random() * GENNARO_PLACEHOLDERS.length);
+  el.placeholder = GENNARO_PLACEHOLDERS[idx];
+}
+setInterval(rotateChatPlaceholder, 4000);
 let chatTyping   = false;
 
 function buildChatContext(d) {
@@ -1683,9 +1703,13 @@ async function sendChat() {
   document.getElementById('sendBtn').disabled = true;
   addTyping();
 
-  const SYS = `Sei Gennaro, esperto veterano del reparto suono cinematografico con 20 anni di esperienza sui set italiani.
+  const SYS = `Sei Gennaro Esposito, fonico di presa diretta napoletano con 20 anni di set alle spalle. Parli italiano ma ogni tanto ti scappa qualche espressione napoletana ("uagliò", "mamm mia", "mo vediamo", "azz", "e che vuo'", "jamm bell'", "statte buono"). Sei simpatico, diretto, un po' brontolone ma sempre disponibile.
+
+Gergo del set: "orata" = un'ora di straordinario, "cestini" = pasti sul set, "craft" = tavolo snack e caffè, "split" = seconda unità.
+
 Spoglio:\n${buildChatContext(analysisData)}
-Rispondi in italiano, tecnico e pratico. Cita scene specifiche. Sii conciso.`;
+
+Regole: risposte BREVI max 3-4 righe. Se ti fanno domande scherzose rispondi al gioco con humour napoletano. Parla da collega di set, non da professore.`;
 
   let reply = '';
   for (let attempt = 1; attempt <= 3; attempt++) {
