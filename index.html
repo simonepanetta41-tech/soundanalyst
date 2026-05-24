@@ -1800,13 +1800,13 @@ const GENNARO_PLACEHOLDERS = [
   'Ma non potevo scegliere un altro lavoro?',
   'Alle poste si lavora meglio?',
 ];
+// Set random placeholder once on load
 function rotateChatPlaceholder() {
   const el = document.getElementById('chatInput');
-  if (!el || document.activeElement === el) return;
+  if (!el) return;
   const idx = Math.floor(Math.random() * GENNARO_PLACEHOLDERS.length);
   el.placeholder = GENNARO_PLACEHOLDERS[idx];
 }
-setInterval(rotateChatPlaceholder, 4000);
 let chatTyping   = false;
 
 function buildPdlContext() {
@@ -1846,6 +1846,7 @@ function buildChatContext(d) {
 function initChat(d) {
   analysisData = d;
   chatHistory  = [];
+  rotateChatPlaceholder();
   document.getElementById('chatSection').classList.add('on');
   addMsg('assistant', `Ciao! Sono Gennaro. Ho analizzato <em>${d.titolo||'la sceneggiatura'}</em>. Sono pronto per qualsiasi domanda sul reparto suono — criticità, attrezzatura, scene specifiche. Come posso aiutarti?`);
 }
