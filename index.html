@@ -247,9 +247,11 @@ header { padding: 28px 0 24px; border-bottom: 1px solid var(--border); margin-bo
 #riassuntoBox { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--yellow); border-radius: 10px; padding: 18px 20px; margin-bottom: 28px; font-size: 12px; line-height: 1.8; color: var(--white-dim); }
 #riassuntoBox .ria-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; font-weight: 500; }
 
-.cats-grid { columns: 2; column-gap: 10px; margin-bottom: 32px; }
-.cat { break-inside: avoid; margin-bottom: 10px; display: inline-block; width: 100%; }
-@media(max-width:560px) { .cats-grid { columns: 1; } }
+.cats-grid { display: flex; gap: 10px; margin-bottom: 32px; align-items: stretch; }
+.cats-col { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.cats-col .cat:last-child { flex: 1; }
+.cat { break-inside: avoid; }
+@media(max-width:560px) { .cats-grid { flex-direction: column; } .cats-col { flex-direction: column; } }
 .cat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px; transition: border-color 0.15s; }
 .cat.active { border-color: #3a3a1a; }
 .cat.inactive { opacity: 0.38; }
@@ -1613,10 +1615,9 @@ function renderResults(d) {
     { key:'stunt_effetti',     ico:'💥', name:'Stunt / Effetti Sp.',  render: x=>x.scene?.map(s=>`<div class="ci"><strong>${s.tipo}</strong><br><span class="ref">${s.scena}</span></div>`).join('') },
   ];
 
-  document.getElementById('catsGrid').innerHTML = CATS.map(c => {
+  const activeCats = CATS.map(c => {
     const cd = d[c.key] || {};
-    const on = !!cd.presente;
-    if (!on) return ''; // hide absent categories
+    if (!cd.presente) return null;
     const cnt = cd.scene?.length || (cd.esibizioni_live?.length||0)+(cd.playback_puro?.length||0);
     const inner = c.render(cd)||'';
     return `<div class="cat active">
@@ -1627,7 +1628,14 @@ function renderResults(d) {
       </div>
       ${inner?`<div class="cat-items">${inner}</div>`:''}
     </div>`;
-  }).join('');
+  }).filter(Boolean);
+
+  // Split into two balanced columns
+  const half = Math.ceil(activeCats.length / 2);
+  const col1 = activeCats.slice(0, half);
+  const col2 = activeCats.slice(half);
+  document.getElementById('catsGrid').innerHTML =
+    `<div class="cats-col">${col1.join('')}</div><div class="cats-col">${col2.join('')}</div>`;
 
   document.getElementById('resultsPage').classList.add('on');
   setTimeout(activateRefs, 50);
