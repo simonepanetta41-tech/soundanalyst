@@ -1238,21 +1238,21 @@ function exportPdf() {
 
   const CATS_DEF = [
     { key: 'camera_car', name: 'Camera Car', fn: x => x.scene?.map(s => typeof s==='object'?s.scena:s) },
-    { key: 'location_wild', name: 'Location Wild', fn: x => x.scene?.map(s => `${s.location}: ${s.scena}`) },
-    { key: 'playback', name: 'Playback', fn: x => [...(x.esibizioni_live||[]).map(s=>s.scena), ...(x.playback_puro||[]).map(s=>s.scena)] },
-    { key: 'costume_critico', name: 'Costume Critico', fn: x => x.scene?.map(s => `${s.personaggi}: ${s.scena}`) },
-    { key: 'mezzi_movimento', name: 'Mezzi Movimento', fn: x => x.scene?.map(s => `${s.mezzo}: ${s.scena}`) },
-    { key: 'acqua_pioggia', name: 'Acqua / Pioggia', fn: x => x.scene?.map(s => `${s.tipo}: ${s.scena}`) },
+    { key: 'location_wild', name: 'Location Wild', fn: x => x.scene?.map(s => s.scena + (s.location?'  —  '+s.location:'')) },
+    { key: 'playback', name: 'Playback', fn: x => [...(x.esibizioni_live||[]).map(s=>s.scena+(s.note?'  —  '+s.note:'')), ...(x.playback_puro||[]).map(s=>s.scena+(s.note?'  —  '+s.note:''))] },
+    { key: 'costume_critico', name: 'Costume Critico', fn: x => x.scene?.map(s => s.scena + (s.personaggi?'  —  '+s.personaggi:'')) },
+    { key: 'mezzi_movimento', name: 'Mezzi Movimento', fn: x => x.scene?.map(s => s.scena + (s.mezzo?'  —  '+s.mezzo:'')) },
+    { key: 'acqua_pioggia', name: 'Acqua / Pioggia', fn: x => x.scene?.map(s => s.scena + (s.tipo?'  —  '+s.tipo:'')) },
     { key: 'subacquee', name: 'Subacquee', fn: x => x.scene?.map(s => typeof s==='object'?s.scena:s) },
-    { key: 'ambienti_rumorosi', name: 'Ambienti Rumorosi', fn: x => x.scene?.map(s => `${s.tipo}: ${s.scena}`) },
-    { key: 'aerei_elicotteri', name: 'Aerei / Elicotteri', fn: x => x.scene?.map(s => `${s.tipo}: ${s.scena}`) },
+    { key: 'ambienti_rumorosi', name: 'Ambienti Rumorosi', fn: x => x.scene?.map(s => s.scena + (s.tipo?'  —  '+s.tipo:'')) },
+    { key: 'aerei_elicotteri', name: 'Aerei / Elicotteri', fn: x => x.scene?.map(s => s.scena + (s.tipo?'  —  '+s.tipo:'')) },
     { key: 'dialoghi_movimento', name: 'Dialoghi in Movimento', fn: x => x.scene?.map(s => s.scena) },
-    { key: 'lingue_straniere', name: 'Lingue Straniere', fn: x => x.scene?.map(s => `${s.lingua}: ${s.scena}`) },
-    { key: 'dialoghi_mediati', name: 'Dialoghi Mediati', fn: x => x.scene?.map(s => `${s.tipo}: ${s.scena}`) },
-    { key: 'voiceover', name: 'Voiceover', fn: x => x.scene?.map(s => `${s.personaggio}: ${s.scena}`) },
+    { key: 'lingue_straniere', name: 'Lingue Straniere', fn: x => x.scene?.map(s => s.scena + (s.lingua?'  —  '+s.lingua:'')) },
+    { key: 'dialoghi_mediati', name: 'Dialoghi Mediati', fn: x => x.scene?.map(s => s.scena + (s.tipo?'  —  '+s.tipo:'')) },
+    { key: 'voiceover', name: 'Voiceover', fn: x => x.scene?.map(s => s.scena + (s.personaggio?'  —  '+s.personaggio:'')) },
     { key: 'crowd_parlante', name: 'Crowd Parlante', fn: x => x.scene?.map(s => s.scena) },
-    { key: 'animali', name: 'Animali', fn: x => x.scene?.map(s => `${s.animale}: ${s.scena}`) },
-    { key: 'stunt_effetti', name: 'Stunt / Effetti', fn: x => x.scene?.map(s => `${s.tipo}: ${s.scena}`) },
+    { key: 'animali', name: 'Animali', fn: x => x.scene?.map(s => s.scena + (s.animale?'  —  '+s.animale:'')) },
+    { key: 'stunt_effetti', name: 'Stunt / Effetti', fn: x => x.scene?.map(s => s.scena + (s.tipo?'  —  '+s.tipo:'')) },
   ];
 
   CATS_DEF.forEach(cat => {
