@@ -1225,11 +1225,27 @@ function exportPdf() {
   });
   y += 22; hline();
 
+  // SINOSSI subito dopo header
+  if (d.riassunto) {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(80,80,80);
+    const sinLines = doc.splitTextToSize(d.riassunto, cw);
+    sinLines.forEach(l => { checkPage(5); doc.text(l, ml, y); y += 4.5; });
+    y += 3; hline();
+  }
+
+  // SCENA CON PIU ATTORI PARLANTI
   if (d.max_attori_parlanti?.scena) {
-    doc.setFontSize(8); doc.setTextColor(...MUTED); doc.text('Scena più affollata: ', ml, y);
-    doc.setTextColor(...DARK);
-    const t = doc.splitTextToSize(d.max_attori_parlanti.scena, cw - 42);
-    doc.text(t, ml + 42, y); y += t.length * 4 + 4; hline();
+    doc.setFillColor(245, 230, 66, 0.15); doc.setFillColor(252, 249, 220);
+    doc.roundedRect(ml, y - 3, cw, 16, 1, 1, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...MUTED);
+    doc.text('SCENA CON PIÙ ATTORI PARLANTI', ml + 3, y + 2);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...DARK);
+    const maxNum = d.max_attori_parlanti.numero || '';
+    const attori = d.max_attori_parlanti.attori ? ` · ${d.max_attori_parlanti.attori}` : '';
+    const maxLine = doc.splitTextToSize(`${d.max_attori_parlanti.scena}${maxNum?' — '+maxNum+' attori':''}${attori}`, cw - 6);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+    doc.text(maxLine, ml + 3, y + 7);
+    y += 20; hline();
   }
 
   // CATEGORIES
@@ -1258,7 +1274,7 @@ function exportPdf() {
   CATS_DEF.forEach(cat => {
     const cd = d[cat.key]; if (!cd?.presente) return;
     checkPage(20);
-    doc.setFillColor(245, 245, 240); doc.roundedRect(ml, y - 4, cw, 8, 1, 1, 'F');
+    doc.setFillColor(252, 248, 210); doc.roundedRect(ml, y - 4, cw, 8, 1, 1, 'F');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...DARK);
     doc.text(cat.name.toUpperCase(), ml + 3, y + 1);
     const scenes = (cat.fn(cd)||[]).filter(Boolean);
@@ -1273,16 +1289,6 @@ function exportPdf() {
     });
     y += 3;
   });
-
-  // SINOSSI
-  if (d.riassunto) {
-    checkPage(30); hline();
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...DARK);
-    doc.text('SINOSSI', ml, y); y += 7;
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(60,60,60);
-    const lines = doc.splitTextToSize(d.riassunto, cw);
-    lines.forEach(l => { checkPage(5); doc.text(l, ml, y); y += 4.5; });
-  }
 
   // FOOTER
   const pages = doc.internal.getNumberOfPages();
