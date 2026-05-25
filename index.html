@@ -2974,7 +2974,7 @@ function parseCastFromText(text) {
 
     // Layout B: bare number "1." on this line, name was previous line
     const numMatch = numOnlyRe.exec(line);
-    if (numMatch && cast.length > 0) {
+    if (numMatch) {
       const prevLine = lines[i - 1] || '';
       if (prevLine && !/^(M?\d+M?)\.\s*$/.test(prevLine)) {
         let nome = prevLine
