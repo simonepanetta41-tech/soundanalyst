@@ -2768,8 +2768,9 @@ async function handleCastUpload(input) {
     const b64 = btoa(bin);
 
     let cast = null;
-    if (file.name.endsWith('.pdf')) {
-      // Use PDF.js parser
+
+    if (file.name.toLowerCase().endsWith('.pdf')) {
+      // PDF — use PDF.js parser
       const tmpDoc = await pdfjsLib.getDocument({ data: atob(b64) }).promise;
       let text = '';
       for (let p = 1; p <= Math.min(3, tmpDoc.numPages); p++) {
@@ -2778,6 +2779,23 @@ async function handleCastUpload(input) {
         text += tc.items.map(i => i.str).join('\n') + '\n';
       }
       cast = parseCastFromText(text);
+    } else {
+      // Image (JPEG/PNG) — use Claude Vision
+      const mediaType = file.type || 'image/jpeg';
+      const data = await callApi('api/chat', {
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 800,
+        system: 'Estrai la lista cast da questa immagine. Rispondi SOLO con JSON valido, nessun testo aggiuntivo, nessun markdown: [{"character_id":1,"nome":"NOME","minore":false}]. Se il personaggio ha prefisso o suffisso M (es: 3M o M1) imposta minore:true. Includi solo personaggi con numero ID. Ordina per character_id crescente.',
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
+          { type: 'text', text: 'Estrai la lista cast.' }
+        ]}]
+      });
+      const raw = data.content.map(b => b.text || '').join('').replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length >= 3) {
+        cast = parsed.map(c => ({ ...c, fonte: 'ufficiale' }));
+      }
     }
 
     if (!cast) {
@@ -2788,7 +2806,7 @@ async function handleCastUpload(input) {
     const userWants = await handlePdlCastPopup(cast);
     if (userWants) {
       await sb.from('cast_list').delete().eq('analysis_id', currentAnalysisId);
-      const rows = cast.map(c => ({ analysis_id: currentAnalysisId, character_id: c.character_id, nome: c.nome, fonte: 'ufficiale' }));
+      const rows = cast.map(c => ({ analysis_id: currentAnalysisId, character_id: c.character_id, nome: c.nome, minore: c.minore || false, fonte: 'ufficiale' }));
       await sb.from('cast_list').insert(rows);
       castData = await loadCastFromSupabase(currentAnalysisId);
       renderCastTab(castData, false);
