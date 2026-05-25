@@ -2182,8 +2182,8 @@ let lastRagContext = null;
 
 function detectSceneNumbers(text) {
   const matches = new Set();
-  // Catches: "scena 3", "SC.3", "SC. 3", "sc 3", "scena 3A", "scene 3"
-  const re = /(?:scena|scene|sc\.?\s+)(\d+[a-z]?)/gi;
+  // Catches: "scena 3", "scena 3A", "scene 15", "SC.3", "SC. 3", "sc 3"
+  const re = /(?:scena|scene|sc\.?)\s+(\d+[a-z]?)/gi;
   let m;
   while ((m = re.exec(text)) !== null) matches.add(m[1].toUpperCase());
   return [...matches];
