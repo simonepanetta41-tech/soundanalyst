@@ -910,7 +910,7 @@ function renderShareResults(d) {
     { key:'camera_car',ico:'🚗',name:'Camera Car',render:x=>x.scene?.map(s=>`<div class="ci"><span class="ref">${s}</span></div>`).join('')},
     { key:'location_wild',ico:'🌲',name:'Location Wild',render:x=>x.scene?.map(s=>`<div class="ci"><strong>${s.location}</strong><br><span class="ref">${s.scena}</span></div>`).join('')},
     { key:'playback',ico:'🎵',name:'Necessità Playback',render:x=>{let h='';if(x.esibizioni_live?.length)h+=`<div class="subsec"><div class="subsec-title">Esibizioni live</div>`+x.esibizioni_live.map(s=>`<div class="ci"><strong>${s.note||''}</strong><br><span class="ref">${s.scena}</span></div>`).join('')+'</div>';if(x.playback_puro?.length)h+=`<div class="subsec"><div class="subsec-title">Playback puro</div>`+x.playback_puro.map(s=>`<div class="ci"><strong>${s.note||''}</strong><br><span class="ref">${s.scena}</span></div>`).join('')+'</div>';return h;}},
-    { key:'costume_critico',ico:'🩱',name:'Costume Critico',render:x=>{let h=x.totale_attori_coinvolti?`<div class="ci" style="color:var(--yellow)"><strong>${x.totale_attori_coinvolti} attori coinvolti</strong></div>`:'';h+=x.scene?.map(s=>`<div class="ci"><strong>${s.personaggi}</strong> (${s.attori} att.)<br><span class="ref">${s.scena}</span></div>`).join('');return h;}},
+    { key:'costume_critico',ico:'🩱',name:'Costumi',render:x=>{let h=x.totale_attori_coinvolti?`<div class="ci" style="color:var(--yellow)"><strong>${x.totale_attori_coinvolti} attori coinvolti</strong></div>`:'';h+=x.scene?.map(s=>`<div class="ci"><strong>${s.personaggi}</strong> (${s.attori} att.)<br><span class="ref">${s.scena}</span></div>`).join('');return h;}},
     { key:'mezzi_movimento',ico:'🚛',name:'Mezzi in Movimento',render:x=>x.scene?.map(s=>`<div class="ci"><strong>${s.mezzo}</strong><br><span class="ref">${s.scena}</span></div>`).join('')},
     { key:'acqua_pioggia',ico:'🌧️',name:'Acqua / Pioggia',render:x=>x.scene?.map(s=>`<div class="ci"><strong>${s.tipo}</strong><br><span class="ref">${s.scena}</span></div>`).join('')},
     { key:'subacquee',ico:'🤿',name:'Scene Subacquee',render:x=>x.scene?.map(s=>`<div class="ci"><span class="ref">${s}</span></div>`).join('')},
@@ -1352,7 +1352,7 @@ function exportPdf() {
         ...(x.esibizioni_live||[]).map(s => '[LIVE] ' + s.scena + (s.note ? '  —  ' + s.note : '')),
         ...(x.playback_puro||[]).map(s =>  '[PURO] ' + s.scena + (s.note ? '  —  ' + s.note : ''))
     ]},
-    { key: 'costume_critico',   name: 'Costume Critico',       fn: x => x.scene?.map(s => s.scena + (s.personaggi ? '  —  ' + s.personaggi + (s.attori ? ' (' + s.attori + ' att.)' : '') : '')) },
+    { key: 'costume_critico',   name: 'Costumi',               fn: x => x.scene?.map(s => s.scena + (s.personaggi ? '  —  ' + s.personaggi + (s.attori ? ' (' + s.attori + ' att.)' : '') : '')) },
     { key: 'mezzi_movimento',   name: 'Mezzi in Movimento',    fn: x => x.scene?.map(s => s.scena + (s.mezzo ? '  —  ' + s.mezzo : '')) },
     { key: 'acqua_pioggia',     name: 'Acqua / Pioggia',       fn: x => x.scene?.map(s => s.scena + (s.tipo ? '  —  ' + s.tipo : '')) },
     { key: 'subacquee',         name: 'Scene Subacquee',       fn: x => x.scene?.map(s => typeof s==='object'?s.scena:s) },
@@ -1370,8 +1370,6 @@ function exportPdf() {
   const activeCats = CATS_DEF.filter(c => d[c.key]?.presente);
 
   if (activeCats.length) {
-    sectionTitle('CATEGORIE CRITICHE SUONO');
-
     activeCats.forEach((cat, idx) => {
       const cd = d[cat.key];
       const scenes = (cat.fn(cd) || []).filter(Boolean);
@@ -1895,7 +1893,7 @@ function renderResults(d) {
     { key:'camera_car',        ico:'🚗', name:'Camera Car',           render: x=>x.scene?.map(s=>`<div class="ci"><span class="ref">${s}</span></div>`).join('') },
     { key:'location_wild',     ico:'🌲', name:'Location Wild',        render: x=>x.scene?.map(s=>`<div class="ci"><strong>${s.location}</strong><br><span class="ref">${s.scena}</span></div>`).join('') },
     { key:'playback',          ico:'🎵', name:'Necessità Playback',   render: x=>{ let h=''; if(x.esibizioni_live?.length) h+=`<div class="subsec"><div class="subsec-title">Esibizioni live</div>`+x.esibizioni_live.map(s=>`<div class="ci"><strong>${s.note||''}</strong><br><span class="ref">${s.scena}</span></div>`).join('')+'</div>'; if(x.playback_puro?.length) h+=`<div class="subsec"><div class="subsec-title">Playback puro</div>`+x.playback_puro.map(s=>`<div class="ci"><strong>${s.note||''}</strong><br><span class="ref">${s.scena}</span></div>`).join('')+'</div>'; return h; }},
-    { key:'costume_critico',   ico:'🩱', name:'Costume Critico',      render: x=>{ let h=x.totale_attori_coinvolti?`<div class="ci" style="color:var(--yellow)"><strong>${x.totale_attori_coinvolti} attori coinvolti</strong></div>`:''; h+=x.scene?.map(s=>`<div class="ci"><strong>${s.personaggi}</strong> (${s.attori} att.)<br><span class="ref">${s.scena}</span></div>`).join(''); return h; }},
+    { key:'costume_critico',   ico:'🩱', name:'Costumi',            render: x=>{ let h=x.totale_attori_coinvolti?`<div class="ci" style="color:var(--yellow)"><strong>${x.totale_attori_coinvolti} attori coinvolti</strong></div>`:''; h+=x.scene?.map(s=>`<div class="ci"><strong>${s.personaggi}</strong> (${s.attori} att.)<br><span class="ref">${s.scena}</span></div>`).join(''); return h; }},
     { key:'mezzi_movimento',   ico:'🚛', name:'Mezzi in Movimento',   render: x=>x.scene?.map(s=>`<div class="ci"><strong>${s.mezzo}</strong><br><span class="ref">${s.scena}</span></div>`).join('') },
     { key:'acqua_pioggia',     ico:'🌧️', name:'Acqua / Pioggia',      render: x=>x.scene?.map(s=>`<div class="ci"><strong>${s.tipo}</strong><br><span class="ref">${s.scena}</span></div>`).join('') },
     { key:'subacquee',         ico:'🤿', name:'Scene Subacquee',      render: x=>x.scene?.map(s=>`<div class="ci"><span class="ref">${s}</span></div>`).join('') },
