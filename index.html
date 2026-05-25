@@ -2754,9 +2754,46 @@ async function generaCastProvvisorio() {
 async function handleCastUpload(input) {
   const file = input.files[0];
   if (!file) return;
-  document.getElementById('castUploadLabel').textContent = file.name;
-  // Step 3 — to be implemented
-  alert('Upload lista ufficiale — coming soon nello Step 3!');
+  document.getElementById('castUploadLabel').textContent = '⏳ Analisi in corso...';
+  try {
+    const buf = await file.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let bin = ''; const chunk = 8192;
+    for (let i = 0; i < bytes.byteLength; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    const b64 = btoa(bin);
+
+    let cast = null;
+    if (file.name.endsWith('.pdf')) {
+      // Use PDF.js parser
+      const tmpDoc = await pdfjsLib.getDocument({ data: atob(b64) }).promise;
+      let text = '';
+      for (let p = 1; p <= Math.min(3, tmpDoc.numPages); p++) {
+        const pg = await tmpDoc.getPage(p);
+        const tc = await pg.getTextContent();
+        text += tc.items.map(i => i.str).join('\n') + '\n';
+      }
+      cast = parseCastFromText(text);
+    }
+
+    if (!cast) {
+      document.getElementById('castUploadLabel').textContent = '⚠ Lista non rilevata nel documento';
+      return;
+    }
+
+    const userWants = await handlePdlCastPopup(cast);
+    if (userWants) {
+      await sb.from('cast_list').delete().eq('analysis_id', currentAnalysisId);
+      const rows = cast.map(c => ({ analysis_id: currentAnalysisId, character_id: c.character_id, nome: c.nome, fonte: 'ufficiale' }));
+      await sb.from('cast_list').insert(rows);
+      castData = await loadCastFromSupabase(currentAnalysisId);
+      renderCastTab(castData, false);
+      document.getElementById('castUploadLabel').textContent = `✓ ${cast.length} personaggi importati`;
+    } else {
+      document.getElementById('castUploadLabel').textContent = 'Nessun file selezionato';
+    }
+  } catch(e) {
+    document.getElementById('castUploadLabel').textContent = '⚠ ' + e.message;
+  }
 }
 let pdlData = null;
 let pdlShootingData = {};
@@ -2867,6 +2904,115 @@ function isSceneCritical(scNum) {
   return false;
 }
 
+// ══ CAST PARSER — from PDL PDF text ══
+async function extractCastFromPdf(b64) {
+  try {
+    if (!modalPdfDoc) {
+      const bin = atob(b64);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      modalPdfDoc = await pdfjsLib.getDocument({ data: arr }).promise;
+    }
+    // Read first 3 pages only
+    const totalPages = modalPdfDoc.numPages;
+    const pagesToRead = Math.min(3, totalPages);
+    let fullText = '';
+    for (let p = 1; p <= pagesToRead; p++) {
+      const page = await modalPdfDoc.getPage(p);
+      const tc = await page.getTextContent();
+      fullText += tc.items.map(i => i.str).join('\n') + '\n';
+    }
+    return parseCastFromText(fullText);
+  } catch(e) {
+    console.log('Cast PDF extract error:', e.message);
+    return null;
+  }
+}
+
+function parseCastFromText(text) {
+  // Find header: CAST, CAST MEMBERS, ATTORI:, PERSONAGGI
+  const headerRe = /(?:CAST(?:\s*MEMBERS?)?|ATTORI|PERSONAGGI)\s*:?\s*\n/i;
+  const headerMatch = headerRe.exec(text);
+  if (!headerMatch) return null;
+
+  // Extract block after header
+  const block = text.slice(headerMatch.index + headerMatch[0].length);
+
+  // Parse lines: "1.NAME", "3M.NAME (note)", "100.NAME"
+  const lineRe = /^(\d+M?)\.(.+)$/gm;
+  const cast = [];
+  let m;
+  while ((m = lineRe.exec(block)) !== null) {
+    const rawId  = m[1].replace('M', '');
+    const charId = parseInt(rawId, 10);
+    if (isNaN(charId)) continue;
+
+    let nome = m[2].trim();
+    // Remove notes in parentheses: "(Stunt - Sc 2)"
+    nome = nome.replace(/\s*\(.*?\)\s*/g, '').trim();
+    // Take only first role if multiple via backslash: "Duse\Ellida\Ecuba"
+    nome = nome.split('\\')[0].trim();
+    // Skip empty names
+    if (!nome) continue;
+
+    cast.push({ character_id: charId, nome, fonte: 'ufficiale' });
+    // Stop if we hit something that looks like schedule content (INT/EXT pattern)
+    if (/^(?:INT|EXT|I\/E)\b/i.test(nome)) break;
+  }
+
+  return cast.length >= 3 ? cast : null;
+}
+
+async function handlePdlCastPopup(cast) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center';
+    overlay.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 32px;max-width:440px;width:90%">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:var(--white);margin-bottom:6px">Lista Cast rilevata nel PDL</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px">${cast.length} personaggi trovati — lista ufficiale del reparto regia.</div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;max-height:180px;overflow-y:auto;margin-bottom:18px;font-family:'DM Mono',monospace;font-size:10px;line-height:1.8">
+          ${cast.slice(0,20).map(c=>`<span style="color:var(--yellow)">${c.character_id}</span>  ${c.nome}`).join('<br>')}
+          ${cast.length > 20 ? `<br><span style="color:var(--muted)">...e altri ${cast.length-20}</span>` : ''}
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button id="castPdlNo"  style="padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:13px">Ignora</button>
+          <button id="castPdlSi"  style="padding:9px 18px;border-radius:8px;border:none;background:var(--yellow);color:#000;font-weight:700;cursor:pointer;font-size:13px">✓ Aggiorna lista Cast</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#castPdlSi').onclick = () => { document.body.removeChild(overlay); resolve(true); };
+    overlay.querySelector('#castPdlNo').onclick  = () => { document.body.removeChild(overlay); resolve(false); };
+  });
+}
+
+async function processPdlCast(b64) {
+  const cast = await extractCastFromPdf(b64);
+  if (!cast) return; // No cast found silently
+
+  const userWants = await handlePdlCastPopup(cast);
+  if (!userWants) return;
+
+  // Save as official cast
+  if (currentAnalysisId) {
+    await sb.from('cast_list').delete().eq('analysis_id', currentAnalysisId);
+    const rows = cast.map(c => ({
+      analysis_id:  currentAnalysisId,
+      character_id: c.character_id,
+      nome:         c.nome,
+      fonte:        'ufficiale'
+    }));
+    await sb.from('cast_list').insert(rows);
+    castData = await loadCastFromSupabase(currentAnalysisId);
+    renderCastTab(castData, false); // no alert — list is official
+    // Toast
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--yellow);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--yellow);z-index:9999;white-space:nowrap;';
+    toast.textContent = `✓ Lista Cast aggiornata — ${cast.length} personaggi`;
+    document.body.appendChild(toast); setTimeout(() => toast.remove(), 3500);
+  }
+}
+
 async function loadPdlFile(input) {
   const f = input.files[0];
   if (!f) return;
@@ -2909,6 +3055,8 @@ async function loadPdlFile(input) {
     renderPdlDashboard();
     // Save to Supabase
     if (currentAnalysisId) savePdlToSupabase();
+    // Check for cast list in PDL (async, non-blocking)
+    processPdlCast(b64);
   } catch(err) {
     label.innerHTML = '⚠ '+err.message;
     setTimeout(()=>{label.innerHTML='📋 Seleziona PDF<input type="file" accept=".pdf" style="display:none" onchange="loadPdlFile(this)">';},3000);
@@ -2943,6 +3091,8 @@ async function loadUpdatedPdlFile(input) {
     localStorage.setItem('pdl_full_bk_'+pdlData.titolo,JSON.stringify(pdlData));
     renderPdlDashboard();
     if(currentAnalysisId) savePdlToSupabase();
+    // Check for updated cast list
+    processPdlCast(b64);
     const toast=document.createElement('div');
     toast.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--yellow);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--yellow);z-index:9999;white-space:nowrap;';
     toast.textContent='✓ PDL aggiornato — '+(pdlData.versione||'nuova versione');
