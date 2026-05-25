@@ -2907,21 +2907,20 @@ function isSceneCritical(scNum) {
 // ══ CAST PARSER — from PDL PDF text ══
 async function extractCastFromPdf(b64) {
   try {
-    if (!modalPdfDoc) {
-      const bin = atob(b64);
-      const arr = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-      modalPdfDoc = await pdfjsLib.getDocument({ data: arr }).promise;
-    }
-    // Read first 3 pages only
-    const totalPages = modalPdfDoc.numPages;
-    const pagesToRead = Math.min(3, totalPages);
+    // Always create a fresh doc — never reuse modalPdfDoc (which is the screenplay)
+    const bin = atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    const doc = await pdfjsLib.getDocument({ data: arr }).promise;
+
+    const pagesToRead = Math.min(3, doc.numPages);
     let fullText = '';
     for (let p = 1; p <= pagesToRead; p++) {
-      const page = await modalPdfDoc.getPage(p);
+      const page = await doc.getPage(p);
       const tc = await page.getTextContent();
       fullText += tc.items.map(i => i.str).join('\n') + '\n';
     }
+    console.log('[CastParser] testo estratto (prime 3 pag):', fullText.slice(0, 400));
     return parseCastFromText(fullText);
   } catch(e) {
     console.log('Cast PDF extract error:', e.message);
