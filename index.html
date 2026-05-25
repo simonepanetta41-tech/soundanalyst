@@ -2784,7 +2784,7 @@ async function handleCastUpload(input) {
       const mediaType = file.type || 'image/jpeg';
       const data = await callApi('api/chat', {
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2000,
+        max_tokens: 4000,
         system: 'Sei un estrattore di dati. Rispondi ESCLUSIVAMENTE con un array JSON. Zero testo extra. Zero markdown. Zero backtick. Solo il JSON grezzo che inizia con [ e finisce con ].',
         messages: [{ role: 'user', content: [
           { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
