@@ -2213,26 +2213,58 @@ async function extractTextFromPages(pageNums) {
   }
 }
 
-async function buildRagContext(userText) {
-  const sceneNums = detectSceneNumbers(userText);
+// Classifies ambiguous messages (number present but no scene keyword) via Haiku
+async function classifyMessageIntent(text) {
+  const recent = chatHistory.slice(-4).map(m => `${m.role}: ${typeof m.content === 'string' ? m.content : ''}`).join('\n');
+  try {
+    const data = await callApi('api/chat', {
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 60,
+      system: 'Sei un classificatore di intento. Rispondi SOLO con JSON valido, nessun testo aggiuntivo.',
+      messages: [{ role: 'user', content: `Contesto recente:\n${recent}\n\nNuovo messaggio: "${text}"\n\nRispondi SOLO con JSON: {"tipo":"scena|pdl|generico","numeri":[numeri scena se tipo=scena]}` }]
+    });
+    const raw = data.content.map(b => b.text || '').join('').trim();
+    return JSON.parse(raw.replace(/```json|```/g, '').trim());
+  } catch(e) {
+    console.log('Classifier error:', e.message);
+    return { tipo: 'generico', numeri: [] };
+  }
+}
 
-  // Always update debug with at least what was detected
+async function buildRagContext(userText) {
+  let sceneNums = detectSceneNumbers(userText);
+  let classifiedBy = 'keyword';
+
+  // No explicit keyword — check if there are bare numbers worth classifying
   if (!sceneNums.length) {
-    lastRagContext = { sceneNums: [], foundScenes: [], pages: [], info: 'Nessun numero di scena rilevato nel messaggio.' };
-    updateRagDebug(); return null;
+    const bareNumbers = userText.match(/\b(\d+)\b/g);
+    if (!bareNumbers) {
+      lastRagContext = { sceneNums: [], foundScenes: [], pages: [], info: 'Nessun numero nel messaggio — nessun RAG.' };
+      updateRagDebug(); return null;
+    }
+    // Ambiguous: has numbers but no scene keyword → ask Haiku
+    lastRagContext = { sceneNums: [], foundScenes: [], pages: [], info: '🤔 Classificazione in corso con Haiku...' };
+    updateRagDebug();
+    const result = await classifyMessageIntent(userText);
+    if (result.tipo !== 'scena' || !result.numeri?.length) {
+      lastRagContext = { sceneNums: [], foundScenes: [], pages: [], info: `Haiku ha classificato: "${result.tipo}" — nessun RAG attivato.` };
+      updateRagDebug(); return null;
+    }
+    sceneNums = result.numeri.map(n => String(n).toUpperCase());
+    classifiedBy = 'haiku';
   }
 
   if (!pdfB64Array.length) {
-    lastRagContext = { sceneNums, foundScenes: [], pages: [], error: 'PDF non in memoria — ricarica la sceneggiatura per abilitare il RAG.' };
+    lastRagContext = { sceneNums, foundScenes: [], pages: [], classifiedBy, error: 'PDF non in memoria — ricarica la sceneggiatura per abilitare il RAG.' };
     updateRagDebug(); return null;
   }
 
   if (!analysisData?.scene_index) {
-    lastRagContext = { sceneNums, foundScenes: [], pages: [], error: 'scene_index assente in questa analisi — rianalizza la sceneggiatura per abilitare il RAG.' };
+    lastRagContext = { sceneNums, foundScenes: [], pages: [], classifiedBy, error: 'scene_index assente — rianalizza la sceneggiatura per abilitare il RAG.' };
     updateRagDebug(); return null;
   }
 
-  // For each detected scene: fetch start page + next (catches 2-page scenes), max 3 scenes
+  // Fetch scene pages (start + next to cover 2-page scenes), max 3 scenes
   const pagesToFetch = new Set();
   const foundScenes  = [];
   for (const sc of sceneNums.slice(0, 3)) {
@@ -2240,23 +2272,23 @@ async function buildRagContext(userText) {
     if (pg != null) {
       const realPage = pg + pageOffset;
       pagesToFetch.add(realPage);
-      pagesToFetch.add(realPage + 1); // overflow page
+      pagesToFetch.add(realPage + 1);
       foundScenes.push({ sc, page: realPage });
     }
   }
 
   if (!pagesToFetch.size) {
-    lastRagContext = { sceneNums, foundScenes: [], pages: [], notFound: true };
+    lastRagContext = { sceneNums, foundScenes: [], pages: [], classifiedBy, notFound: true };
     updateRagDebug(); return null;
   }
 
   const extracted = await extractTextFromPages([...pagesToFetch].sort((a, b) => a - b));
   if (!extracted) {
-    lastRagContext = { sceneNums, foundScenes, pages: [], error: 'PDF non disponibile' };
+    lastRagContext = { sceneNums, foundScenes, pages: [], classifiedBy, error: 'Errore estrazione testo dal PDF.' };
     updateRagDebug(); return null;
   }
 
-  lastRagContext = { sceneNums, foundScenes, pages: extracted };
+  lastRagContext = { sceneNums, foundScenes, pages: extracted, classifiedBy };
   updateRagDebug();
 
   return extracted.map(p => `[Pagina ${p.page}]\n${p.text}`).join('\n\n');
@@ -2270,7 +2302,7 @@ function updateRagDebug() {
 
   if (!lastRagContext) { content.textContent = 'Nessuna richiesta ancora.'; return; }
 
-  const { sceneNums, foundScenes, pages, notFound, error, info } = lastRagContext;
+  const { sceneNums, foundScenes, pages, notFound, error, info, classifiedBy } = lastRagContext;
   let html = '';
 
   if (info) {
@@ -2278,9 +2310,12 @@ function updateRagDebug() {
     content.innerHTML = html; return;
   }
 
-  // Detected scenes
+  // Detected scenes + how they were found
+  const badge = classifiedBy === 'haiku'
+    ? `<span style="background:rgba(110,231,183,0.15);color:var(--green);border-radius:4px;padding:1px 6px;font-size:9px;margin-left:6px">via Haiku</span>`
+    : `<span style="background:rgba(245,230,66,0.12);color:var(--yellow);border-radius:4px;padding:1px 6px;font-size:9px;margin-left:6px">keyword</span>`;
   html += `<div style="margin-bottom:8px">
-    <span style="color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:0.08em">Scene rilevate nel messaggio</span><br>
+    <span style="color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:0.08em">Scene rilevate</span>${badge}<br>
     <span style="color:var(--yellow)">${sceneNums.length ? sceneNums.map(s=>'SC.'+s).join(', ') : '—'}</span>
   </div>`;
 
