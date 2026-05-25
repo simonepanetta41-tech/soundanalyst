@@ -2189,10 +2189,8 @@ function detectSceneNumbers(text) {
   return [...matches];
 }
 
-// Detects if a page text starts a new scene (INT./EXT. header)
-function pageStartsNewScene(text) {
-  return /^(?:INT\.|EXT\.|I\/E\.|E\/I\.)/i.test(text.trimStart());
-}
+// Regex that matches a scene header (INT./EXT.) wherever it appears in the text
+const SCENE_HEADER_RE = /\b(?:INT\.|EXT\.|I\/E\.|E\/I\.)\s+/i;
 
 // Extract page text as raw string
 async function getPageText(pNum) {
@@ -2207,15 +2205,28 @@ async function getPageText(pNum) {
 // Fetch pages for a scene: start page + follow overflow until next scene header (max 5 pages)
 async function fetchScenePages(startPage) {
   const pages = [];
+
+  // First page: always include in full
   const firstText = await getPageText(startPage);
   if (!firstText) return pages;
   pages.push({ page: startPage, text: firstText });
 
+  // Overflow pages: include only content before the next scene header
   for (let p = startPage + 1; p <= startPage + 4; p++) {
     const text = await getPageText(p);
     if (!text) break;
-    // Stop if this page opens with a new scene header
-    if (pageStartsNewScene(text)) break;
+
+    const match = SCENE_HEADER_RE.exec(text);
+    if (match && match.index > 0) {
+      // New scene found mid-page — include only the text before it, then stop
+      const textBefore = text.slice(0, match.index).trim();
+      if (textBefore) pages.push({ page: p, text: textBefore });
+      break;
+    } else if (match && match.index === 0) {
+      // New scene starts right at the top of this page — stop, don't include
+      break;
+    }
+    // No scene header found — include full page and continue
     pages.push({ page: p, text });
   }
   return pages;
