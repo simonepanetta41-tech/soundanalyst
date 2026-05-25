@@ -1834,7 +1834,6 @@ Rispondi SOLO con il JSON.`;
 
 // ══ ANALYSIS ══
 async function startAnalysis() {
-  const key = getKey();
   document.getElementById('errorBox').classList.remove('show');
   document.getElementById('analyzeBtn').disabled = true;
   document.getElementById('homePage').style.display = 'none';
@@ -2304,7 +2303,6 @@ async function sendChat() {
   const input = document.getElementById('chatInput');
   const text  = input.value.trim();
   if (!text) return;
-  const key = getKey();
   input.value = ''; input.style.height = 'auto';
   document.querySelector('.chat-suggestions').style.display = 'none';
   addMsg('user', text);
