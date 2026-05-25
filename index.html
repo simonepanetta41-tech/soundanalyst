@@ -3034,9 +3034,6 @@ async function processPdlCast(b64) {
   console.log('[CastParser] utente ha scelto:', userWants);
   if (!userWants) return;
 
-  const userWants = await handlePdlCastPopup(cast);
-  if (!userWants) return;
-
   // Save as official cast
   if (currentAnalysisId) {
     await sb.from('cast_list').delete().eq('analysis_id', currentAnalysisId);
