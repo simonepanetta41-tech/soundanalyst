@@ -764,6 +764,8 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       <button style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:0 4px;line-height:1" onclick="closePdlDayModal()">✕</button>
     </div>
     <div class="pdl-scene-chips" id="pdlModalChips"></div>
+    <div class="pdl-scene-chips" id="pdlModalChips"></div>
+    <div id="pdlModalCast" style="display:none;margin-bottom:14px"></div>
     <div style="margin-bottom:14px">
       <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Note giornata</div>
       <textarea id="pdlModalNotes" placeholder="Note..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--white);font-family:'DM Mono',monospace;font-size:12px;outline:none;resize:none;min-height:70px;transition:border-color 0.15s"></textarea>
@@ -2957,17 +2959,17 @@ function parseCastFromText(text) {
     if (/^(?:INT|EXT|I\/E|E\/I)\b/i.test(line)) break;
     if (/^(?:PIANO|PDL|REGIA|End of|Fine del|DAY)\b/i.test(line)) break;
 
-    // Layout A: "1.NOME" or "3M.NOME" or "M1.NOME"
     const inlineMatch = inlineRe.exec(line);
     if (inlineMatch) {
       const rawId = inlineMatch[1];
       const isMinore = rawId.startsWith('M') || rawId.endsWith('M');
+      const mprefix = rawId.startsWith('M');
       const charId = parseInt(rawId.replace(/M/g, ''), 10);
       let nome = inlineMatch[2].trim()
         .replace(/\s*\(.*?\)\s*/g, '')
         .split('\\')[0].trim();
       if (nome && !isNaN(charId)) {
-        cast.push({ character_id: charId, nome, minore: isMinore, fonte: 'ufficiale' });
+        cast.push({ character_id: charId, nome, minore: isMinore, _mprefix: mprefix, fonte: 'ufficiale' });
       }
       i++; continue;
     }
@@ -2982,9 +2984,10 @@ function parseCastFromText(text) {
           .split('\\')[0].trim();
         const rawId = numMatch[1];
         const isMinore = rawId.startsWith('M') || rawId.endsWith('M');
+        const mprefix = rawId.startsWith('M');
         const charId = parseInt(rawId.replace(/M/g, ''), 10);
         if (nome && !isNaN(charId)) {
-          cast.push({ character_id: charId, nome, minore: isMinore, fonte: 'ufficiale' });
+          cast.push({ character_id: charId, nome, minore: isMinore, _mprefix: mprefix, fonte: 'ufficiale' });
         }
       }
       i++; continue;
@@ -2993,10 +2996,12 @@ function parseCastFromText(text) {
     i++;
   }
 
-  // Deduplicate by character_id, keep last occurrence
   const seen = new Map();
-  for (const c of cast) seen.set(c.character_id, c);
-  const result = [...seen.values()].sort((a, b) => a.character_id - b.character_id);
+  for (const c of cast) seen.set(c.character_id + (c._mprefix ? '_M' : ''), c);
+  const result = [...seen.values()].sort((a, b) => {
+    if (a._mprefix !== b._mprefix) return a._mprefix ? 1 : -1;
+    return a.character_id - b.character_id;
+  }).map(c => { delete c._mprefix; return c; });
 
   return result.length >= 3 ? result : null;
 }
@@ -3374,6 +3379,30 @@ function renderPdlModalChips(g) {
     const crit=isSceneCritical(sc.numero);
     return`<div class="pdl-chip ${typeClass} ${stato==='done'?'girato':''} ${stato==='standby'?'standby':''} ${crit?'critical':''}" style="${crit?'box-shadow:0 0 0 1.5px #e53e3e':''}" onclick="cyclePdlSceneModal('${sc.numero}')" title="${sc.location||''} — ${sc.int_ext||''} ${sc.momento||''}">${icon?`<span style="font-size:11px;font-weight:700">${icon}</span>`:''}<span class="pdl-chip-num" onclick="openSceneFromPdl('${sc.numero}',event)" style="text-decoration:underline;text-decoration-color:rgba(255,255,255,0.3);text-underline-offset:2px">${sc.numero}</span><span style="font-size:9px;opacity:0.7">${sc.int_ext||''} ${sc.momento||''}</span></div>`;
   }).join('');
+
+  // Cast IDs row
+  const castEl = document.getElementById('pdlModalCast');
+  const allIds = [...new Set((g.scene||[]).flatMap(sc => sc.cast||[]))].sort((a,b)=>Number(a)-Number(b));
+  if (allIds.length && castData.length) {
+    // Build lookup map
+    const castMap = new Map(castData.map(c => [String(c.id_ufficiale ?? c.character_id), c]));
+    const chips = allIds.map(id => {
+      const c = castMap.get(String(id));
+      const nome = c ? c.nome : '?';
+      const isM = c?.minore;
+      return `<span title="${nome}" style="display:inline-flex;align-items:center;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-family:'DM Mono',monospace;font-size:10px;color:var(--white-dim);white-space:nowrap">
+        <span style="color:var(--yellow);font-weight:700">${id}</span>
+        <span style="color:var(--muted)">${nome}${isM?' <span style="font-size:8px;opacity:0.7">M</span>':''}</span>
+      </span>`;
+    }).join('');
+    castEl.style.display = 'block';
+    castEl.innerHTML = `
+      <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Cast — ${allIds.length} presenze</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">${chips}</div>`;
+  } else {
+    castEl.style.display = 'none';
+  }
+
   updatePdlModalStatus(g);
 }
 
