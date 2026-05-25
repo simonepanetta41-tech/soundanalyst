@@ -2189,28 +2189,36 @@ function detectSceneNumbers(text) {
   return [...matches];
 }
 
-async function extractTextFromPages(pageNums) {
-  if (!pdfB64Array.length) return null;
+// Detects if a page text starts a new scene (INT./EXT. header)
+function pageStartsNewScene(text) {
+  return /^(?:INT\.|EXT\.|I\/E\.|E\/I\.)/i.test(text.trimStart());
+}
+
+// Extract page text as raw string
+async function getPageText(pNum) {
+  if (!modalPdfDoc || pNum < 1 || pNum > modalPdfDoc.numPages) return null;
   try {
-    if (!modalPdfDoc) {
-      const bin = atob(pdfB64Array[0]);
-      const arr = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-      modalPdfDoc = await pdfjsLib.getDocument({ data: arr }).promise;
-    }
-    const results = [];
-    for (const pNum of pageNums) {
-      if (pNum < 1 || pNum > modalPdfDoc.numPages) continue;
-      const page = await modalPdfDoc.getPage(pNum);
-      const tc   = await page.getTextContent();
-      const text = tc.items.map(i => i.str).join(' ').replace(/\s+/g, ' ').trim();
-      if (text) results.push({ page: pNum, text });
-    }
-    return results.length ? results : null;
-  } catch(e) {
-    console.log('RAG extract error:', e.message);
-    return null;
+    const page = await modalPdfDoc.getPage(pNum);
+    const tc   = await page.getTextContent();
+    return tc.items.map(i => i.str).join(' ').replace(/\s+/g, ' ').trim();
+  } catch(e) { return null; }
+}
+
+// Fetch pages for a scene: start page + follow overflow until next scene header (max 5 pages)
+async function fetchScenePages(startPage) {
+  const pages = [];
+  const firstText = await getPageText(startPage);
+  if (!firstText) return pages;
+  pages.push({ page: startPage, text: firstText });
+
+  for (let p = startPage + 1; p <= startPage + 4; p++) {
+    const text = await getPageText(p);
+    if (!text) break;
+    // Stop if this page opens with a new scene header
+    if (pageStartsNewScene(text)) break;
+    pages.push({ page: p, text });
   }
+  return pages;
 }
 
 // Classifies ambiguous messages (number present but no scene keyword) via Haiku
@@ -2264,34 +2272,46 @@ async function buildRagContext(userText) {
     updateRagDebug(); return null;
   }
 
-  // Fetch scene pages (start + next to cover 2-page scenes), max 3 scenes
-  const pagesToFetch = new Set();
-  const foundScenes  = [];
-  for (const sc of sceneNums.slice(0, 3)) {
-    const pg = analysisData.scene_index[sc] ?? analysisData.scene_index[sc.toLowerCase()];
-    if (pg != null) {
-      const realPage = pg + pageOffset;
-      pagesToFetch.add(realPage);
-      pagesToFetch.add(realPage + 1);
-      foundScenes.push({ sc, page: realPage });
+  // Ensure PDF doc is loaded once
+  if (!modalPdfDoc) {
+    try {
+      const bin = atob(pdfB64Array[0]);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      modalPdfDoc = await pdfjsLib.getDocument({ data: arr }).promise;
+    } catch(e) {
+      lastRagContext = { sceneNums, foundScenes: [], pages: [], classifiedBy, error: 'Errore caricamento PDF: ' + e.message };
+      updateRagDebug(); return null;
     }
   }
 
-  if (!pagesToFetch.size) {
+  // For each scene: follow pages dynamically until next scene header (max 5 pages)
+  const allPages = [];
+  const foundScenes = [];
+  const seenPages = new Set();
+
+  for (const sc of sceneNums.slice(0, 3)) {
+    const pg = analysisData.scene_index[sc] ?? analysisData.scene_index[sc.toLowerCase()];
+    if (pg == null) continue;
+    const startPage = pg + pageOffset;
+    foundScenes.push({ sc, page: startPage });
+    const scenePages = await fetchScenePages(startPage);
+    for (const p of scenePages) {
+      if (!seenPages.has(p.page)) { seenPages.add(p.page); allPages.push(p); }
+    }
+  }
+
+  if (!foundScenes.length) {
     lastRagContext = { sceneNums, foundScenes: [], pages: [], classifiedBy, notFound: true };
     updateRagDebug(); return null;
   }
 
-  const extracted = await extractTextFromPages([...pagesToFetch].sort((a, b) => a - b));
-  if (!extracted) {
-    lastRagContext = { sceneNums, foundScenes, pages: [], classifiedBy, error: 'Errore estrazione testo dal PDF.' };
-    updateRagDebug(); return null;
-  }
+  allPages.sort((a, b) => a.page - b.page);
 
-  lastRagContext = { sceneNums, foundScenes, pages: extracted, classifiedBy };
+  lastRagContext = { sceneNums, foundScenes, pages: allPages, classifiedBy };
   updateRagDebug();
 
-  return extracted.map(p => `[Pagina ${p.page}]\n${p.text}`).join('\n\n');
+  return allPages.map(p => `[Pagina ${p.page}]\n${p.text}`).join('\n\n');
 }
 
 function updateRagDebug() {
