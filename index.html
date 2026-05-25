@@ -3382,13 +3382,13 @@ function renderPdlModalChips(g) {
 
     // Cast pills for this scene
     const sceneIds = (sc.cast||[]).slice().sort((a,b) => Number(a)-Number(b));
-    const castPills = sceneIds.length ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:5px">${
+    const castPills = sceneIds.length ? `<div style="display:flex;flex-direction:column;gap:2px;margin-top:5px">${
       sceneIds.map(id => {
         const c = castMap.get(String(id));
         const nome = c ? c.nome : '';
         const isM = c?.minore;
-        return `<span title="${nome}" style="display:inline-flex;align-items:center;gap:2px;background:rgba(0,0,0,0.25);border-radius:4px;padding:1px 5px;font-family:'DM Mono',monospace;font-size:9px;white-space:nowrap">
-          <span style="color:var(--yellow);font-weight:700">${id}</span>${nome ? `<span style="color:rgba(255,255,255,0.55)">${nome}${isM?' M':''}</span>` : ''}
+        return `<span style="display:inline-flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:9px;white-space:nowrap">
+          <span style="color:var(--yellow);font-weight:700;min-width:16px">${id}</span>${nome ? `<span style="color:rgba(255,255,255,0.55)">${nome}${isM?' M':''}</span>` : ''}
         </span>`;
       }).join('')
     }</div>` : '';
