@@ -574,6 +574,7 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       <div class="result-tabs">
         <button class="result-tab active" id="tabSpoglio" onclick="switchResultTab('spoglio')">📄 Spoglio Suono</button>
         <button class="result-tab" id="tabPdl" onclick="switchResultTab('pdl')">📋 Piano di Lavorazione</button>
+        <button class="result-tab" id="tabCast" onclick="switchResultTab('cast')">🎭 Cast ID</button>
       </div>
 
       <!-- SPOGLIO TAB -->
@@ -706,6 +707,42 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
           </div>
         </div>
       </div><!-- end pdlSection -->
+
+      <!-- CAST TAB -->
+      <div id="castSection" style="display:none">
+        <div id="castContent" style="max-width:700px;margin:0 auto;padding:24px 0">
+
+          <!-- Alert provvisorio -->
+          <div id="castAlert" style="display:none;background:rgba(245,230,66,0.08);border:1px solid rgba(245,230,66,0.3);border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px">
+            <span style="font-size:16px">⚠️</span>
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--yellow);margin-bottom:3px">Lista provvisoria</div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.5">Questa lista è ricavata automaticamente dalla sceneggiatura. Gli ID potrebbero non corrispondere a quelli ufficiali del reparto regia. Carica la lista ufficiale qui sotto per sostituirla.</div>
+            </div>
+          </div>
+
+          <!-- Upload ufficiale -->
+          <div style="border:1px dashed var(--border);border-radius:10px;padding:18px 20px;margin-bottom:24px">
+            <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:6px">Carica lista ID ufficiale</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:12px">PDF o JPEG della lista cast dal reparto regia. Sostituirà la lista provvisoria.</div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <input type="file" id="castUploadInput" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleCastUpload(this)">
+              <button onclick="document.getElementById('castUploadInput').click()" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--white);cursor:pointer;font-size:12px">📎 Scegli file</button>
+              <span id="castUploadLabel" style="font-size:11px;color:var(--muted)">Nessun file selezionato</span>
+            </div>
+          </div>
+
+          <!-- Tabella cast -->
+          <div id="castTableWrap"></div>
+
+          <!-- Bottone genera provvisoria -->
+          <div id="castGeneraBtn" style="display:none;margin-top:16px;text-align:center">
+            <button onclick="generaCastProvvisorio()" style="padding:10px 22px;border-radius:8px;border:1px solid var(--yellow);background:none;color:var(--yellow);cursor:pointer;font-size:13px;font-weight:600">Genera lista ID provvisoria</button>
+            <div style="font-size:10px;color:var(--muted);margin-top:6px">Ricavata dalla sceneggiatura già analizzata</div>
+          </div>
+
+        </div>
+      </div><!-- end castSection -->
 
     </div><!-- end resultsPage -->
 
@@ -1641,6 +1678,10 @@ async function loadFromHistory(id) {
       setTimeout(() => toast.remove(), 3000);
     }
   } catch(e) { console.log('PDF load from storage:', e.message); }
+
+  // Load cast in background
+  castData = await loadCastFromSupabase(id);
+  renderCastTab(castData, castData.length > 0 && castData[0]?.fonte === 'provvisoria');
 }
 
 async function deleteAnalysis(id, e) {
@@ -1654,6 +1695,52 @@ async function clearAllHistory() {
   if (!confirm('Sei sicuro? Tutte le analisi verranno eliminate.')) return;
   await sb.from('analyses').delete().eq('user_id', currentUser.id);
   loadHistory();
+}
+
+// ══ CAST ══
+let castData = []; // in-memory, synced with cast_list table
+
+async function saveCastToSupabase(analysisId, castArray) {
+  if (!analysisId || !castArray?.length) return;
+  try {
+    // Delete existing rows for this analysis (re-import)
+    await sb.from('cast_list').delete().eq('analysis_id', analysisId);
+    const rows = castArray.map(c => ({
+      analysis_id:  analysisId,
+      character_id: c.character_id,
+      nome:         c.nome,
+      pose_stimate: c.pose_stimate,
+      fonte:        'provvisoria'
+    }));
+    await sb.from('cast_list').insert(rows);
+  } catch(e) { console.error('Cast save error:', e.message); }
+}
+
+async function loadCastFromSupabase(analysisId) {
+  if (!analysisId) return [];
+  try {
+    const { data } = await sb.from('cast_list').select('*').eq('analysis_id', analysisId).order('character_id');
+    return data || [];
+  } catch(e) { return []; }
+}
+
+function showCastPopup() {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center';
+    overlay.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 32px;max-width:420px;width:90%">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:var(--white);margin-bottom:10px">Lista ID provvisoria</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:22px">Vuoi generare una lista ID personaggi provvisoria basata sulle presenze in sceneggiatura?<br><br>Potrai sostituirla in qualsiasi momento con la lista ufficiale del reparto regia.</div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button id="castPopupNo"  style="padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:13px">Non ora</button>
+          <button id="castPopupSi"  style="padding:9px 18px;border-radius:8px;border:none;background:var(--yellow);color:#000;font-weight:700;cursor:pointer;font-size:13px">Sì, genera</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#castPopupSi').onclick = () => { document.body.removeChild(overlay); resolve(true); };
+    overlay.querySelector('#castPopupNo').onclick = () => { document.body.removeChild(overlay); resolve(false); };
+  });
 }
 
 async function saveAnalysis(data) {
@@ -1823,7 +1910,8 @@ Struttura JSON richiesta:
   "voiceover": { "presente": false, "scene": [{ "scena": "string", "personaggio": "string" }] },
   "crowd_parlante": { "presente": false, "scene": [{ "scena": "string", "note": "string" }] },
   "animali": { "presente": false, "scene": [{ "scena": "string", "animale": "string" }] },
-  "stunt_effetti": { "presente": false, "scene": [{ "scena": "string", "tipo": "string" }] }
+  "stunt_effetti": { "presente": false, "scene": [{ "scena": "string", "tipo": "string" }] },
+  "cast_provvisorio": [{ "character_id": 1, "nome": "string", "pose_stimate": 0 }]
 }
 
 Regole importanti:
@@ -1833,6 +1921,7 @@ Regole importanti:
 - camera_car: scene girate su veicoli con ripresa dall'auto
 - mezzi_movimento: escludi camera car, includi camion/moto/apecar/barca/treno/etc.
 - IMPORTANTE: ogni campo "scena" deve includere il numero di pagina PDF nel formato (p.X) — es: "SC.12 - EXT. BOSCO - GIORNO (p.34)"
+- cast_provvisorio: elenca TUTTI i personaggi con dialogo o azione significativa. Conta le scene in cui ogni personaggio appare (pose_stimate). Ordina per pose_stimate decrescente e assegna character_id progressivo (1 = più presente). Includi solo personaggi veri, non "VOCE FUORI CAMPO" generica, non comparse senza nome.
 Rispondi SOLO con il JSON.`;
 
 // ══ ANALYSIS ══
@@ -1901,9 +1990,27 @@ async function startAnalysis() {
     const data = JSON.parse(raw.replace(/```json|```/g,'').trim());
 
     await saveAnalysis(data);
+
+    // Save cast silently (always)
+    if (data.cast_provvisorio?.length && currentAnalysisId) {
+      await saveCastToSupabase(currentAnalysisId, data.cast_provvisorio);
+    }
+
     hideHomeShowResults();
     renderResults(data);
     loadNotes(null);
+
+    // Show cast popup after render
+    if (data.cast_provvisorio?.length) {
+      const userWants = await showCastPopup();
+      if (userWants) {
+        castData = await loadCastFromSupabase(currentAnalysisId);
+        renderCastTab(castData, true);
+      } else {
+        castData = await loadCastFromSupabase(currentAnalysisId);
+        renderCastTab(castData, false);
+      }
+    }
 
   } catch(err) { showError(err.message); }
 }
@@ -2009,7 +2116,7 @@ function resetApp() {
   document.getElementById('errorBox').classList.remove('show');
   document.getElementById('riassuntoBox').style.display = 'none';
   document.getElementById('maxInfo').style.display = 'none';
-  chatHistory = []; analysisData = null; currentAnalysisId = null; catNotesData = {};
+  chatHistory = []; analysisData = null; currentAnalysisId = null; catNotesData = {}; castData = [];
   checkReady();
   showPage('home');
 }
@@ -2576,19 +2683,81 @@ document.getElementById('shareResultsContainer').addEventListener('click', e => 
 // ══ RESULT TABS ══
 function switchResultTab(tab) {
   const spoglio = document.getElementById('spoglioSection');
-  const pdl = document.getElementById('pdlSection');
-  if (tab === 'spoglio') {
-    spoglio.style.display = '';
-    pdl.classList.remove('on');
-  } else {
-    spoglio.style.display = 'none';
-    pdl.classList.add('on');
-  }
+  const pdl     = document.getElementById('pdlSection');
+  const cast    = document.getElementById('castSection');
+  spoglio.style.display = tab === 'spoglio' ? '' : 'none';
+  cast.style.display    = tab === 'cast'    ? '' : 'none';
+  if (tab === 'pdl') { pdl.classList.add('on'); } else { pdl.classList.remove('on'); }
   document.getElementById('tabSpoglio').classList.toggle('active', tab === 'spoglio');
-  document.getElementById('tabPdl').classList.toggle('active', tab === 'pdl');
+  document.getElementById('tabPdl').classList.toggle('active',     tab === 'pdl');
+  document.getElementById('tabCast').classList.toggle('active',    tab === 'cast');
 }
 
-// ══ PDL STATE ══
+// ══ CAST RENDER ══
+function renderCastTab(rows, showAlert) {
+  const alert = document.getElementById('castAlert');
+  const wrap  = document.getElementById('castTableWrap');
+  const btn   = document.getElementById('castGeneraBtn');
+  if (!alert || !wrap) return;
+
+  if (!rows?.length) {
+    // No cast yet — show genera button
+    alert.style.display = 'none';
+    wrap.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--muted);font-size:13px">Nessuna lista ID ancora caricata.</div>`;
+    btn.style.display = 'block';
+    return;
+  }
+
+  alert.style.display = showAlert ? 'flex' : 'none';
+  btn.style.display = 'none';
+
+  const fonte = rows[0]?.fonte || 'provvisoria';
+  const isUfficiale = fonte === 'ufficiale';
+
+  wrap.innerHTML = `
+    <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:var(--surface2)">
+            <th style="padding:10px 16px;text-align:left;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);font-weight:600;width:80px">ID</th>
+            <th style="padding:10px 16px;text-align:left;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);font-weight:600">Personaggio</th>
+            <th style="padding:10px 16px;text-align:right;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);font-weight:600;width:80px">${isUfficiale ? 'Ufficiale' : 'Provvisorio'}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((r, i) => `
+            <tr style="border-top:1px solid var(--border);${i%2===0?'background:var(--surface)':'background:var(--surface2)'}">
+              <td style="padding:11px 16px">
+                <span style="display:inline-block;min-width:32px;text-align:center;background:var(--yellow);color:#000;font-weight:700;font-size:13px;border-radius:6px;padding:2px 8px">${r.id_ufficiale ?? r.character_id}</span>
+              </td>
+              <td style="padding:11px 16px;font-size:13px;color:var(--white);font-weight:500">${r.nome}</td>
+              <td style="padding:11px 16px;text-align:right">
+                <span style="font-size:10px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 7px">${isUfficiale ? 'ufficiale' : 'stimato'}</span>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+async function generaCastProvvisorio() {
+  if (!castData.length && currentAnalysisId) {
+    castData = await loadCastFromSupabase(currentAnalysisId);
+  }
+  if (!castData.length) {
+    alert('Nessun dato cast disponibile. Rianalizza la sceneggiatura.');
+    return;
+  }
+  renderCastTab(castData, true);
+}
+
+async function handleCastUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('castUploadLabel').textContent = file.name;
+  // Step 3 — to be implemented
+  alert('Upload lista ufficiale — coming soon nello Step 3!');
+}
 let pdlData = null;
 let pdlShootingData = {};
 let pdlCurrentMonth = new Date().getMonth();
