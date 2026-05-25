@@ -1192,122 +1192,282 @@ function exportPdf() {
   const d = analysisData;
   const W = 210, ml = 18, mr = 18, cw = W - ml - mr;
   let y = 20;
-  const YELLOW = [245, 230, 66];
-  const DARK = [30, 30, 30];
-  const MUTED = [100, 100, 100];
-  const LINE = [220, 220, 220];
 
+  // ── Palette ──
+  const C = {
+    yellow:   [245, 230, 66],
+    yellowBg: [252, 249, 218],
+    dark:     [22,  22,  22],
+    mid:      [55,  55,  55],
+    muted:    [130, 130, 130],
+    light:    [200, 200, 200],
+    rule:     [230, 230, 230],
+    white:    [255, 255, 255],
+    accentBg: [246, 246, 246],
+    noteBg:   [240, 248, 255],
+    noteBdr:  [180, 210, 240],
+  };
+
+  // ── Helpers ──
   function checkPage(need = 10) {
-    if (y + need > 277) { doc.addPage(); y = 18; }
-  }
-  function hline() {
-    doc.setDrawColor(...LINE); doc.setLineWidth(0.3);
-    doc.line(ml, y, W - mr, y); y += 5;
+    if (y + need > 277) { doc.addPage(); y = 20; }
   }
 
-  // HEADER
-  doc.setFillColor(0, 0, 0); doc.rect(0, 0, W, 32, 'F');
-  doc.setFillColor(...YELLOW); doc.rect(0, 32, W, 1.5, 'F');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(22);
-  doc.setTextColor(255, 255, 255); doc.text('Sound', ml, 19);
-  doc.setTextColor(...YELLOW); doc.text('Analyst', ml + doc.getTextWidth('Sound') + 1, 19);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
-  doc.setTextColor(150, 150, 150); doc.text('Spoglio Suono', ml, 26);
-  doc.text(new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' }), W - mr, 26, { align: 'right' });
-  y = 42;
+  function rule(color = C.rule, weight = 0.25) {
+    doc.setDrawColor(...color); doc.setLineWidth(weight);
+    doc.line(ml, y, W - mr, y);
+  }
 
-  // TITLE
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(...DARK);
-  doc.text(d.titolo || 'Senza titolo', ml, y); y += 8;
-  if (d.regia) { doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...MUTED); doc.text(`Regia: ${d.regia}`, ml, y); y += 6; }
-  hline();
+  function gap(h) { y += h; }
 
-  // STATS
-  const stats = [['Scene', d.totale_scene||'—'], ['INT', d.scene_interno||'—'], ['EXT', d.scene_esterno||'—'], ['Max attori', d.max_attori_parlanti?.numero||'—']];
-  const sw = cw / stats.length;
-  stats.forEach(([label, val], i) => {
-    const x = ml + i * sw;
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(...DARK); doc.text(String(val), x, y + 8);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...MUTED); doc.text(label.toUpperCase(), x, y + 14);
+  function sectionTitle(text) {
+    checkPage(14);
+    // left accent bar
+    doc.setFillColor(...C.yellow);
+    doc.rect(ml, y - 3, 2.5, 7, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+    doc.setTextColor(...C.muted);
+    doc.text(text, ml + 6, y + 1);
+    gap(10);
+  }
+
+  // ── COVER BAND ──
+  doc.setFillColor(10, 10, 10);
+  doc.rect(0, 0, W, 36, 'F');
+  // yellow bottom stripe on header
+  doc.setFillColor(...C.yellow);
+  doc.rect(0, 35, W, 1.5, 'F');
+
+  // brand
+  doc.setFillColor(...C.yellow);
+  doc.roundedRect(ml, 8, 11, 11, 1.5, 1.5, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+  doc.setTextColor(10, 10, 10);
+  doc.text('SA', ml + 3.5, 15.5);
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+  doc.setTextColor(...C.white);
+  doc.text('Sound', ml + 15, 15.5);
+  const sw0 = doc.getTextWidth('Sound');
+  doc.setTextColor(...C.yellow);
+  doc.text('Analyst', ml + 15 + sw0 + 1, 15.5);
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+  doc.setTextColor(160, 160, 160);
+  doc.text('SPOGLIO REPARTO SUONO', ml + 15, 22);
+
+  const dateStr = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+  doc.setTextColor(160, 160, 160);
+  doc.text(dateStr, W - mr, 22, { align: 'right' });
+
+  y = 46;
+
+  // ── FILM TITLE BLOCK ──
+  const titleStr = d.titolo || 'Senza titolo';
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(20);
+  doc.setTextColor(...C.dark);
+  doc.text(titleStr, ml, y);
+  gap(8);
+
+  if (d.regia) {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+    doc.setTextColor(...C.muted);
+    doc.text('Regia: ' + d.regia, ml, y);
+    gap(6);
+  }
+
+  gap(2);
+  rule(C.rule); gap(7);
+
+  // ── STATS ROW ──
+  const statsData = [
+    { val: String(d.totale_scene || '—'), lbl: 'SCENE TOTALI' },
+    { val: String(d.scene_interno || '—'), lbl: 'INTERNO' },
+    { val: String(d.scene_esterno || '—'), lbl: 'ESTERNO' },
+    { val: String(d.max_attori_parlanti?.numero || '—'), lbl: 'MAX ATTORI' },
+    { val: String(d.media_attori_parlanti || '—'), lbl: 'MEDIA ATTORI' },
+  ];
+  const boxW = cw / statsData.length;
+  statsData.forEach(({ val, lbl }, i) => {
+    const bx = ml + i * boxW;
+    // subtle bg only on first and last for visual rhythm
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(20);
+    doc.setTextColor(...C.dark);
+    doc.text(val, bx, y + 9);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5);
+    doc.setTextColor(...C.muted);
+    doc.text(lbl, bx, y + 14.5);
+    // thin vertical divider (skip last)
+    if (i < statsData.length - 1) {
+      doc.setDrawColor(...C.rule); doc.setLineWidth(0.2);
+      doc.line(bx + boxW - 4, y + 1, bx + boxW - 4, y + 16);
+    }
   });
-  y += 22; hline();
+  gap(22);
+  rule(C.rule); gap(7);
 
-  // SINOSSI subito dopo header
-  if (d.riassunto) {
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(80,80,80);
-    const sinLines = doc.splitTextToSize(d.riassunto, cw);
-    sinLines.forEach(l => { checkPage(5); doc.text(l, ml, y); y += 4.5; });
-    y += 3; hline();
-  }
-
-  // SCENA CON PIU ATTORI PARLANTI
+  // ── MAX ATTORI BOX ──
   if (d.max_attori_parlanti?.scena) {
-    doc.setFillColor(245, 230, 66, 0.15); doc.setFillColor(252, 249, 220);
-    doc.roundedRect(ml, y - 3, cw, 16, 1, 1, 'F');
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...MUTED);
-    doc.text('SCENA CON PIÙ ATTORI PARLANTI', ml + 3, y + 2);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...DARK);
-    const maxNum = d.max_attori_parlanti.numero || '';
-    const attori = d.max_attori_parlanti.attori ? ` · ${d.max_attori_parlanti.attori}` : '';
-    const maxLine = doc.splitTextToSize(`${d.max_attori_parlanti.scena}${maxNum?' — '+maxNum+' attori':''}${attori}`, cw - 6);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
-    doc.text(maxLine, ml + 3, y + 7);
-    y += 20; hline();
+    checkPage(18);
+    doc.setFillColor(...C.yellowBg);
+    doc.roundedRect(ml, y - 2, cw, 14, 1.5, 1.5, 'F');
+    doc.setDrawColor(...C.yellow); doc.setLineWidth(0.5);
+    doc.roundedRect(ml, y - 2, cw, 14, 1.5, 1.5, 'S');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5);
+    doc.setTextColor(...C.muted);
+    doc.text('SCENA CON PIU ATTORI PARLANTI', ml + 4, y + 2.5);
+    const maxTxt = doc.splitTextToSize(
+      d.max_attori_parlanti.scena + (d.max_attori_parlanti.numero ? '  —  ' + d.max_attori_parlanti.numero + ' attori' : ''),
+      cw - 8
+    );
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+    doc.setTextColor(...C.dark);
+    doc.text(maxTxt[0] || '', ml + 4, y + 8);
+    gap(18);
+    rule(C.rule); gap(7);
   }
 
-  // CATEGORIES
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...DARK);
-  doc.text('CATEGORIE CRITICHE SUONO', ml, y); y += 8;
+  // ── SINOSSI ──
+  if (d.riassunto) {
+    checkPage(20);
+    sectionTitle('SINOSSI');
+    const sinLines = doc.splitTextToSize(d.riassunto, cw);
+    sinLines.forEach(l => {
+      checkPage(5);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+      doc.setTextColor(70, 70, 70);
+      doc.text(l, ml, y);
+      gap(4.6);
+    });
+    gap(4);
+    rule(C.rule); gap(7);
+  }
 
+  // ── CATEGORIE CRITICHE ──
   const CATS_DEF = [
-    { key: 'camera_car', name: 'Camera Car', fn: x => x.scene?.map(s => typeof s==='object'?s.scena:s) },
-    { key: 'location_wild', name: 'Location Wild', fn: x => x.scene?.map(s => s.scena + (s.location?'  —  '+s.location:'')) },
-    { key: 'playback', name: 'Playback', fn: x => [...(x.esibizioni_live||[]).map(s=>s.scena+(s.note?'  —  '+s.note:'')), ...(x.playback_puro||[]).map(s=>s.scena+(s.note?'  —  '+s.note:''))] },
-    { key: 'costume_critico', name: 'Costume Critico', fn: x => x.scene?.map(s => s.scena + (s.personaggi?'  —  '+s.personaggi:'')) },
-    { key: 'mezzi_movimento', name: 'Mezzi Movimento', fn: x => x.scene?.map(s => s.scena + (s.mezzo?'  —  '+s.mezzo:'')) },
-    { key: 'acqua_pioggia', name: 'Acqua / Pioggia', fn: x => x.scene?.map(s => s.scena + (s.tipo?'  —  '+s.tipo:'')) },
-    { key: 'subacquee', name: 'Subacquee', fn: x => x.scene?.map(s => typeof s==='object'?s.scena:s) },
-    { key: 'ambienti_rumorosi', name: 'Ambienti Rumorosi', fn: x => x.scene?.map(s => s.scena + (s.tipo?'  —  '+s.tipo:'')) },
-    { key: 'aerei_elicotteri', name: 'Aerei / Elicotteri', fn: x => x.scene?.map(s => s.scena + (s.tipo?'  —  '+s.tipo:'')) },
-    { key: 'dialoghi_movimento', name: 'Dialoghi in Movimento', fn: x => x.scene?.map(s => s.scena) },
-    { key: 'lingue_straniere', name: 'Lingue Straniere', fn: x => x.scene?.map(s => s.scena + (s.lingua?'  —  '+s.lingua:'')) },
-    { key: 'dialoghi_mediati', name: 'Dialoghi Mediati', fn: x => x.scene?.map(s => s.scena + (s.tipo?'  —  '+s.tipo:'')) },
-    { key: 'voiceover', name: 'Voiceover', fn: x => x.scene?.map(s => s.scena + (s.personaggio?'  —  '+s.personaggio:'')) },
-    { key: 'crowd_parlante', name: 'Crowd Parlante', fn: x => x.scene?.map(s => s.scena) },
-    { key: 'animali', name: 'Animali', fn: x => x.scene?.map(s => s.scena + (s.animale?'  —  '+s.animale:'')) },
-    { key: 'stunt_effetti', name: 'Stunt / Effetti', fn: x => x.scene?.map(s => s.scena + (s.tipo?'  —  '+s.tipo:'')) },
+    { key: 'camera_car',        name: 'Camera Car',            fn: x => x.scene?.map(s => typeof s==='object'?s.scena:s) },
+    { key: 'location_wild',     name: 'Location Wild',         fn: x => x.scene?.map(s => s.scena + (s.location ? '  —  ' + s.location : '')) },
+    { key: 'playback',          name: 'Playback',              fn: x => [
+        ...(x.esibizioni_live||[]).map(s => '[LIVE] ' + s.scena + (s.note ? '  —  ' + s.note : '')),
+        ...(x.playback_puro||[]).map(s =>  '[PURO] ' + s.scena + (s.note ? '  —  ' + s.note : ''))
+    ]},
+    { key: 'costume_critico',   name: 'Costume Critico',       fn: x => x.scene?.map(s => s.scena + (s.personaggi ? '  —  ' + s.personaggi + (s.attori ? ' (' + s.attori + ' att.)' : '') : '')) },
+    { key: 'mezzi_movimento',   name: 'Mezzi in Movimento',    fn: x => x.scene?.map(s => s.scena + (s.mezzo ? '  —  ' + s.mezzo : '')) },
+    { key: 'acqua_pioggia',     name: 'Acqua / Pioggia',       fn: x => x.scene?.map(s => s.scena + (s.tipo ? '  —  ' + s.tipo : '')) },
+    { key: 'subacquee',         name: 'Scene Subacquee',       fn: x => x.scene?.map(s => typeof s==='object'?s.scena:s) },
+    { key: 'ambienti_rumorosi', name: 'Ambienti Rumorosi',     fn: x => x.scene?.map(s => s.scena + (s.tipo ? '  —  ' + s.tipo : '')) },
+    { key: 'aerei_elicotteri',  name: 'Aerei / Elicotteri',    fn: x => x.scene?.map(s => s.scena + (s.tipo ? '  —  ' + s.tipo : '')) },
+    { key: 'dialoghi_movimento',name: 'Dialoghi in Movimento', fn: x => x.scene?.map(s => s.scena + (s.note ? '  —  ' + s.note : '')) },
+    { key: 'lingue_straniere',  name: 'Lingue Straniere',      fn: x => x.scene?.map(s => s.scena + (s.lingua ? '  —  ' + s.lingua : '')) },
+    { key: 'dialoghi_mediati',  name: 'Dialoghi Mediati',      fn: x => x.scene?.map(s => s.scena + (s.tipo ? '  —  ' + s.tipo : '')) },
+    { key: 'voiceover',         name: 'Voiceover / F.C.',      fn: x => x.scene?.map(s => s.scena + (s.personaggio ? '  —  ' + s.personaggio : '')) },
+    { key: 'crowd_parlante',    name: 'Crowd Parlante',        fn: x => x.scene?.map(s => s.scena + (s.note ? '  —  ' + s.note : '')) },
+    { key: 'animali',           name: 'Scene con Animali',     fn: x => x.scene?.map(s => s.scena + (s.animale ? '  —  ' + s.animale : '')) },
+    { key: 'stunt_effetti',     name: 'Stunt / Effetti Sp.',   fn: x => x.scene?.map(s => s.scena + (s.tipo ? '  —  ' + s.tipo : '')) },
   ];
 
-  CATS_DEF.forEach(cat => {
-    const cd = d[cat.key]; if (!cd?.presente) return;
-    checkPage(20);
-    doc.setFillColor(252, 248, 210); doc.roundedRect(ml, y - 4, cw, 8, 1, 1, 'F');
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...DARK);
-    doc.text(cat.name.toUpperCase(), ml + 3, y + 1);
-    const scenes = (cat.fn(cd)||[]).filter(Boolean);
-    doc.setFont('helvetica', 'normal'); doc.setTextColor(...MUTED);
-    doc.text(`${scenes.length} sc.`, W - mr, y + 1, { align: 'right' });
-    y += 9;
-    scenes.forEach(scene => {
-      checkPage(6);
-      const lines = doc.splitTextToSize(`• ${scene}`, cw - 4);
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...DARK);
-      doc.text(lines, ml + 3, y); y += lines.length * 4 + 1;
-    });
-    y += 3;
-  });
+  const activeCats = CATS_DEF.filter(c => d[c.key]?.presente);
 
-  // FOOTER
+  if (activeCats.length) {
+    sectionTitle('CATEGORIE CRITICHE SUONO');
+
+    activeCats.forEach((cat, idx) => {
+      const cd = d[cat.key];
+      const scenes = (cat.fn(cd) || []).filter(Boolean);
+      const rowH = 8 + scenes.length * 5 + 4;
+      checkPage(Math.min(rowH, 40));
+
+      // Category header bar
+      doc.setFillColor(...C.accentBg);
+      doc.roundedRect(ml, y - 3, cw, 8, 1, 1, 'F');
+      // left accent
+      doc.setFillColor(...C.yellow);
+      doc.rect(ml, y - 3, 2, 8, 'F');
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
+      doc.setTextColor(...C.dark);
+      doc.text(cat.name.toUpperCase(), ml + 6, y + 1.5);
+
+      // scene count badge
+      const badge = scenes.length + ' sc.';
+      const bdgW = doc.getTextWidth(badge) + 6;
+      doc.setFillColor(...C.yellow);
+      doc.roundedRect(W - mr - bdgW, y - 2, bdgW, 6, 1, 1, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
+      doc.setTextColor(30, 30, 30);
+      doc.text(badge, W - mr - bdgW / 2, y + 2.2, { align: 'center' });
+
+      gap(9);
+
+      // scene lines
+      scenes.forEach(scene => {
+        checkPage(6);
+        const lines = doc.splitTextToSize(scene, cw - 8);
+        // bullet dot
+        doc.setFillColor(...C.muted);
+        doc.circle(ml + 3.5, y - 0.8, 0.7, 'F');
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+        doc.setTextColor(...C.mid);
+        doc.text(lines, ml + 7, y);
+        gap(lines.length * 4.5 + 0.5);
+      });
+
+      gap(3);
+      // thin separator between categories (skip last)
+      if (idx < activeCats.length - 1) {
+        rule([238, 238, 238], 0.2);
+        gap(4);
+      }
+    });
+
+    gap(4);
+    rule(C.rule); gap(7);
+  }
+
+  // ── NOTE MANUALI ──
+  const notesEl = document.getElementById('analysisNotes');
+  const notesText = notesEl ? notesEl.value.trim() : '';
+  if (notesText) {
+    checkPage(24);
+    sectionTitle('NOTE');
+
+    // note box with light blue tint
+    const noteLines = doc.splitTextToSize(notesText, cw - 10);
+    const noteBoxH = noteLines.length * 4.8 + 10;
+    doc.setFillColor(...C.noteBg);
+    doc.roundedRect(ml, y - 3, cw, noteBoxH, 1.5, 1.5, 'F');
+    doc.setDrawColor(...C.noteBdr); doc.setLineWidth(0.4);
+    doc.roundedRect(ml, y - 3, cw, noteBoxH, 1.5, 1.5, 'S');
+    // left accent
+    doc.setFillColor(120, 180, 230);
+    doc.rect(ml, y - 3, 2.5, noteBoxH, 'F');
+
+    noteLines.forEach(l => {
+      checkPage(5.5);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+      doc.setTextColor(40, 60, 90);
+      doc.text(l, ml + 7, y);
+      gap(4.8);
+    });
+    gap(8);
+    rule(C.rule); gap(7);
+  }
+
+  // ── FOOTER su ogni pagina ──
   const pages = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i);
-    doc.setDrawColor(...LINE); doc.setLineWidth(0.3); doc.line(ml, 285, W - mr, 285);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...MUTED);
-    doc.text('SoundAnalyst · ohsfaccimmarosound · Reparto Suono', ml, 290);
-    doc.text(`${i} / ${pages}`, W - mr, 290, { align: 'right' });
+    doc.setFillColor(10, 10, 10);
+    doc.rect(0, 282, W, 15, 'F');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5);
+    doc.setTextColor(140, 140, 140);
+    doc.text('SoundAnalyst · Reparto Suono', ml, 289);
+    doc.text('Generato il ' + dateStr, W / 2, 289, { align: 'center' });
+    doc.text('Pag. ' + i + ' / ' + pages, W - mr, 289, { align: 'right' });
   }
 
-  doc.save(`Spoglio_${(d.titolo||'film').replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+  doc.save('Spoglio_' + (d.titolo || 'film').replace(/\s+/g, '_') + '_' + new Date().toISOString().split('T')[0] + '.pdf');
 }
 
 function setTheme(theme) {
