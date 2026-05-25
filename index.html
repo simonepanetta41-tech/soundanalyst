@@ -269,6 +269,19 @@ header { padding: 28px 0 24px; border-bottom: 1px solid var(--border); margin-bo
 .subsec { border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px; }
 .subsec-title { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
 
+/* ── CAT NOTE TOGGLE ── */
+.cat-note-toggle { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--border); cursor: pointer; user-select: none; }
+.cat-note-toggle:hover .cat-note-label { color: var(--yellow); }
+.cat-note-label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); flex: 1; transition: color 0.15s; }
+.cat-note-label.has-content { color: var(--yellow); }
+.cat-note-arrow { font-size: 9px; color: var(--muted); transition: transform 0.2s; line-height: 1; }
+.cat-note-arrow.open { transform: rotate(180deg); }
+.cat-note-body { display: none; margin-top: 8px; }
+.cat-note-body.open { display: block; }
+.cat-note-ta { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--white); font-family: 'DM Mono', monospace; font-size: 11px; outline: none; resize: none; min-height: 64px; transition: border-color 0.15s; line-height: 1.6; }
+.cat-note-ta:focus { border-color: var(--yellow); }
+.cat-note-save { font-size: 9px; color: var(--muted); text-align: right; margin-top: 3px; height: 12px; }
+
 /* ── CHAT ── */
 #chatSection { display: none; margin-top: 40px; }
 #chatSection.on { display: block; }
@@ -1373,7 +1386,8 @@ function exportPdf() {
     activeCats.forEach((cat, idx) => {
       const cd = d[cat.key];
       const scenes = (cat.fn(cd) || []).filter(Boolean);
-      const rowH = 8 + scenes.length * 5 + 4;
+      const catNote = (catNotesData[cat.key] || '').trim();
+      const rowH = 8 + scenes.length * 5 + (catNote ? 16 : 0) + 4;
       checkPage(Math.min(rowH, 40));
 
       // Category header bar
@@ -1412,6 +1426,32 @@ function exportPdf() {
       });
 
       gap(3);
+
+      // cat note (only if filled)
+      if (catNote) {
+        checkPage(14);
+        const cnLines = doc.splitTextToSize(catNote, cw - 10);
+        const cnH = cnLines.length * 4.4 + 8;
+        doc.setFillColor(...C.noteBg);
+        doc.roundedRect(ml, y - 2, cw, cnH, 1, 1, 'F');
+        doc.setDrawColor(...C.noteBdr); doc.setLineWidth(0.3);
+        doc.roundedRect(ml, y - 2, cw, cnH, 1, 1, 'S');
+        doc.setFillColor(120, 180, 230);
+        doc.rect(ml, y - 2, 2, cnH, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5);
+        doc.setTextColor(...C.muted);
+        doc.text('NOTA', ml + 5, y + 1.5);
+        gap(5);
+        cnLines.forEach(l => {
+          checkPage(5);
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+          doc.setTextColor(40, 60, 90);
+          doc.text(l, ml + 5, y);
+          gap(4.4);
+        });
+        gap(3);
+      }
+
       // thin separator between categories (skip last)
       if (idx < activeCats.length - 1) {
         rule([238, 238, 238], 0.2);
@@ -1913,13 +1953,23 @@ function renderResults(d) {
     if (!cd.presente) return null;
     const cnt = cd.scene?.length || (cd.esibizioni_live?.length||0)+(cd.playback_puro?.length||0);
     const inner = c.render(cd)||'';
-    return `<div class="cat active">
+    const existingNote = (catNotesData[c.key] || '').trim();
+    const hasNote = !!existingNote;
+    return `<div class="cat active" id="cat-card-${c.key}">
       <div class="cat-top">
         <span class="cat-ico">${c.ico}</span>
         <span class="cat-name">${c.name}</span>
         <span class="badge-count">${cnt>0?cnt+' sc.':'sì'}</span>
       </div>
       ${inner?`<div class="cat-items">${inner}</div>`:''}
+      <div class="cat-note-toggle" onclick="toggleCatNote('${c.key}')">
+        <span class="cat-note-label${hasNote?' has-content':''}">Note${hasNote?' ·':''}</span>
+        <span class="cat-note-arrow${hasNote?' open':''}" id="cat-note-arrow-${c.key}">▼</span>
+      </div>
+      <div class="cat-note-body${hasNote?' open':''}" id="cat-note-body-${c.key}">
+        <textarea class="cat-note-ta" id="cat-note-ta-${c.key}" placeholder="Note per questa categoria..." oninput="scheduleCatNotesSave('${c.key}')">${existingNote}</textarea>
+        <div class="cat-note-save" id="cat-note-save-${c.key}"></div>
+      </div>
     </div>`;
   }).filter(Boolean);
 
@@ -1946,7 +1996,7 @@ function resetApp() {
   document.getElementById('errorBox').classList.remove('show');
   document.getElementById('riassuntoBox').style.display = 'none';
   document.getElementById('maxInfo').style.display = 'none';
-  chatHistory = []; analysisData = null; currentAnalysisId = null;
+  chatHistory = []; analysisData = null; currentAnalysisId = null; catNotesData = {};
   checkReady();
   showPage('home');
 }
@@ -1968,28 +2018,76 @@ const GENNARO_PLACEHOLDERS = [
   'Alle poste si lavora meglio?',
 ];
 // Set random placeholder once on load
+// ── Notes state ──
+let catNotesData = {}; // { camera_car: "...", playback: "...", ... }
 let _notesSaveTimer = null;
+let _catNotesSaveTimer = null;
+
 function scheduleNotesSave() {
   const status = document.getElementById('notesSaveStatus');
   status.textContent = 'Modifica in corso...';
   clearTimeout(_notesSaveTimer);
-  _notesSaveTimer = setTimeout(saveNotes, 1500);
+  _notesSaveTimer = setTimeout(saveAllNotes, 1500);
 }
 
-async function saveNotes() {
+function scheduleCatNotesSave(key) {
+  const val = document.getElementById('cat-note-ta-' + key)?.value.trim() || '';
+  catNotesData[key] = val;
+  // update label style
+  const label = document.querySelector(`#cat-card-${key} .cat-note-label`);
+  if (label) {
+    label.classList.toggle('has-content', !!val);
+    label.textContent = val ? 'Note ·' : 'Note';
+  }
+  const status = document.getElementById('cat-note-save-' + key);
+  if (status) status.textContent = '...';
+  clearTimeout(_catNotesSaveTimer);
+  _catNotesSaveTimer = setTimeout(saveAllNotes, 1500);
+}
+
+async function saveAllNotes() {
   if (!currentAnalysisId) return;
-  const notes = document.getElementById('analysisNotes').value;
+  const globalText = document.getElementById('analysisNotes')?.value || '';
   const status = document.getElementById('notesSaveStatus');
+  const payload = JSON.stringify({ global: globalText, cats: catNotesData });
   try {
-    await sb.from('analyses').update({ notes }).eq('id', currentAnalysisId);
-    status.textContent = '✓ Salvato';
-    setTimeout(() => { status.textContent = ''; }, 2000);
-  } catch(e) { status.textContent = '⚠ Errore salvataggio'; }
+    await sb.from('analyses').update({ notes: payload }).eq('id', currentAnalysisId);
+    if (status) { status.textContent = '✓ Salvato'; setTimeout(() => { status.textContent = ''; }, 2000); }
+    // clear per-cat save indicators
+    Object.keys(catNotesData).forEach(k => {
+      const s = document.getElementById('cat-note-save-' + k);
+      if (s) { s.textContent = '✓'; setTimeout(() => { if(s) s.textContent = ''; }, 2000); }
+    });
+  } catch(e) {
+    if (status) status.textContent = '⚠ Errore salvataggio';
+  }
 }
 
-function loadNotes(notes) {
-  const el = document.getElementById('analysisNotes');
-  if (el) el.value = notes || '';
+// keep legacy name working (called from textarea oninput on global notes)
+function saveNotes() { return saveAllNotes(); }
+
+function loadNotes(raw) {
+  catNotesData = {};
+  const globalEl = document.getElementById('analysisNotes');
+  if (!raw) { if (globalEl) globalEl.value = ''; return; }
+  // Try to parse as new JSON format
+  try {
+    const parsed = JSON.parse(raw);
+    if (globalEl) globalEl.value = parsed.global || '';
+    catNotesData = parsed.cats || {};
+  } catch(_) {
+    // Legacy plain-text global notes
+    if (globalEl) globalEl.value = raw;
+  }
+}
+
+function toggleCatNote(key) {
+  const body  = document.getElementById('cat-note-body-' + key);
+  const arrow = document.getElementById('cat-note-arrow-' + key);
+  if (!body) return;
+  const isOpen = body.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open', isOpen);
+  if (isOpen) document.getElementById('cat-note-ta-' + key)?.focus();
 }
 
 function rotateChatPlaceholder() {
