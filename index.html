@@ -2214,10 +2214,23 @@ async function extractTextFromPages(pageNums) {
 }
 
 async function buildRagContext(userText) {
-  if (!analysisData?.scene_index || !pdfB64Array.length) return null;
-
   const sceneNums = detectSceneNumbers(userText);
-  if (!sceneNums.length) return null;
+
+  // Always update debug with at least what was detected
+  if (!sceneNums.length) {
+    lastRagContext = { sceneNums: [], foundScenes: [], pages: [], info: 'Nessun numero di scena rilevato nel messaggio.' };
+    updateRagDebug(); return null;
+  }
+
+  if (!pdfB64Array.length) {
+    lastRagContext = { sceneNums, foundScenes: [], pages: [], error: 'PDF non in memoria — ricarica la sceneggiatura per abilitare il RAG.' };
+    updateRagDebug(); return null;
+  }
+
+  if (!analysisData?.scene_index) {
+    lastRagContext = { sceneNums, foundScenes: [], pages: [], error: 'scene_index assente in questa analisi — rianalizza la sceneggiatura per abilitare il RAG.' };
+    updateRagDebug(); return null;
+  }
 
   // For each detected scene: fetch start page + next (catches 2-page scenes), max 3 scenes
   const pagesToFetch = new Set();
@@ -2257,8 +2270,13 @@ function updateRagDebug() {
 
   if (!lastRagContext) { content.textContent = 'Nessuna richiesta ancora.'; return; }
 
-  const { sceneNums, foundScenes, pages, notFound, error } = lastRagContext;
+  const { sceneNums, foundScenes, pages, notFound, error, info } = lastRagContext;
   let html = '';
+
+  if (info) {
+    html += `<div style="color:var(--muted);font-size:10px">${info}</div>`;
+    content.innerHTML = html; return;
+  }
 
   // Detected scenes
   html += `<div style="margin-bottom:8px">
