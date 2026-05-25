@@ -3372,36 +3372,40 @@ function openPdlDayModal(dayNum) {
 }
 
 function renderPdlModalChips(g) {
-  document.getElementById('pdlModalChips').innerHTML=(g.scene||[]).map(sc=>{
-    const stato=pdlModalSceneStates[sc.numero]||'pending';
-    const typeClass=getPdlSceneTypeClass(sc.int_ext,sc.momento);
-    const icon=stato==='done'?'✓':stato==='standby'?'⏸':'';
-    const crit=isSceneCritical(sc.numero);
-    return`<div class="pdl-chip ${typeClass} ${stato==='done'?'girato':''} ${stato==='standby'?'standby':''} ${crit?'critical':''}" style="${crit?'box-shadow:0 0 0 1.5px #e53e3e':''}" onclick="cyclePdlSceneModal('${sc.numero}')" title="${sc.location||''} — ${sc.int_ext||''} ${sc.momento||''}">${icon?`<span style="font-size:11px;font-weight:700">${icon}</span>`:''}<span class="pdl-chip-num" onclick="openSceneFromPdl('${sc.numero}',event)" style="text-decoration:underline;text-decoration-color:rgba(255,255,255,0.3);text-underline-offset:2px">${sc.numero}</span><span style="font-size:9px;opacity:0.7">${sc.int_ext||''} ${sc.momento||''}</span></div>`;
+  const castMap = new Map(castData.map(c => [String(c.id_ufficiale ?? c.character_id), c]));
+
+  document.getElementById('pdlModalChips').innerHTML = (g.scene||[]).map(sc => {
+    const stato = pdlModalSceneStates[sc.numero] || 'pending';
+    const typeClass = getPdlSceneTypeClass(sc.int_ext, sc.momento);
+    const icon = stato==='done' ? '✓' : stato==='standby' ? '⏸' : '';
+    const crit = isSceneCritical(sc.numero);
+
+    // Cast pills for this scene
+    const sceneIds = (sc.cast||[]).slice().sort((a,b) => Number(a)-Number(b));
+    const castPills = sceneIds.length ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:5px">${
+      sceneIds.map(id => {
+        const c = castMap.get(String(id));
+        const nome = c ? c.nome : '';
+        const isM = c?.minore;
+        return `<span title="${nome}" style="display:inline-flex;align-items:center;gap:2px;background:rgba(0,0,0,0.25);border-radius:4px;padding:1px 5px;font-family:'DM Mono',monospace;font-size:9px;white-space:nowrap">
+          <span style="color:var(--yellow);font-weight:700">${id}</span>${nome ? `<span style="color:rgba(255,255,255,0.55)">${nome}${isM?' M':''}</span>` : ''}
+        </span>`;
+      }).join('')
+    }</div>` : '';
+
+    return `<div class="pdl-chip ${typeClass} ${stato==='done'?'girato':''} ${stato==='standby'?'standby':''} ${crit?'critical':''}" style="${crit?'box-shadow:0 0 0 1.5px #e53e3e':''}display:flex;flex-direction:column;align-items:flex-start;" onclick="cyclePdlSceneModal('${sc.numero}')" title="${sc.location||''} — ${sc.int_ext||''} ${sc.momento||''}">
+      <div style="display:flex;align-items:center;gap:4px">
+        ${icon ? `<span style="font-size:11px;font-weight:700">${icon}</span>` : ''}
+        <span class="pdl-chip-num" onclick="openSceneFromPdl('${sc.numero}',event)" style="text-decoration:underline;text-decoration-color:rgba(255,255,255,0.3);text-underline-offset:2px">${sc.numero}</span>
+        <span style="font-size:9px;opacity:0.7">${sc.int_ext||''} ${sc.momento||''}</span>
+      </div>
+      ${castPills}
+    </div>`;
   }).join('');
 
-  // Cast IDs row
+  // Hide the old aggregated cast div
   const castEl = document.getElementById('pdlModalCast');
-  const allIds = [...new Set((g.scene||[]).flatMap(sc => sc.cast||[]))].sort((a,b)=>Number(a)-Number(b));
-  if (allIds.length && castData.length) {
-    // Build lookup map
-    const castMap = new Map(castData.map(c => [String(c.id_ufficiale ?? c.character_id), c]));
-    const chips = allIds.map(id => {
-      const c = castMap.get(String(id));
-      const nome = c ? c.nome : '?';
-      const isM = c?.minore;
-      return `<span title="${nome}" style="display:inline-flex;align-items:center;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-family:'DM Mono',monospace;font-size:10px;color:var(--white-dim);white-space:nowrap">
-        <span style="color:var(--yellow);font-weight:700">${id}</span>
-        <span style="color:var(--muted)">${nome}${isM?' <span style="font-size:8px;opacity:0.7">M</span>':''}</span>
-      </span>`;
-    }).join('');
-    castEl.style.display = 'block';
-    castEl.innerHTML = `
-      <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Cast — ${allIds.length} presenze</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px">${chips}</div>`;
-  } else {
-    castEl.style.display = 'none';
-  }
+  if (castEl) castEl.style.display = 'none';
 
   updatePdlModalStatus(g);
 }
