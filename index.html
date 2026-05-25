@@ -624,6 +624,9 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
           <span class="sugg" onclick="fillSugg(this)">Quali scene rischiano ADR?</span>
           <span class="sugg" onclick="fillSugg(this)">Riassumi le criticità principali</span>
         </div>
+        <div style="margin-top:10px;text-align:right">
+          <button onclick="showRagDebug()" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;padding:4px 10px;border-radius:6px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--yellow)';this.style.color='var(--yellow)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">🔍 debug rag</button>
+        </div>
       </div>
       </div><!-- end spoglioSection -->
 
@@ -2296,6 +2299,18 @@ function toggleRagDebug() {
   const open = body.classList.toggle('open');
   body.style.display = open ? 'block' : 'none';
   if (arrow) arrow.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+function showRagDebug() {
+  const panel = document.getElementById('ragDebugPanel');
+  const body  = document.getElementById('ragDebugBody');
+  const arrow = document.getElementById('ragDebugArrow');
+  if (!panel || !body) return;
+  panel.style.display = 'block';
+  body.style.display = 'block';
+  body.classList.add('open');
+  if (arrow) arrow.style.transform = 'rotate(180deg)';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 async function sendChat() {
