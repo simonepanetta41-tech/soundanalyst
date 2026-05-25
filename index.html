@@ -2923,8 +2923,10 @@ async function extractCastFromPdf(b64) {
       const tc = await page.getTextContent();
       fullText += tc.items.map(i => i.str).join('\n') + '\n';
     }
-    console.log('[CastParser] testo estratto (prime 3 pag):', fullText.slice(0, 400));
-    return parseCastFromText(fullText);
+    console.log('[CastParser] testo estratto (prime 3 pag):', fullText.slice(0, 600));
+    const result = parseCastFromText(fullText);
+    console.log('[CastParser] parseCastFromText result:', result ? result.length + ' voci' : 'null');
+    return result;
   } catch(e) {
     console.log('Cast PDF extract error:', e.message);
     return null;
@@ -3023,8 +3025,14 @@ async function handlePdlCastPopup(cast) {
 }
 
 async function processPdlCast(b64) {
+  console.log('[CastParser] processPdlCast avviato');
   const cast = await extractCastFromPdf(b64);
-  if (!cast) return; // No cast found silently
+  console.log('[CastParser] cast estratto:', cast ? cast.length + ' personaggi' : 'null');
+  if (!cast) return;
+
+  const userWants = await handlePdlCastPopup(cast);
+  console.log('[CastParser] utente ha scelto:', userWants);
+  if (!userWants) return;
 
   const userWants = await handlePdlCastPopup(cast);
   if (!userWants) return;
