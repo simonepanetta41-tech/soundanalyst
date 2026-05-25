@@ -2784,16 +2784,17 @@ async function handleCastUpload(input) {
       const mediaType = file.type || 'image/jpeg';
       const data = await callApi('api/chat', {
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 800,
-        system: 'Estrai la lista cast da questa immagine. Rispondi SOLO con JSON valido, nessun testo aggiuntivo, nessun markdown: [{"character_id":1,"nome":"NOME","minore":false}]. Se il personaggio ha prefisso o suffisso M (es: 3M o M1) imposta minore:true. Includi solo personaggi con numero ID. Ordina per character_id crescente.',
+        max_tokens: 1000,
+        system: 'Sei un estrattore di dati. Rispondi ESCLUSIVAMENTE con un array JSON. Zero testo extra. Zero markdown. Zero spiegazioni. Solo il JSON grezzo che inizia con [ e finisce con ].',
         messages: [{ role: 'user', content: [
           { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
-          { type: 'text', text: 'Estrai la lista cast.' }
+          { type: 'text', text: 'Estrai tutti i personaggi con il loro numero ID da questa lista cast. Formato OBBLIGATORIO: [{"character_id":1,"nome":"ALBERTO","minore":false},{"character_id":2,"nome":"MATTIA","minore":false}]. Se il personaggio ha (M) o (Stunt) nel nome, rimuovilo dal nome. Se ha M prima o dopo il numero ID imposta minore:true.' }
         ]}]
       });
-      const raw = data.content.map(b => b.text || '').join('').replace(/```json|```/g, '').trim();
-      // Extract JSON array even if there's surrounding text
-      const arrayMatch = raw.match(/\[[\s\S]*\]/);
+      const raw = data.content.map(b => b.text || '').join('').trim();
+      console.log('[CastVision] risposta raw:', raw.slice(0, 300));
+      const cleaned = raw.replace(/```json|```/g, '').trim();
+      const arrayMatch = cleaned.match(/\[[\s\S]*\]/);
       if (!arrayMatch) throw new Error('Nessun JSON array trovato nella risposta');
       const parsed = JSON.parse(arrayMatch[0]);
       if (Array.isArray(parsed) && parsed.length >= 3) {
