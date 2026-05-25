@@ -572,6 +572,13 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       <div class="sec-label" style="margin-top:28px">Dettaglio categorie</div>
       <div class="cats-grid" id="catsGrid"></div>
 
+      <!-- NOTE MANUALI -->
+      <div id="notesSection" style="margin-top:32px;margin-bottom:8px">
+        <div class="panel-label" style="margin-bottom:10px">Note</div>
+        <textarea id="analysisNotes" placeholder="Note libere sull'analisi..." style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;color:var(--white);font-family:'DM Mono',monospace;font-size:12px;outline:none;resize:none;min-height:100px;transition:border-color 0.15s;line-height:1.6" oninput="scheduleNotesSave()"></textarea>
+        <div id="notesSaveStatus" style="font-size:10px;color:var(--muted);text-align:right;margin-top:4px;height:14px"></div>
+      </div>
+
       <!-- CHAT -->
       <div id="chatSection">
         <div class="chat-intro">
@@ -1384,12 +1391,13 @@ function renderHistoryGrid(items) {
 }
 
 async function loadFromHistory(id) {
-  const { data, error } = await sb.from('analyses').select('data').eq('id', id).single();
+  const { data, error } = await sb.from('analyses').select('data, notes').eq('id', id).single();
   if (error || !data) { alert('Errore caricamento analisi'); return; }
   pdfB64Array = []; modalPdfDoc = null;
   currentAnalysisId = id;
   hideHomeShowResults();
   renderResults(data.data);
+  loadNotes(data.notes);
 
   // Try to load PDL from Supabase in background
   loadPdlFromSupabase(id).then(loaded => {
@@ -1684,6 +1692,7 @@ async function startAnalysis() {
     await saveAnalysis(data);
     hideHomeShowResults();
     renderResults(data);
+    loadNotes(null);
 
   } catch(err) { showError(err.message); }
 }
@@ -1801,6 +1810,30 @@ const GENNARO_PLACEHOLDERS = [
   'Alle poste si lavora meglio?',
 ];
 // Set random placeholder once on load
+let _notesSaveTimer = null;
+function scheduleNotesSave() {
+  const status = document.getElementById('notesSaveStatus');
+  status.textContent = 'Modifica in corso...';
+  clearTimeout(_notesSaveTimer);
+  _notesSaveTimer = setTimeout(saveNotes, 1500);
+}
+
+async function saveNotes() {
+  if (!currentAnalysisId) return;
+  const notes = document.getElementById('analysisNotes').value;
+  const status = document.getElementById('notesSaveStatus');
+  try {
+    await sb.from('analyses').update({ notes }).eq('id', currentAnalysisId);
+    status.textContent = '✓ Salvato';
+    setTimeout(() => { status.textContent = ''; }, 2000);
+  } catch(e) { status.textContent = '⚠ Errore salvataggio'; }
+}
+
+function loadNotes(notes) {
+  const el = document.getElementById('analysisNotes');
+  if (el) el.value = notes || '';
+}
+
 function rotateChatPlaceholder() {
   const el = document.getElementById('chatInput');
   if (!el) return;
