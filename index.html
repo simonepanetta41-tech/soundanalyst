@@ -1994,6 +1994,29 @@ async function startAnalysis() {
     const raw  = res.content.map(b=>b.text||'').join('');
     const data = JSON.parse(raw.replace(/```json|```/g,'').trim());
 
+    // Normalize: if a category has scene data, force presente=true
+    const arrayKeys = {
+      camera_car:        d => d.scene?.length,
+      location_wild:     d => d.scene?.length,
+      playback:          d => d.esibizioni_live?.length || d.playback_puro?.length,
+      costume_critico:   d => d.scene?.length,
+      mezzi_movimento:   d => d.scene?.length,
+      acqua_pioggia:     d => d.scene?.length,
+      subacquee:         d => d.scene?.length,
+      ambienti_rumorosi: d => d.scene?.length,
+      aerei_elicotteri:  d => d.scene?.length,
+      dialoghi_movimento:d => d.scene?.length,
+      lingue_straniere:  d => d.scene?.length,
+      dialoghi_mediati:  d => d.scene?.length,
+      voiceover:         d => d.scene?.length,
+      crowd_parlante:    d => d.scene?.length,
+      animali:           d => d.scene?.length,
+      stunt_effetti:     d => d.scene?.length,
+    };
+    Object.entries(arrayKeys).forEach(([key, hasData]) => {
+      if (data[key] && hasData(data[key])) data[key].presente = true;
+    });
+
     await saveAnalysis(data);
 
     // Save cast silently (always)
