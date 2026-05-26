@@ -3467,6 +3467,7 @@ function renderPdlCalendarWeekly() {
         ${locHtml}
         <div class="cal-cell-scenes" style="display:flex">${sceneHtml}</div>
         ${g.unita_secondarie?.length ? `<div style="font-size:8px;color:var(--muted);margin-top:3px;letter-spacing:0.05em">2° UNIT</div>` : ''}
+        ${g.trasferimento ? `<div style="font-size:13px;margin-top:4px" title="${g.trasferimento}">🚌</div>` : ''}
         ${sd.notes ? `<div class="cal-cell-note">${sd.notes}</div>` : ''}`;
     } else {
       el.className = `cal-cell ${isToday?'is-today':''}`;
