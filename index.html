@@ -220,7 +220,8 @@ header { padding: 28px 0 24px; border-bottom: 1px solid var(--border); margin-bo
 .pdl-modal-title span { color:var(--yellow); }
 .pdl-modal-sub { font-size:11px;color:var(--muted);margin-top:3px; }
 .pdl-chip-hint { font-size:10px;color:var(--muted);margin-bottom:10px; }
-.pdl-scene-chips { display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px; }
+.pdl-transfer { display:flex;align-items:center;gap:6px;margin-top:8px;padding:6px 10px;background:rgba(100,180,255,0.08);border:1px solid rgba(100,180,255,0.25);border-radius:7px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(100,180,255,0.9);letter-spacing:0.04em; }
+.pdl-transfer-cal { font-size:9px;color:rgba(100,180,255,0.8);background:rgba(100,180,255,0.1);border-radius:4px;padding:1px 5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
 .pdl-chip { display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.15s;border:2px solid transparent;user-select:none; }
 .pdl-chip:hover { filter:brightness(1.2); }
 .pdl-chip.girato { opacity:0.4;text-decoration:line-through; }
@@ -2881,9 +2882,9 @@ const PDL_SYSPROMPT = `Sei un esperto analizzatore di piani di lavorazione cinem
 Analizza il PDL e restituisci SOLO un JSON valido. Nessun testo. Nessun backtick. JSON COMPATTO.
 
 Struttura:
-{"titolo":"string","regista":"string","versione":"string","totale_giorni":0,"totale_scene":0,"data_inizio":"YYYY-MM-DD","data_fine":"YYYY-MM-DD","settimane":[{"numero":1,"label":"string","giorni":[{"numero_giorno":1,"data":"YYYY-MM-DD","giorno_settimana":"Monday","ora_inizio":"08:00","ora_fine":"18:00","ora_incerta":false,"location_principale":"string","pagine_giorno":"string","unita_secondarie":[{"label":"string (es: 2° UNITÀ)","ora_inizio":"string","location":"string"}],"scene":[{"numero":"string","int_ext":"INT/EXT/INT-EXT","momento":"D/N/M/E","location":"string","cast":["1","2"],"pagine":"string","stunt":false}]}]}]}
+{"titolo":"string","regista":"string","versione":"string","totale_giorni":0,"totale_scene":0,"data_inizio":"YYYY-MM-DD","data_fine":"YYYY-MM-DD","settimane":[{"numero":1,"label":"string","giorni":[{"numero_giorno":1,"data":"YYYY-MM-DD","giorno_settimana":"Monday","ora_inizio":"08:00","ora_fine":"18:00","ora_incerta":false,"location_principale":"string","pagine_giorno":"string","trasferimento":"string o null","unita_secondarie":[{"label":"string (es: 2° UNITÀ)","ora_inizio":"string","location":"string"}],"scene":[{"numero":"string","int_ext":"INT/EXT/INT-EXT","momento":"D/N/M/E","location":"string","cast":["1","2"],"pagine":"string","stunt":false}]}]}]}
 
-Regole: momento D=Day N=Night M=Morning E=Evening. cast solo numeri. JSON minificato. ORARI CRITICI: nel PDL la struttura è sempre: [H: orario] → [scene del giorno N] → [Fine del Giorno #N]. La riga H: con l'orario precede SEMPRE le scene del giorno a cui appartiene. Se un giorno ha più orari (es. unità principale + 2° UNITÀ), usa SOLO il primo orario trovato per quel giorno. L'orario dopo "Fine del Giorno #N" appartiene al giorno N+1. Formati orario riconosciuti: "H: 08:00/18:00" (ora_inizio=08:00, ora_fine=18:00), "07:30/17:30", "ORARIO 08-18", "09.00-17.00", "H: 15/01 o 17/03" (formato compatto italiano — 15/01 significa ora_inizio=15:00 ora_fine=01:00, 17/03 significa ora_inizio=17:00 ora_fine=03:00 — se ci sono due orari alternativi separati da "o", prendi il primo E imposta ora_incerta=true). Se non trovi orari usa "TBD" e ora_incerta=false. Se non trovi orari usa "TBD". Rispondi SOLO con il JSON.`;
+Regole: momento D=Day N=Night M=Morning E=Evening. cast solo numeri. JSON minificato. ORARI CRITICI: nel PDL la struttura è sempre: [H: orario] → [scene del giorno N] → [Fine del Giorno #N]. La riga H: con l'orario precede SEMPRE le scene del giorno a cui appartiene. Se un giorno ha più orari (es. unità principale + 2° UNITÀ), usa SOLO il primo orario trovato per quel giorno. L'orario dopo "Fine del Giorno #N" appartiene al giorno N+1. Formati orario riconosciuti: "H: 08:00/18:00" (ora_inizio=08:00, ora_fine=18:00), "07:30/17:30", "ORARIO 08-18", "09.00-17.00", "H: 15/01 o 17/03" (formato compatto italiano — 15/01 significa ora_inizio=15:00 ora_fine=01:00, 17/03 significa ora_inizio=17:00 ora_fine=03:00 — se ci sono due orari alternativi separati da "o", prendi il primo E imposta ora_incerta=true). Se non trovi orari usa "TBD" e ora_incerta=false. TRASFERIMENTI: se nel giorno o in coda al giorno (prima di "Fine del Giorno #N") compare una riga tipo "TRASFERIMENTO A ROMA", "TRASFERIMENTO IN VENETO", "SPOSTAMENTO", ecc., metti la dicitura esatta nel campo trasferimento del giorno a cui appartiene. Se non c'è trasferimento usa null. Rispondi SOLO con il JSON.`;
 
 function getPdlKey() { return localStorage.getItem('sa_key') || ''; }
 
@@ -3323,7 +3324,7 @@ function renderPdlCalendar() {
         const oraStr = (g.ora_inizio && g.ora_inizio !== 'TBD') ? ' ' + g.ora_inizio : '';
         el.innerHTML = '<div class="cal-cell-day">' + day + '</div><div class="cal-cell-giorno" style="font-size:8px;opacity:0.8">D' + g.numero_giorno + oraStr + '</div>';
       } else {
-        el.innerHTML=`<div class="cal-cell-day">${day}</div><div class="cal-cell-giorno">DAY ${g.numero_giorno} ${g.ora_inizio&&g.ora_inizio!='TBD'?'<span style="color:'+(g.ora_incerta?'var(--orange)':'inherit')+'">'+(g.ora_inizio)+(g.ora_incerta?' ?':'')+'</span>':''}</div><div class="cal-cell-loc">${g.location_principale||''}</div><div class="cal-cell-scenes">${(g.scene||[]).slice(0,4).map(sc=>{const stato=(sd.scenes||{})[sc.numero]||'pending';const col=stato==='done'?'rgba(110,231,183,0.6)':stato==='standby'?'rgba(245,166,35,0.6)':'rgba(255,255,255,0.2)';const crit=isSceneCritical(sc.numero);return`<div class="cal-cell-sc" style="background:${col};${crit?'box-shadow:0 0 0 1.5px #e53e3e':''}">${sc.numero}</div>`;}).join('')}${sceneTotal>4?`<div class="cal-cell-sc" style="background:rgba(255,255,255,0.1)">+${sceneTotal-4}</div>`:''}</div>${sd.notes?`<div class="cal-cell-note">${sd.notes}</div>`:''}`;
+        el.innerHTML=`<div class="cal-cell-day">${day}</div><div class="cal-cell-giorno">DAY ${g.numero_giorno} ${g.ora_inizio&&g.ora_inizio!='TBD'?'<span style="color:'+(g.ora_incerta?'var(--orange)':'inherit')+'">'+(g.ora_inizio)+(g.ora_incerta?' ?':'')+'</span>':''}</div><div class="cal-cell-loc">${g.location_principale||''}</div><div class="cal-cell-scenes">${(g.scene||[]).slice(0,4).map(sc=>{const stato=(sd.scenes||{})[sc.numero]||'pending';const col=stato==='done'?'rgba(110,231,183,0.6)':stato==='standby'?'rgba(245,166,35,0.6)':'rgba(255,255,255,0.2)';const crit=isSceneCritical(sc.numero);return`<div class="cal-cell-sc" style="background:${col};${crit?'box-shadow:0 0 0 1.5px #e53e3e':''}">${sc.numero}</div>`;}).join('')}${sceneTotal>4?`<div class="cal-cell-sc" style="background:rgba(255,255,255,0.1)">+${sceneTotal-4}</div>`:''}</div>${g.trasferimento?`<div class="pdl-transfer-cal">🚌 ${g.trasferimento}</div>`:''}${sd.notes?`<div class="cal-cell-note">${sd.notes}</div>`:''}`;
       }
     } else {
       el.className=`cal-cell ${isToday?'is-today':''}`;
@@ -3472,9 +3473,22 @@ function renderPdlModalChips(g) {
     </div>`;
   }).join('');
 
-  // Hide the old aggregated cast div
+  // Trasferimento chip (in coda alle scene)
   const castEl = document.getElementById('pdlModalCast');
   if (castEl) castEl.style.display = 'none';
+
+  if (g.trasferimento) {
+    const existing = document.getElementById('pdlModalTransfer');
+    if (existing) existing.remove();
+    const transferDiv = document.createElement('div');
+    transferDiv.id = 'pdlModalTransfer';
+    transferDiv.className = 'pdl-transfer';
+    transferDiv.innerHTML = `<span style="font-size:14px">🚌</span><span>${g.trasferimento}</span>`;
+    document.getElementById('pdlModalChips').after(transferDiv);
+  } else {
+    const existing = document.getElementById('pdlModalTransfer');
+    if (existing) existing.remove();
+  }
 
   updatePdlModalStatus(g);
 }
