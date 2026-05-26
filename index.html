@@ -220,9 +220,10 @@ header { padding: 28px 0 24px; border-bottom: 1px solid var(--border); margin-bo
 .pdl-modal-title span { color:var(--yellow); }
 .pdl-modal-sub { font-size:11px;color:var(--muted);margin-top:3px; }
 .pdl-chip-hint { font-size:10px;color:var(--muted);margin-bottom:10px; }
+.pdl-scene-chips { display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;margin-bottom:14px; }
 .pdl-transfer { display:flex;align-items:center;gap:6px;margin-top:8px;padding:6px 10px;background:rgba(100,180,255,0.08);border:1px solid rgba(100,180,255,0.25);border-radius:7px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(100,180,255,0.9);letter-spacing:0.04em; }
 .pdl-transfer-cal { font-size:9px;color:rgba(100,180,255,0.8);background:rgba(100,180,255,0.1);border-radius:4px;padding:1px 5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-.pdl-chip { display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.15s;border:2px solid transparent;user-select:none; }
+.pdl-chip { display:flex;flex-direction:column;align-items:flex-start;gap:0;padding:8px 12px;border-radius:12px;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.15s;border:2px solid transparent;user-select:none;overflow:hidden; }
 .pdl-chip:hover { filter:brightness(1.2); }
 .pdl-chip.girato { opacity:0.4;text-decoration:line-through; }
 .pdl-chip.standby { border-style:dashed!important;opacity:0.75; }
@@ -776,7 +777,7 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
     </div>
     <div class="pdl-scene-chips" id="pdlModalChips"></div>
     <div id="pdlModalCast" style="display:none;margin-bottom:14px"></div>
-    <div style="margin-bottom:14px">
+    <div style="margin-top:16px;margin-bottom:14px">
       <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Note giornata</div>
       <textarea id="pdlModalNotes" placeholder="Note..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--white);font-family:'DM Mono',monospace;font-size:12px;outline:none;resize:none;min-height:70px;transition:border-color 0.15s"></textarea>
     </div>
@@ -3525,7 +3526,7 @@ function renderPdlModalChips(g) {
       }).join('')
     }</div>` : '';
 
-    return `<div class="pdl-chip ${typeClass} ${stato==='done'?'girato':''} ${stato==='standby'?'standby':''} ${crit?'critical':''}" style="${crit?'box-shadow:0 0 0 1.5px #e53e3e;':''}width:160px;flex-shrink:0;flex-direction:column;align-items:flex-start;height:auto;" onclick="cyclePdlSceneModal('${sc.numero}')" title="${sc.location||''} — ${sc.int_ext||''} ${sc.momento||''}">
+    return `<div class="pdl-chip ${typeClass} ${stato==='done'?'girato':''} ${stato==='standby'?'standby':''} ${crit?'critical':''}" style="${crit?'box-shadow:0 0 0 1.5px #e53e3e;':''}" onclick="cyclePdlSceneModal('${sc.numero}')" title="${sc.location||''} — ${sc.int_ext||''} ${sc.momento||''}">
       <div style="display:flex;align-items:center;gap:4px;width:100%">
         ${icon?`<span style="font-size:11px;font-weight:700">${icon}</span>`:''}
         <span class="pdl-chip-num" onclick="openSceneFromPdl('${sc.numero}',event)" style="text-decoration:underline;text-decoration-color:rgba(255,255,255,0.3);text-underline-offset:2px">${sc.numero}</span>
