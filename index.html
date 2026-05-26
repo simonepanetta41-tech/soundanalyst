@@ -1914,7 +1914,8 @@ Struttura JSON richiesta:
   "crowd_parlante": { "presente": false, "scene": [{ "scena": "string", "note": "string" }] },
   "animali": { "presente": false, "scene": [{ "scena": "string", "animale": "string" }] },
   "stunt_effetti": { "presente": false, "scene": [{ "scena": "string", "tipo": "string" }] },
-  "cast_provvisorio": [{ "character_id": 1, "nome": "string", "pose_stimate": 0 }]
+  "cast_provvisorio": [{ "character_id": 1, "nome": "string", "pose_stimate": 0 }],
+  "personaggi_scene": { "NOMEPERSONAGGIO": ["SC.1","SC.4","SC.12"] }
 }
 
 Regole importanti:
@@ -1925,6 +1926,7 @@ Regole importanti:
 - mezzi_movimento: escludi camera car, includi camion/moto/apecar/barca/treno/etc.
 - IMPORTANTE: ogni campo "scena" deve includere il numero di pagina PDF nel formato (p.X) — es: "SC.12 - EXT. BOSCO - GIORNO (p.34)"
 - cast_provvisorio: elenca TUTTI i personaggi con dialogo o azione significativa. Conta le scene in cui ogni personaggio appare (pose_stimate). Ordina per pose_stimate decrescente e assegna character_id progressivo (1 = più presente). Includi solo personaggi veri, non "VOCE FUORI CAMPO" generica, non comparse senza nome.
+- personaggi_scene: mappa NOME_PERSONAGGIO → array di numeri scena in cui appare (solo personaggi con almeno 2 scene). Usa il nome esatto come appare nei dialoghi. Solo numero scena, senza prefisso SC. Es: {"MATTIA":["4","12","25"],"MARIA":["4","50"]}
 Rispondi SOLO con il JSON.`;
 
 // ══ ANALYSIS ══
@@ -2252,6 +2254,15 @@ function buildChatContext(d) {
     ['Stunt',d.stunt_effetti,x=>x.scene?.map(s=>`${s.tipo}:${s.scena}`).join('; ')],
   ];
   cats.forEach(([l,obj,fn]) => { if(obj?.presente){const v=fn(obj);if(v)lines.push(`${l}: ${v}`);}});
+
+  // Mappa personaggi→scene (compatta, solo se disponibile)
+  if (d.personaggi_scene && Object.keys(d.personaggi_scene).length) {
+    const mapStr = Object.entries(d.personaggi_scene)
+      .map(([nome, scene]) => `${nome}:${Array.isArray(scene) ? scene.join(',') : scene}`)
+      .join(' | ');
+    lines.push(`\nPERSONAGGI→SCENE: ${mapStr}`);
+  }
+
   return lines.join('\n');
 }
 
@@ -2529,7 +2540,8 @@ Gergo del set: "orata" = un'ora di straordinario, "cestini" = pasti sul set, "cr
 
 Spoglio:\n${buildChatContext(analysisData)}${pdlData ? "\n\nPIANO DI LAVORAZIONE:\n" + buildPdlContext() : ""}${ragText ? "\n\nTESTO SCENEGGIATURA (pagine rilevanti):\n" + ragText : ""}
 
-Regole: risposte BREVI max 3-4 righe. Se ti fanno domande scherzose rispondi al gioco con humour napoletano. Parla da collega di set, non da professore.${ragText ? ' Quando rispondi su scene specifiche, usa il testo della sceneggiatura fornito sopra.' : ''}`;
+Regole: risposte BREVI max 3-4 righe. Se ti fanno domande scherzose rispondi al gioco con humour napoletano. Parla da collega di set, non da professore.
+Se hai la mappa PERSONAGGI→SCENE nel contesto, usala per rispondere a domande su quali scene coinvolgono uno o più personaggi, se si incontrano, quante scene hanno insieme — senza bisogno del testo della sceneggiatura.${ragText ? ' Quando rispondi su scene specifiche, usa il testo della sceneggiatura fornito sopra.' : ''}`;
 
   let reply = '';
   for (let attempt = 1; attempt <= 3; attempt++) {
