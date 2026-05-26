@@ -3513,44 +3513,41 @@ function renderPdlModalChips(g) {
     const icon = stato==='done' ? '✓' : stato==='standby' ? '⏸' : '';
     const crit = isSceneCritical(sc.numero);
 
-    // Cast pills for this scene
     const sceneIds = (sc.cast||[]).slice().sort((a,b) => Number(a)-Number(b));
-    const castPills = sceneIds.length ? `<div style="display:flex;flex-direction:column;gap:2px;margin-top:5px">${
+    const castBlock = sceneIds.length ? `<div style="margin-top:6px;display:flex;flex-direction:column;gap:2px;border-top:1px solid rgba(255,255,255,0.08);padding-top:5px">${
       sceneIds.map(id => {
         const c = castMap.get(String(id));
         const nome = c ? c.nome : '';
         const isM = c?.minore;
-        return `<span style="display:inline-flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:9px;white-space:nowrap">
-          <span style="color:var(--yellow);font-weight:700;min-width:16px">${id}</span>${nome ? `<span style="color:rgba(255,255,255,0.55)">${nome}${isM?' M':''}</span>` : ''}
-        </span>`;
+        return `<div style="display:flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:9px;white-space:nowrap">
+          <span style="color:var(--yellow);font-weight:700;min-width:16px">${id}</span>${nome?`<span style="color:rgba(255,255,255,0.5)">${nome}${isM?' M':''}</span>`:''}
+        </div>`;
       }).join('')
     }</div>` : '';
 
-    return `<div class="pdl-chip ${typeClass} ${stato==='done'?'girato':''} ${stato==='standby'?'standby':''} ${crit?'critical':''}" style="${crit?'box-shadow:0 0 0 1.5px #e53e3e;':''}" onclick="cyclePdlSceneModal('${sc.numero}')" title="${sc.location||''} — ${sc.int_ext||''} ${sc.momento||''}">
-      <div style="display:flex;align-items:center;gap:4px">
-        ${icon ? `<span style="font-size:11px;font-weight:700">${icon}</span>` : ''}
+    return `<div class="pdl-chip ${typeClass} ${stato==='done'?'girato':''} ${stato==='standby'?'standby':''} ${crit?'critical':''}" style="${crit?'box-shadow:0 0 0 1.5px #e53e3e;':''}width:160px;flex-shrink:0;flex-direction:column;align-items:flex-start;height:auto;" onclick="cyclePdlSceneModal('${sc.numero}')" title="${sc.location||''} — ${sc.int_ext||''} ${sc.momento||''}">
+      <div style="display:flex;align-items:center;gap:4px;width:100%">
+        ${icon?`<span style="font-size:11px;font-weight:700">${icon}</span>`:''}
         <span class="pdl-chip-num" onclick="openSceneFromPdl('${sc.numero}',event)" style="text-decoration:underline;text-decoration-color:rgba(255,255,255,0.3);text-underline-offset:2px">${sc.numero}</span>
         <span style="font-size:9px;opacity:0.7">${sc.int_ext||''} ${sc.momento||''}</span>
       </div>
-      ${castPills}
+      ${castBlock}
     </div>`;
   }).join('');
 
-  // Trasferimento chip (in coda alle scene)
+  // Cast panel hidden
   const castEl = document.getElementById('pdlModalCast');
   if (castEl) castEl.style.display = 'none';
 
+  // Trasferimento
+  const existing = document.getElementById('pdlModalTransfer');
+  if (existing) existing.remove();
   if (g.trasferimento) {
-    const existing = document.getElementById('pdlModalTransfer');
-    if (existing) existing.remove();
     const transferDiv = document.createElement('div');
     transferDiv.id = 'pdlModalTransfer';
     transferDiv.className = 'pdl-transfer';
     transferDiv.innerHTML = `<span style="font-size:14px">🚌</span><span>${g.trasferimento}</span>`;
     document.getElementById('pdlModalChips').after(transferDiv);
-  } else {
-    const existing = document.getElementById('pdlModalTransfer');
-    if (existing) existing.remove();
   }
 
   updatePdlModalStatus(g);
