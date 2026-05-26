@@ -2888,7 +2888,6 @@ Regole: momento D=Day N=Night M=Morning E=Evening. cast solo numeri. JSON minifi
 
 // ══ TRANSFER PARSER — local, no API ══
 function parseTrasferimentiFromText(text) {
-  // Map: numero_giorno → trasferimento label
   const result = {};
 
   // Split by "Fine del Giorno #N" markers
@@ -2900,16 +2899,16 @@ function parseTrasferimentiFromText(text) {
     lastIdx = m.index + m[0].length;
   }
 
-  // Transfer keywords
-  const transferRe = /(?:TRASFERIMENTO|SPOSTAMENTO TROUPE|TRASFER\.|CAMBIO LOCATION)[\s\w\-\/àèéìòùÀÈÉÌÒÙ]*/gi;
+  // Match transfer lines — max 6 words after keyword to avoid grabbing schedule content
+  const transferRe = /(?:TRASFERIMENTO|SPOSTAMENTO TROUPE|TRASFER\.)\s+(?:[A-ZÀÈÉÌÒÙ][A-ZÀÈÉÌÒÙa-zàèéìòù\s]{0,40}?)(?=\s{2,}|\n|Fine|$)/g;
 
   blocks.forEach(({ dayNum, start, end }) => {
     const chunk = text.slice(start, end);
+    transferRe.lastIndex = 0;
     const match = transferRe.exec(chunk);
-    transferRe.lastIndex = 0; // reset for next chunk
     if (match) {
-      const label = match[0].trim().replace(/\s+/g, ' ');
-      if (label.length > 4) result[dayNum] = label;
+      const label = match[0].trim().replace(/\s+/g, ' ').slice(0, 50);
+      if (label.length > 6) result[dayNum] = label;
     }
   });
 
@@ -3389,7 +3388,7 @@ function renderPdlCalendar() {
         const oraStr = (g.ora_inizio && g.ora_inizio !== 'TBD') ? ' ' + g.ora_inizio : '';
         el.innerHTML = '<div class="cal-cell-day">' + day + '</div><div class="cal-cell-giorno" style="font-size:8px;opacity:0.8">D' + g.numero_giorno + oraStr + '</div>';
       } else {
-        el.innerHTML=`<div class="cal-cell-day">${day}</div><div class="cal-cell-giorno">DAY ${g.numero_giorno} ${g.ora_inizio&&g.ora_inizio!='TBD'?'<span style="color:'+(g.ora_incerta?'var(--orange)':'inherit')+'">'+(g.ora_inizio)+(g.ora_incerta?' ?':'')+'</span>':''}</div><div class="cal-cell-loc">${g.location_principale||''}</div><div class="cal-cell-scenes">${(g.scene||[]).slice(0,4).map(sc=>{const stato=(sd.scenes||{})[sc.numero]||'pending';const col=stato==='done'?'rgba(110,231,183,0.6)':stato==='standby'?'rgba(245,166,35,0.6)':'rgba(255,255,255,0.2)';const crit=isSceneCritical(sc.numero);return`<div class="cal-cell-sc" style="background:${col};${crit?'box-shadow:0 0 0 1.5px #e53e3e':''}">${sc.numero}</div>`;}).join('')}${sceneTotal>4?`<div class="cal-cell-sc" style="background:rgba(255,255,255,0.1)">+${sceneTotal-4}</div>`:''}</div>${g.trasferimento?`<div class="pdl-transfer-cal">🚌 ${g.trasferimento}</div>`:''}${sd.notes?`<div class="cal-cell-note">${sd.notes}</div>`:''}`;
+        el.innerHTML=`<div class="cal-cell-day">${day}</div><div class="cal-cell-giorno">DAY ${g.numero_giorno} ${g.ora_inizio&&g.ora_inizio!='TBD'?'<span style="color:'+(g.ora_incerta?'var(--orange)':'inherit')+'">'+(g.ora_inizio)+(g.ora_incerta?' ?':'')+'</span>':''}</div><div class="cal-cell-loc">${g.location_principale||''}</div><div class="cal-cell-scenes">${(g.scene||[]).slice(0,4).map(sc=>{const stato=(sd.scenes||{})[sc.numero]||'pending';const col=stato==='done'?'rgba(110,231,183,0.6)':stato==='standby'?'rgba(245,166,35,0.6)':'rgba(255,255,255,0.2)';const crit=isSceneCritical(sc.numero);return`<div class="cal-cell-sc" style="background:${col};${crit?'box-shadow:0 0 0 1.5px #e53e3e':''}">${sc.numero}</div>`;}).join('')}${sceneTotal>4?`<div class="cal-cell-sc" style="background:rgba(255,255,255,0.1)">+${sceneTotal-4}</div>`:''}</div>${g.trasferimento?`<div style="font-size:13px;margin-top:4px" title="${g.trasferimento}">🚌</div>`:''}${sd.notes?`<div class="cal-cell-note">${sd.notes}</div>`:''}`;
       }
     } else {
       el.className=`cal-cell ${isToday?'is-today':''}`;
