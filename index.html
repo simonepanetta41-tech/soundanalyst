@@ -775,7 +775,6 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       <button style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:0 4px;line-height:1" onclick="closePdlDayModal()">✕</button>
     </div>
     <div class="pdl-scene-chips" id="pdlModalChips"></div>
-    <div class="pdl-scene-chips" id="pdlModalChips"></div>
     <div id="pdlModalCast" style="display:none;margin-bottom:14px"></div>
     <div style="margin-bottom:14px">
       <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Note giornata</div>
@@ -3527,7 +3526,7 @@ function renderPdlModalChips(g) {
       }).join('')
     }</div>` : '';
 
-    return `<div class="pdl-chip ${typeClass} ${stato==='done'?'girato':''} ${stato==='standby'?'standby':''} ${crit?'critical':''}" style="${crit?'box-shadow:0 0 0 1.5px #e53e3e':''}display:flex;flex-direction:column;align-items:flex-start;" onclick="cyclePdlSceneModal('${sc.numero}')" title="${sc.location||''} — ${sc.int_ext||''} ${sc.momento||''}">
+    return `<div class="pdl-chip ${typeClass} ${stato==='done'?'girato':''} ${stato==='standby'?'standby':''} ${crit?'critical':''}" style="${crit?'box-shadow:0 0 0 1.5px #e53e3e;':''}display:flex;flex-direction:column;align-items:flex-start;" onclick="cyclePdlSceneModal('${sc.numero}')" title="${sc.location||''} — ${sc.int_ext||''} ${sc.momento||''}">
       <div style="display:flex;align-items:center;gap:4px">
         ${icon ? `<span style="font-size:11px;font-weight:700">${icon}</span>` : ''}
         <span class="pdl-chip-num" onclick="openSceneFromPdl('${sc.numero}',event)" style="text-decoration:underline;text-decoration-color:rgba(255,255,255,0.3);text-underline-offset:2px">${sc.numero}</span>
