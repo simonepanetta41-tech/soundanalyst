@@ -4,23 +4,26 @@
   "description": "Analisi sceneggiatura per il reparto suono",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#f5e642",
-  "orientation": "portrait-primary",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "orientation": "any",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/soundanalyst_favicon_32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/soundanalyst_favicon_192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/soundanalyst_favicon_512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ],
-  "categories": ["productivity", "utilities"],
-  "lang": "it"
+  ]
 }
