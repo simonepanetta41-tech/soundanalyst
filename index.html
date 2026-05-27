@@ -2093,54 +2093,24 @@ function showError(msg) {
 }
 
 // ══ SYSPROMPT ══
-const SYSPROMPT = `Sei un esperto analista di sceneggiature cinematografiche specializzato nel reparto suono.
-Analizza la sceneggiatura e rispondi SOLO con un oggetto JSON valido. Nessun testo prima o dopo. Nessun markdown. Nessun backtick.
+const SYSPROMPT = `Sei un analista di sceneggiature per il reparto suono cinematografico. Analizza e rispondi SOLO con JSON valido. Nessun testo. Nessun markdown.
 
-Struttura JSON richiesta:
-{
-  "titolo": "string",
-  "scene_list": [{"n":"string","ie":"INT/EST/EXT/I-E","m":"D/N/M/E/T"}],
-  "riassunto": "string (circa 15 righe: genere, trama principale con archi narrativi, personaggi chiave, tono, ambientazione, colpi di scena principali — scritto in italiano)",
-  "totale_scene": 0,
-  "scene_interno": 0,
-  "scene_esterno": 0,
-  "scene_interno_giorno": 0,
-  "scene_interno_notte": 0,
-  "scene_esterno_giorno": 0,
-  "scene_esterno_notte": 0,
-  "max_attori_parlanti": { "numero": 0, "scena": "string" },
-  "media_attori_parlanti": 0,
-  "camera_car": { "presente": false, "scene": [] },
-  "location_wild": { "presente": false, "scene": [{ "scena": "string", "location": "string" }] },
-  "playback": { "presente": false, "esibizioni_live": [{ "scena": "string", "note": "string" }], "playback_puro": [{ "scena": "string", "note": "string" }], "musica_diegetica": [{ "scena": "string", "fonte": "string", "note": "string" }] },
-  "costume_critico": { "presente": false, "scene": [{ "scena": "string", "attori": 0, "personaggi": "string", "note": "string" }], "totale_attori_coinvolti": 0 },
-  "mezzi_movimento": { "presente": false, "scene": [{ "scena": "string", "mezzo": "string", "note": "string" }] },
-  "acqua_pioggia": { "presente": false, "scene": [{ "scena": "string", "tipo": "string" }] },
-  "subacquee": { "presente": false, "scene": ["string"] },
-  "ambienti_rumorosi": { "presente": false, "scene": [{ "scena": "string", "tipo": "string" }] },
-  "aerei_elicotteri": { "presente": false, "scene": [{ "scena": "string", "tipo": "string" }] },
-  "dialoghi_movimento": { "presente": false, "scene": [{ "scena": "string", "note": "string" }] },
-  "lingue_straniere": { "presente": false, "lingue": [], "scene": [{ "scena": "string", "lingua": "string" }] },
-  "dialoghi_mediati": { "presente": false, "scene": [{ "scena": "string", "tipo": "string" }] },
-  "voiceover": { "presente": false, "scene": [{ "scena": "string", "personaggio": "string" }] },
-  "crowd_parlante": { "presente": false, "scene": [{ "scena": "string", "note": "string" }] },
-  "animali": { "presente": false, "scene": [{ "scena": "string", "animale": "string" }] },
-  "stunt_effetti": { "presente": false, "scene": [{ "scena": "string", "tipo": "string" }] },
-  "cast_provvisorio": [{ "character_id": 1, "nome": "string", "pose_stimate": 0 }],
-  "personaggi_scene": { "NOMEPERSONAGGIO": ["SC.1","SC.4","SC.12"] }
-}
+{"titolo":"string","scene_list":[{"n":"string","ie":"INT/EST/EXT/I-E","m":"D/N/M/E/T"}],"riassunto":"string (10-12 righe: genere, trama, personaggi chiave, tono)","totale_scene":0,"scene_interno":0,"scene_esterno":0,"scene_interno_giorno":0,"scene_interno_notte":0,"scene_esterno_giorno":0,"scene_esterno_notte":0,"max_attori_parlanti":{"numero":0,"scena":"string"},"media_attori_parlanti":0,"camera_car":{"presente":false,"scene":[]},"location_wild":{"presente":false,"scene":[{"scena":"string","location":"string"}]},"playback":{"presente":false,"esibizioni_live":[{"scena":"string","note":"string"}],"playback_puro":[{"scena":"string","note":"string"}],"musica_diegetica":[{"scena":"string","fonte":"string","note":"string"}]},"costume_critico":{"presente":false,"scene":[{"scena":"string","attori":0,"personaggi":"string","note":"string"}],"totale_attori_coinvolti":0},"mezzi_movimento":{"presente":false,"scene":[{"scena":"string","mezzo":"string","note":"string"}]},"acqua_pioggia":{"presente":false,"scene":[{"scena":"string","tipo":"string"}]},"subacquee":{"presente":false,"scene":["string"]},"ambienti_rumorosi":{"presente":false,"scene":[{"scena":"string","tipo":"string"}]},"aerei_elicotteri":{"presente":false,"scene":[{"scena":"string","tipo":"string"}]},"dialoghi_movimento":{"presente":false,"scene":[{"scena":"string","note":"string"}]},"lingue_straniere":{"presente":false,"lingue":[],"scene":[{"scena":"string","lingua":"string"}]},"dialoghi_mediati":{"presente":false,"scene":[{"scena":"string","tipo":"string"}]},"voiceover":{"presente":false,"scene":[{"scena":"string","personaggio":"string"}]},"crowd_parlante":{"presente":false,"scene":[{"scena":"string","note":"string"}]},"animali":{"presente":false,"scene":[{"scena":"string","animale":"string"}]},"stunt_effetti":{"presente":false,"scene":[{"scena":"string","tipo":"string"}]},"cast_provvisorio":[{"character_id":1,"nome":"string","pose_stimate":0}],"personaggi_scene":{"NOME":["1","2"]}}
 
-Regole importanti:
-- scene_list: elenca TUTTE le scene della sceneggiatura con numero (n), interno/esterno (ie: INT/EST/EXT/I-E) e momento (m: D=giorno G=giorno M=mattino E=sera T=tramonto N=notte). Es: [{"n":"1","ie":"EST","m":"D"},{"n":"2","ie":"INT","m":"N"}]
-- media_attori_parlanti: arrotonda PER ECCESSO al numero intero
-- location_wild: scene in ambienti naturali che presentano difficoltà logistiche per il reparto suono (trasporto attrezzatura, alimentazione, spostamenti) — boschi, spiagge, fiumi, laghi, cascate, montagne, canyon, grotte, campi aperti, litorali. L'ambiente naturale deve essere fisicamente presente nella scena. NON includere: interni di edifici con vista su paesaggi naturali (finestra sul mare, finestra sul bosco), riferimenti visivi o dialoghi su luoghi naturali, scenografie che simulano ambienti naturali. Criterio pratico: il reparto suono deve trasportare l'attrezzatura in un luogo difficile da raggiungere o senza infrastrutture?
-- costume_critico: petto nudo, bikini, costume bagno, body, etc.
-- camera_car: scene girate su veicoli con ripresa dall'auto
-- mezzi_movimento: escludi camera car, includi camion/moto/apecar/barca/treno/etc.
-- IMPORTANTE: ogni campo "scena" deve includere il numero di pagina PDF nel formato (p.X) — es: "SC.12 - EXT. BOSCO - GIORNO (p.34)"
-- cast_provvisorio: elenca TUTTI i personaggi con dialogo o azione significativa. Conta le scene in cui ogni personaggio appare (pose_stimate). Ordina per pose_stimate decrescente e assegna character_id progressivo (1 = più presente). Includi solo personaggi veri, non "VOCE FUORI CAMPO" generica, non comparse senza nome.
-- playback: esibizioni_live = band/artista che suona dal vivo in scena; playback_puro = artista che finge di suonare su base pre-registrata; musica_diegetica = musica udibile in scena proveniente da una fonte visibile o citata (radio, TV, stereo, jukebox, altoparlanti, vicino di casa, ecc.) — includi il campo "fonte" con il tipo di sorgente.
-- personaggi_scene: mappa NOME_PERSONAGGIO → array di numeri scena in cui appare (solo personaggi con almeno 2 scene). Usa il nome esatto come appare nei dialoghi. Solo numero scena, senza prefisso SC. Es: {"MATTIA":["4","12","25"],"MARIA":["4","50"]}
+Regole:
+- scene_list: TUTTE le scene con n=numero, ie=INT/EST/EXT/I-E, m=D(giorno)N(notte)M(mattino)E(sera)T(tramonto)
+- scena format: "SC.N - TIPO. LOCATION - MOMENTO (p.X)"
+- camera_car: scene girate su veicolo in movimento con ripresa dall'auto
+- location_wild: ambienti naturali con difficoltà logistiche (boschi, spiagge, fiumi, montagne). NON finestre con vista natura.
+- costume_critico: petto nudo, bikini, costume bagno, body
+- mezzi_movimento: camion/moto/barca/treno/apecar — escludi camera car
+- playback live=esibizione dal vivo, puro=playback su base, diegetica=musica da fonte visibile in scena (radio/TV/stereo)
+- dialoghi_movimento: dialogo mentre ci si sposta (a piedi, in moto, in auto se non camera car)
+- dialoghi_mediati: telefono, videochiamata, walkie-talkie, interfono
+- cast_provvisorio: tutti i personaggi con dialogo, ordinati per pose_stimate desc, character_id progressivo
+- personaggi_scene: solo personaggi con 2+ scene, solo numero scena senza SC.
+- media_attori_parlanti: intero per eccesso
+- ogni scena include numero pagina PDF: (p.X)
 Rispondi SOLO con il JSON.`;
 
 // ══ ANALYSIS ══
