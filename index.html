@@ -281,7 +281,37 @@ header { padding: 28px 0 24px; border-bottom: 1px solid var(--border); margin-bo
 .subsec { border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px; }
 .subsec-title { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
 
-/* ── CAT NOTE TOGGLE ── */
+/* ── VERSION COMPARE ── */
+#versionBar { display:none;margin:20px 0;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap; }
+.btn-new-version { display:flex;align-items:center;gap:7px;padding:9px 16px;background:none;border:1px solid var(--yellow);border-radius:8px;color:var(--yellow);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12px;cursor:pointer;transition:all 0.15s; }
+.btn-new-version:hover { background:rgba(245,230,66,0.08); }
+.btn-prev-version { display:flex;align-items:center;gap:7px;padding:9px 16px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12px;cursor:pointer;transition:all 0.15s; }
+.btn-prev-version:hover { border-color:var(--muted);color:var(--white); }
+.version-label { font-size:11px;color:var(--muted);font-family:'DM Mono',monospace; }
+
+/* Confronto modale */
+#compareModal { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;padding:16px; }
+#compareModal.open { display:flex; }
+.compare-box { background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:680px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden; }
+.compare-header { padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0; }
+.compare-title { font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:var(--white); }
+.compare-subtitle { font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:3px; }
+.compare-close { background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:4px; }
+.compare-body { padding:20px 24px;overflow-y:auto;flex:1; }
+.compare-section { margin-bottom:22px; }
+.compare-section-title { display:flex;align-items:center;gap:8px;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px; }
+.compare-section-title svg { flex-shrink:0; }
+.compare-count { background:var(--surface2);border-radius:4px;padding:1px 6px;font-size:9px;color:var(--muted); }
+.compare-item { padding:8px 12px;border-radius:7px;margin-bottom:5px;font-size:12px;line-height:1.5; }
+.compare-item.added { background:rgba(110,231,183,0.08);border:1px solid rgba(110,231,183,0.2);color:rgba(110,231,183,0.9); }
+.compare-item.removed { background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);color:rgba(239,68,68,0.8); }
+.compare-item.modified { background:rgba(245,230,66,0.06);border:1px solid rgba(245,230,66,0.2);color:var(--white-dim); }
+.compare-item.critical { background:rgba(245,230,66,0.1);border:1px solid rgba(245,230,66,0.35);color:var(--white); }
+.compare-item strong { color:var(--yellow); }
+.compare-footer { padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;flex-shrink:0; }
+.compare-loading { display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;padding:32px 0;justify-content:center; }
+.spin { animation:spin 1s linear infinite;display:inline-block; }
+@keyframes spin { to { transform:rotate(360deg); } }
 .cat-note-toggle { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--border); cursor: pointer; user-select: none; }
 .cat-note-toggle:hover .cat-note-label { color: var(--yellow); }
 .cat-note-label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); flex: 1; transition: color 0.15s; }
@@ -672,6 +702,49 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       <div class="stats-row" id="statsRow"></div>
       <div class="max-info" id="maxInfo" style="display:none"></div>
       <div id="riassuntoBox" style="display:none"><div class="ria-label">Sinossi</div><div id="riassuntoText"></div></div>
+
+      <!-- VERSION BAR -->
+      <div id="versionBar">
+        <button class="btn-new-version" onclick="document.getElementById('newVersionInput').click()">
+          <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v12M4 10l6-6 6 6"/></svg>
+          Carica nuova versione
+        </button>
+        <input type="file" id="newVersionInput" accept=".pdf" style="display:none" onchange="handleNewVersion(this)">
+        <button class="btn-prev-version" id="btnPrevVersion" style="display:none" onclick="openCompareModal(false)">
+          <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 3"/></svg>
+          Versione precedente
+        </button>
+        <span class="version-label" id="versionLabel"></span>
+      </div>
+
+      <!-- COMPARE MODAL -->
+      <div id="compareModal">
+        <div class="compare-box">
+          <div class="compare-header">
+            <div>
+              <div class="compare-title">Confronto versioni</div>
+              <div class="compare-subtitle" id="compareSubtitle"></div>
+            </div>
+            <button class="compare-close" onclick="document.getElementById('compareModal').classList.remove('open')">
+              <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+            </button>
+          </div>
+          <div class="compare-body" id="compareBody">
+            <div class="compare-loading">
+              <span class="spin"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2z" stroke-opacity=".2"/><path d="M10 2a8 8 0 018 8" stroke-linecap="round"/></svg></span>
+              Analisi in corso...
+            </div>
+          </div>
+          <div class="compare-footer" id="compareFooter" style="display:none">
+            <button class="btn-prev-version" onclick="document.getElementById('compareModal').classList.remove('open')">Chiudi</button>
+            <button class="btn-new-version" id="btnImportNew" onclick="importNewAnalysis()">
+              <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v8M6 8l4 4 4-4"/><path d="M4 16h12"/></svg>
+              Importa nuova analisi
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div class="sec-label" style="margin-top:28px">Dettaglio categorie</div>
       <div class="cats-grid" id="catsGrid"></div>
 
@@ -1812,6 +1885,9 @@ async function loadFromHistory(id) {
   // Load cast in background
   castData = await loadCastFromSupabase(id);
   renderCastTab(castData, castData.length > 0 && castData[0]?.fonte === 'provvisoria');
+  // Show version bar
+  updateVersionBar();
+  checkPrevVersion();
 }
 
 async function deleteAnalysis(id, e) {
@@ -2156,6 +2232,13 @@ async function startAnalysis() {
     hideHomeShowResults();
     renderResults(data);
     loadNotes(null);
+    updateVersionBar();
+    // Save screenplay text silently for future comparison
+    if (currentAnalysisId && pdfB64Array.length) {
+      extractFullText(pdfB64Array[0]).then(text => {
+        saveScreenplayText(currentAnalysisId, text);
+      }).catch(()=>{});
+    }
 
     // Show cast popup after render
     if (data.cast_provvisorio?.length) {
@@ -2278,7 +2361,295 @@ function resetApp() {
   showPage('home');
 }
 
-// ══ CHAT ══
+// ══ VERSION COMPARISON ══
+let pendingNewAnalysis = null; // hidden new analysis waiting to be imported
+let pendingNewPdfB64   = null; // b64 of new PDF
+
+async function extractFullText(b64) {
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  const doc = await pdfjsLib.getDocument({ data: arr }).promise;
+  let text = '';
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const tc   = await page.getTextContent();
+    text += tc.items.map(i => i.str).join(' ') + '\n';
+  }
+  return text;
+}
+
+async function saveScreenplayText(analysisId, text, isPrev = false) {
+  const fname = isPrev ? `${analysisId}_text_prev.txt` : `${analysisId}_text.txt`;
+  const blob = new Blob([text], { type: 'text/plain' });
+  await sb.storage.from('Screenplays').upload(fname, blob, { upsert: true });
+}
+
+async function loadScreenplayText(analysisId, isPrev = false) {
+  const fname = isPrev ? `${analysisId}_text_prev.txt` : `${analysisId}_text.txt`;
+  try {
+    const { data } = await sb.storage.from('Screenplays').download(fname);
+    if (!data) return null;
+    return await data.text();
+  } catch(e) { return null; }
+}
+
+function updateVersionBar() {
+  const bar = document.getElementById('versionBar');
+  if (!bar) return;
+  bar.style.display = 'flex';
+}
+
+async function checkPrevVersion() {
+  if (!currentAnalysisId) return;
+  const prev = await loadScreenplayText(currentAnalysisId, true);
+  const btnPrev = document.getElementById('btnPrevVersion');
+  if (btnPrev) btnPrev.style.display = prev ? 'flex' : 'none';
+}
+
+async function handleNewVersion(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+
+  const label = document.getElementById('versionLabel');
+  label.textContent = '⏳ Elaborazione in corso...';
+
+  try {
+    // Read new PDF as b64
+    const buf = await file.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let bin = ''; const chunk = 8192;
+    for (let i = 0; i < bytes.byteLength; i += chunk)
+      bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    const b64 = btoa(bin);
+    pendingNewPdfB64 = b64;
+
+    // Extract text from new PDF
+    label.textContent = '⏳ Estrazione testo...';
+    const newText = await extractFullText(b64);
+
+    // Load current text
+    const curText = await loadScreenplayText(currentAnalysisId) || '';
+
+    // Open modal immediately with loading state
+    openCompareModal(true);
+
+    // Step 1 — Run comparison (shown to user)
+    runComparison(curText, newText, b64);
+
+    // Step 2 — Run new analysis in background (hidden)
+    runNewAnalysisBackground(b64, newText);
+
+    label.textContent = `${file.name}`;
+
+  } catch(e) {
+    label.textContent = '⚠ ' + e.message;
+  }
+}
+
+async function runComparison(oldText, newText, newB64) {
+  const body = document.getElementById('compareBody');
+  const footer = document.getElementById('compareFooter');
+  const subtitle = document.getElementById('compareSubtitle');
+  subtitle.textContent = `${analysisData?.titolo || 'Sceneggiatura'} — confronto versioni`;
+
+  // Build critical scenes list from current analysis
+  const criticalKeys = ['camera_car','location_wild','playback','costume_critico','mezzi_movimento',
+    'acqua_pioggia','subacquee','ambienti_rumorosi','aerei_elicotteri','dialoghi_movimento',
+    'lingue_straniere','dialoghi_mediati','voiceover','crowd_parlante','animali','stunt_effetti'];
+  const criticalScenes = new Set();
+  if (analysisData) {
+    criticalKeys.forEach(k => {
+      const cat = analysisData[k];
+      if (!cat?.presente) return;
+      (cat.scene||[]).forEach(s => {
+        const m = String(s.scena||s||'').match(/SC\.(\w+)/);
+        if (m) criticalScenes.add(m[1]);
+      });
+      (cat.esibizioni_live||[]).concat(cat.playback_puro||[]).concat(cat.musica_diegetica||[]).forEach(s => {
+        const m = String(s.scena||'').match(/SC\.(\w+)/);
+        if (m) criticalScenes.add(m[1]);
+      });
+    });
+  }
+
+  const prompt = `Sei un analizzatore di sceneggiature cinematografiche. Confronta le due versioni qui sotto e produci un report JSON strutturato.
+
+VERSIONE PRECEDENTE:
+${oldText.slice(0, 60000)}
+
+NUOVA VERSIONE:
+${newText.slice(0, 60000)}
+
+Scene critiche da monitorare (numeri scena): ${[...criticalScenes].join(', ') || 'nessuna'}
+
+Rispondi SOLO con JSON valido:
+{
+  "scene_aggiunte": [{"numero":"string","intestazione":"string"}],
+  "scene_eliminate": [{"numero":"string","intestazione":"string"}],
+  "scene_modificate": [{"numero":"string","intestazione":"string","riassunto":"string (max 20 parole)"}],
+  "scene_da_segnalare": [{"numero":"string","intestazione":"string","riassunto":"string","motivo":"string"}]
+}
+
+scene_da_segnalare = solo scene modificate/eliminate che erano critiche per il suono (numeri: ${[...criticalScenes].join(',')}).
+Ignora rinumerazioni. Ignora scene identiche. Sii conciso.`;
+
+  try {
+    const resp = await callApi('api/analyze', {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const raw = resp.content.map(b => b.text||'').join('').replace(/```json|```/g,'').trim();
+    const data = JSON.parse(raw);
+    renderCompareResult(data);
+    footer.style.display = 'flex';
+
+    // Save texts for future use
+    if (currentAnalysisId) {
+      const curText = await loadScreenplayText(currentAnalysisId);
+      if (curText) await saveScreenplayText(currentAnalysisId, curText, true);
+      const newText2 = await extractFullText(pendingNewPdfB64);
+      await saveScreenplayText(currentAnalysisId, newText2, false);
+    }
+
+  } catch(e) {
+    body.innerHTML = `<div style="color:rgba(239,68,68,0.8);padding:20px;text-align:center">⚠ Errore: ${e.message}</div>`;
+  }
+}
+
+function renderCompareResult(data) {
+  const body = document.getElementById('compareBody');
+  const ico_plus   = `<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="rgba(110,231,183,0.9)" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v6M5 8h6"/></svg>`;
+  const ico_minus  = `<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="rgba(239,68,68,0.8)" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6.5"/><path d="M5 8h6"/></svg>`;
+  const ico_edit   = `<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="#f5e642" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3-8 8H3v-3z"/></svg>`;
+  const ico_alert  = `<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="#f5e642" stroke-width="1.5" stroke-linecap="round"><path d="M8 1l7 13H1z"/><path d="M8 6v4M8 11.5v.5"/></svg>`;
+
+  let html = '';
+
+  if (data.scene_da_segnalare?.length) {
+    html += `<div class="compare-section">
+      <div class="compare-section-title">${ico_alert} Scene da segnalare <span class="compare-count">${data.scene_da_segnalare.length}</span></div>
+      ${data.scene_da_segnalare.map(s => `<div class="compare-item critical"><strong>SC.${s.numero}</strong> — ${s.intestazione}<br><span style="font-size:11px;color:var(--muted)">${s.riassunto} · <em>${s.motivo}</em></span></div>`).join('')}
+    </div>`;
+  }
+
+  if (data.scene_aggiunte?.length) {
+    html += `<div class="compare-section">
+      <div class="compare-section-title">${ico_plus} Scene aggiunte <span class="compare-count">${data.scene_aggiunte.length}</span></div>
+      ${data.scene_aggiunte.map(s => `<div class="compare-item added"><strong>SC.${s.numero}</strong> — ${s.intestazione}</div>`).join('')}
+    </div>`;
+  }
+
+  if (data.scene_eliminate?.length) {
+    html += `<div class="compare-section">
+      <div class="compare-section-title">${ico_minus} Scene eliminate <span class="compare-count">${data.scene_eliminate.length}</span></div>
+      ${data.scene_eliminate.map(s => `<div class="compare-item removed"><strong>SC.${s.numero}</strong> — ${s.intestazione}</div>`).join('')}
+    </div>`;
+  }
+
+  if (data.scene_modificate?.length) {
+    html += `<div class="compare-section">
+      <div class="compare-section-title">${ico_edit} Scene modificate <span class="compare-count">${data.scene_modificate.length}</span></div>
+      ${data.scene_modificate.map(s => `<div class="compare-item modified"><strong>SC.${s.numero}</strong> — ${s.intestazione}<br><span style="font-size:11px;color:var(--muted)">${s.riassunto}</span></div>`).join('')}
+    </div>`;
+  }
+
+  if (!html) html = `<div style="text-align:center;padding:32px 0;color:var(--muted);font-size:13px">Nessuna differenza rilevante tra le due versioni.</div>`;
+
+  body.innerHTML = html;
+}
+
+async function runNewAnalysisBackground(b64, newText) {
+  // Reuse existing SYSPROMPT — full analysis of new version
+  try {
+    const pages = Math.min(20, Math.ceil(newText.length / 3000));
+    const resp = await callApi('api/analyze', {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 16000,
+      system: getSysprompt(),
+      messages: [{ role: 'user', content: newText.slice(0, 120000) }]
+    });
+    const raw = resp.content.map(b => b.text||'').join('').replace(/```json|```/g,'').trim();
+    pendingNewAnalysis = JSON.parse(raw);
+    console.log('[VersionCompare] nuova analisi pronta, in attesa di import');
+  } catch(e) {
+    console.log('[VersionCompare] nuova analisi fallita:', e.message);
+    pendingNewAnalysis = null;
+  }
+}
+
+function getSysprompt() {
+  // Return the same SYSPROMPT used in startAnalysis
+  return document.querySelector('script')?.textContent?.match(/const SYSPROMPT = `([^`]+)`/)?.[1] || '';
+}
+
+async function importNewAnalysis() {
+  if (!pendingNewAnalysis) {
+    alert('Analisi nuova versione ancora in corso, riprova tra poco.');
+    return;
+  }
+  if (!currentAnalysisId) return;
+
+  // Normalize
+  const data = pendingNewAnalysis;
+  const arrayKeys = {
+    camera_car: d=>d.scene?.length, location_wild: d=>d.scene?.length,
+    playback: d=>(d.esibizioni_live?.length||0)+(d.playback_puro?.length||0)+(d.musica_diegetica?.length||0),
+    costume_critico: d=>d.scene?.length, mezzi_movimento: d=>d.scene?.length,
+    acqua_pioggia: d=>d.scene?.length, subacquee: d=>d.scene?.length,
+    ambienti_rumorosi: d=>d.scene?.length, aerei_elicotteri: d=>d.scene?.length,
+    dialoghi_movimento: d=>d.scene?.length, lingue_straniere: d=>d.scene?.length,
+    dialoghi_mediati: d=>d.scene?.length, voiceover: d=>d.scene?.length,
+    crowd_parlante: d=>d.scene?.length, animali: d=>d.scene?.length, stunt_effetti: d=>d.scene?.length,
+  };
+  Object.entries(arrayKeys).forEach(([key, hasData]) => {
+    if (data[key] && hasData(data[key])) data[key].presente = true;
+  });
+
+  // Save to Supabase
+  await sb.from('analyses').update({ data: data }).eq('id', currentAnalysisId);
+
+  // Update PDF in storage if new b64 available
+  if (pendingNewPdfB64) {
+    const bin = atob(pendingNewPdfB64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    const blob = new Blob([arr], { type: 'application/pdf' });
+    await sb.storage.from('Screenplays').upload(`${currentAnalysisId}.pdf`, blob, { upsert: true });
+  }
+
+  // Update UI
+  analysisData = data;
+  document.getElementById('compareModal').classList.remove('open');
+  renderResults(data);
+  loadNotes(null);
+
+  // Show prev version button
+  document.getElementById('btnPrevVersion').style.display = 'flex';
+  document.getElementById('versionLabel').textContent = 'Importata nuova versione';
+
+  pendingNewAnalysis = null;
+  pendingNewPdfB64 = null;
+
+  // Toast
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--yellow);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--yellow);z-index:9999;white-space:nowrap';
+  toast.textContent = '✓ Analisi aggiornata alla nuova versione';
+  document.body.appendChild(toast); setTimeout(()=>toast.remove(), 3500);
+}
+
+function openCompareModal(isNew) {
+  const modal = document.getElementById('compareModal');
+  modal.classList.add('open');
+  if (!isNew) {
+    // Show cached comparison result — just reopen modal
+    document.getElementById('compareFooter').style.display = pendingNewAnalysis ? 'flex' : 'none';
+  }
+}
+
+// ══ END VERSION COMPARISON ══
 let analysisData = null;
 let chatHistory  = [];
 
