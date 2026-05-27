@@ -979,6 +979,13 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
           <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:120px">
             <input id="scriptSearchInput" type="text" placeholder="Cerca..." onkeydown="if(event.key==='Enter')scriptSearch()" style="flex:1;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:12px;font-family:'DM Mono',monospace">
             <button onclick="scriptSearch()" style="padding:6px 10px;background:var(--yellow);border:none;border-radius:6px;color:#000;font-weight:700;font-size:11px;cursor:pointer">Vai</button>
+            <span id="scriptSearchCount" style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;display:none"></span>
+            <button id="scriptSearchPrev" onclick="scriptSearchNav(-1)" style="display:none;padding:5px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--white);cursor:pointer">
+              <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2L4 6l4 4"/></svg>
+            </button>
+            <button id="scriptSearchNext" onclick="scriptSearchNav(1)" style="display:none;padding:5px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--white);cursor:pointer">
+              <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 2l4 4-4 4"/></svg>
+            </button>
           </div>
 
           <!-- Go to scene -->
@@ -3472,6 +3479,9 @@ let scriptDoc = null;
 let scriptCurPage = 1;
 let scriptScale = 1.5;
 let scriptRendering = false;
+let scriptSearchResults = []; // list of page numbers matching search
+let scriptSearchIdx = 0;      // current result index
+let scriptSearchQuery = '';
 
 async function initScriptViewer() {
   if (!pdfB64Array.length) return;
@@ -3490,7 +3500,7 @@ async function initScriptViewer() {
   await scriptRenderPage(scriptCurPage);
 }
 
-async function scriptRenderPage(n) {
+async function scriptRenderPage(n, highlight) {
   if (!scriptDoc || scriptRendering) return;
   scriptRendering = true;
   n = Math.min(Math.max(1, n), scriptDoc.numPages);
@@ -3504,51 +3514,128 @@ async function scriptRenderPage(n) {
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     await page.render({ canvasContext: ctx, viewport }).promise;
+
+    // Highlight search terms
+    if (highlight) {
+      const tc = await page.getTextContent();
+      const query = highlight.toLowerCase();
+      ctx.fillStyle = 'rgba(245,230,66,0.35)';
+      for (const item of tc.items) {
+        if (!item.str.toLowerCase().includes(query)) continue;
+        const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+        const x = tx[4];
+        const y = tx[5];
+        const h = Math.abs(tx[3]) * 1.2;
+        const w = item.width * viewport.scale;
+        ctx.fillRect(x, y - h, w, h);
+      }
+    }
   } catch(e) { console.log('Render error:', e.message); }
   scriptRendering = false;
 }
 
 async function scriptChangePage(delta) {
-  await scriptRenderPage(scriptCurPage + delta);
+  await scriptRenderPage(scriptCurPage + delta, scriptSearchQuery || null);
 }
 
 async function scriptGoToPage(n) {
-  await scriptRenderPage(parseInt(n));
+  await scriptRenderPage(parseInt(n), scriptSearchQuery || null);
 }
 
 async function scriptZoom(delta) {
   scriptScale = Math.min(3, Math.max(0.5, scriptScale + delta));
   document.getElementById('scriptZoomLabel').textContent = Math.round(scriptScale * 100) + '%';
-  await scriptRenderPage(scriptCurPage);
+  await scriptRenderPage(scriptCurPage, scriptSearchQuery || null);
 }
 
 async function scriptSearch() {
   const query = document.getElementById('scriptSearchInput').value.trim().toLowerCase();
   if (!query || !scriptDoc) return;
+  scriptSearchQuery = query;
+  scriptSearchResults = [];
+
   for (let p = 1; p <= scriptDoc.numPages; p++) {
     const page = await scriptDoc.getPage(p);
     const tc = await page.getTextContent();
     const text = tc.items.map(i => i.str).join(' ').toLowerCase();
-    if (text.includes(query)) {
-      await scriptRenderPage(p);
-      document.getElementById('scriptSearchInput').style.borderColor = 'var(--yellow)';
-      setTimeout(() => document.getElementById('scriptSearchInput').style.borderColor = '', 1500);
-      return;
-    }
+    if (text.includes(query)) scriptSearchResults.push(p);
   }
-  document.getElementById('scriptSearchInput').style.borderColor = 'rgba(239,68,68,0.6)';
+
+  if (!scriptSearchResults.length) {
+    document.getElementById('scriptSearchInput').style.borderColor = 'rgba(239,68,68,0.6)';
+    document.getElementById('scriptSearchCount').textContent = '0 risultati';
+    setTimeout(() => document.getElementById('scriptSearchInput').style.borderColor = '', 1500);
+    return;
+  }
+
+  scriptSearchIdx = 0;
+  updateScriptSearchUI();
+  await scriptRenderPage(scriptSearchResults[0], query);
+  document.getElementById('scriptSearchInput').style.borderColor = 'var(--yellow)';
   setTimeout(() => document.getElementById('scriptSearchInput').style.borderColor = '', 1500);
 }
 
+async function scriptSearchNav(delta) {
+  if (!scriptSearchResults.length) return;
+  scriptSearchIdx = (scriptSearchIdx + delta + scriptSearchResults.length) % scriptSearchResults.length;
+  updateScriptSearchUI();
+  await scriptRenderPage(scriptSearchResults[scriptSearchIdx], scriptSearchQuery);
+}
+
+function updateScriptSearchUI() {
+  const el = document.getElementById('scriptSearchCount');
+  if (el) el.textContent = `${scriptSearchIdx + 1}/${scriptSearchResults.length}`;
+  const prevBtn = document.getElementById('scriptSearchPrev');
+  const nextBtn = document.getElementById('scriptSearchNext');
+  const show = scriptSearchResults.length > 0;
+  if (prevBtn) prevBtn.style.display = show ? 'flex' : 'none';
+  if (nextBtn) nextBtn.style.display = show ? 'flex' : 'none';
+  if (el) el.style.display = show ? 'inline' : 'none';
+}
+
+function buildSceneIndex() {
+  // Build scene → page map from category scene strings (p.X format)
+  const idx = {};
+  if (!analysisData) return idx;
+  const catKeys = ['camera_car','location_wild','costume_critico','mezzi_movimento','acqua_pioggia',
+    'subacquee','ambienti_rumorosi','aerei_elicotteri','dialoghi_movimento','lingue_straniere',
+    'dialoghi_mediati','voiceover','crowd_parlante','animali','stunt_effetti'];
+  const allStrs = [];
+  catKeys.forEach(k => {
+    (analysisData[k]?.scene||[]).forEach(s => allStrs.push(typeof s==='string'?s:s.scena||''));
+  });
+  ['esibizioni_live','playback_puro','musica_diegetica'].forEach(k => {
+    (analysisData.playback?.[k]||[]).forEach(s => allStrs.push(s.scena||''));
+  });
+  allStrs.forEach(str => {
+    const scNum = str.match(/SC\.(\S+)/)?.[1];
+    const pg = str.match(/\(p\.(\d+)/)?.[1];
+    if (scNum && pg) idx[scNum] = parseInt(pg);
+  });
+  return idx;
+}
+
 async function scriptGoToScene() {
-  const input = document.getElementById('scriptSceneInput').value.trim().replace(/^SC\.?/i, '');
-  if (!input || !analysisData?.scene_index) return;
-  const pg = analysisData.scene_index[input] ?? analysisData.scene_index[input.toLowerCase()];
+  const input = document.getElementById('scriptSceneInput').value.trim().replace(/^SC\.?/i, '').toUpperCase();
+  if (!input) return;
+
+  // Try scene_index first, fallback to built index
+  let pg = analysisData?.scene_index?.[input] ?? analysisData?.scene_index?.[input.toLowerCase()];
+  if (pg == null) {
+    const idx = buildSceneIndex();
+    pg = idx[input] ?? idx[input.toLowerCase()];
+    if (pg != null) pg = pg - pageOffset; // scene strings already have absolute page, no offset needed
+  }
+
   if (pg != null) {
     await scriptRenderPage(pg + pageOffset);
-  } else {
-    document.getElementById('scriptSceneInput').style.borderColor = 'rgba(239,68,68,0.6)';
+    document.getElementById('scriptSceneInput').style.borderColor = 'var(--yellow)';
     setTimeout(() => document.getElementById('scriptSceneInput').style.borderColor = '', 1500);
+  } else {
+    // Last resort: search text in PDF
+    const query = 'SC.' + input;
+    document.getElementById('scriptSearchInput').value = query;
+    await scriptSearch();
   }
 }
 
