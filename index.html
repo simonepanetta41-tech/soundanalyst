@@ -3619,24 +3619,29 @@ async function scriptGoToScene() {
   const input = document.getElementById('scriptSceneInput').value.trim().replace(/^SC\.?/i, '').toUpperCase();
   if (!input) return;
 
-  // Try scene_index first, fallback to built index
+  // scene_index stores relative page → add pageOffset
   let pg = analysisData?.scene_index?.[input] ?? analysisData?.scene_index?.[input.toLowerCase()];
-  if (pg == null) {
-    const idx = buildSceneIndex();
-    pg = idx[input] ?? idx[input.toLowerCase()];
-    if (pg != null) pg = pg - pageOffset; // scene strings already have absolute page, no offset needed
-  }
-
   if (pg != null) {
     await scriptRenderPage(pg + pageOffset);
     document.getElementById('scriptSceneInput').style.borderColor = 'var(--yellow)';
     setTimeout(() => document.getElementById('scriptSceneInput').style.borderColor = '', 1500);
-  } else {
-    // Last resort: search text in PDF
-    const query = 'SC.' + input;
-    document.getElementById('scriptSearchInput').value = query;
-    await scriptSearch();
+    return;
   }
+
+  // buildSceneIndex stores absolute page from (p.X) → use directly
+  const idx = buildSceneIndex();
+  pg = idx[input] ?? idx[input.toLowerCase()];
+  if (pg != null) {
+    await scriptRenderPage(pg); // already absolute
+    document.getElementById('scriptSceneInput').style.borderColor = 'var(--yellow)';
+    setTimeout(() => document.getElementById('scriptSceneInput').style.borderColor = '', 1500);
+    return;
+  }
+
+  // Last resort: search text in PDF
+  const query = 'SC.' + input;
+  document.getElementById('scriptSearchInput').value = query;
+  await scriptSearch();
 }
 
 // ══ END SCRIPT VIEWER ══
