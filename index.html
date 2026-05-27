@@ -2100,13 +2100,15 @@ const SYSPROMPT = `Sei un analista di sceneggiature per il reparto suono cinemat
 Regole:
 - scene_list: TUTTE le scene con n=numero, ie=INT/EST/EXT/I-E, m=D(giorno)N(notte)M(mattino)E(sera)T(tramonto)
 - scena format: "SC.N - TIPO. LOCATION - MOMENTO (p.X)"
-- camera_car: scene girate su veicolo in movimento con ripresa dall'auto
-- location_wild: ambienti naturali con difficoltà logistiche (boschi, spiagge, fiumi, montagne). NON finestre con vista natura.
+- camera_car: scene con dialogo o azione girate su veicolo in movimento — auto, moto, furgone, camion. Includi scene dove i personaggi parlano mentre guidano o sono passeggeri in movimento.
+- location_wild: ambienti naturali con difficoltà logistiche (boschi, spiagge, fiumi, montagne, mare aperto). NON finestre con vista natura.
 - costume_critico: petto nudo, bikini, costume bagno, body
-- mezzi_movimento: camion/moto/barca/treno/apecar — escludi camera car
-- playback live=esibizione dal vivo, puro=playback su base, diegetica=musica da fonte visibile in scena (radio/TV/stereo)
-- dialoghi_movimento: dialogo mentre ci si sposta (a piedi, in moto, in auto se non camera car)
+- mezzi_movimento: veicoli in movimento visibili in scena — moto, barca, camion, apecar, treno. Escludi camera car.
+- acqua_pioggia: scene con pioggia, mare, fiumi, piscine, acqua in scena — anche riferimenti diretti (mantellina antipioggia, ombrello) o acqua usata come elemento narrativo
+- playback: live=esibizione dal vivo, puro=playback su base, diegetica=musica da fonte visibile (radio/TV/stereo/banda/altoparlanti)
+- dialoghi_movimento: dialogo mentre ci si sposta fisicamente (a piedi, in moto, in auto in movimento)
 - dialoghi_mediati: telefono, videochiamata, walkie-talkie, interfono
+- lingue_straniere: scene con dialoghi in lingua diversa dall'italiano — includi anche dialetti marcati (veneziano, tedesco, inglese, svedese ecc.)
 - cast_provvisorio: tutti i personaggi con dialogo, ordinati per pose_stimate desc, character_id progressivo
 - personaggi_scene: solo personaggi con 2+ scene, solo numero scena senza SC.
 - media_attori_parlanti: intero per eccesso
