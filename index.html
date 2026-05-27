@@ -2582,7 +2582,7 @@ async function runNewAnalysisBackground(b64, newText) {
       model: 'claude-sonnet-4-6',
       max_tokens: 16000,
       system: sysprompt,
-      messages: [{ role: 'user', content: newText.slice(0, 120000) }]
+      messages: [{ role: 'user', content: [{ type: 'text', text: newText.slice(0, 120000) }] }]
     });
     const raw = resp.content.map(b => b.text||'').join('').replace(/```json|```/g,'').trim();
     pendingNewAnalysis = JSON.parse(raw);
