@@ -3030,6 +3030,9 @@ function buildChatContext(d) {
     const castStr = d.cast_provvisorio.slice(0,25).map(c => `${c.character_id}.${c.nome}(${c.pose_stimate}gg)`).join(' ');
     lines.push(`CAST: ${castStr}`);
   }
+
+  // Mappa personaggi→scene (compatta, solo se disponibile)
+  if (d.personaggi_scene && Object.keys(d.personaggi_scene).length) {
     const mapStr = Object.entries(d.personaggi_scene)
       .map(([nome, scene]) => `${nome}:${Array.isArray(scene) ? scene.join(',') : scene}`)
       .join(' | ');
