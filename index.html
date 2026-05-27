@@ -2099,7 +2099,7 @@ Analizza la sceneggiatura e rispondi SOLO con un oggetto JSON valido. Nessun tes
 Struttura JSON richiesta:
 {
   "titolo": "string",
-  "scene_index": { "1": 1, "2": 3 },
+  "scene_list": [{"n":"string","ie":"INT/EST/EXT/I-E","m":"D/N/M/E/T"}],
   "riassunto": "string (circa 15 righe: genere, trama principale con archi narrativi, personaggi chiave, tono, ambientazione, colpi di scena principali — scritto in italiano)",
   "totale_scene": 0,
   "scene_interno": 0,
@@ -2131,6 +2131,7 @@ Struttura JSON richiesta:
 }
 
 Regole importanti:
+- scene_list: elenca TUTTE le scene della sceneggiatura con numero (n), interno/esterno (ie: INT/EST/EXT/I-E) e momento (m: D=giorno G=giorno M=mattino E=sera T=tramonto N=notte). Es: [{"n":"1","ie":"EST","m":"D"},{"n":"2","ie":"INT","m":"N"}]
 - media_attori_parlanti: arrotonda PER ECCESSO al numero intero
 - location_wild: scene in ambienti naturali che presentano difficoltà logistiche per il reparto suono (trasporto attrezzatura, alimentazione, spostamenti) — boschi, spiagge, fiumi, laghi, cascate, montagne, canyon, grotte, campi aperti, litorali. L'ambiente naturale deve essere fisicamente presente nella scena. NON includere: interni di edifici con vista su paesaggi naturali (finestra sul mare, finestra sul bosco), riferimenti visivi o dialoghi su luoghi naturali, scenografie che simulano ambienti naturali. Criterio pratico: il reparto suono deve trasportare l'attrezzatura in un luogo difficile da raggiungere o senza infrastrutture?
 - costume_critico: petto nudo, bikini, costume bagno, body, etc.
@@ -2241,37 +2242,55 @@ async function startAnalysis() {
       if (data[key] && hasData(data[key])) data[key].presente = true;
     });
 
-    // Recalculate INT/EXT/day/night from actual scene strings (more reliable than Claude's estimate)
-    const allSceneStrs = [];
-    ['camera_car','location_wild','costume_critico','mezzi_movimento','acqua_pioggia',
-     'subacquee','ambienti_rumorosi','aerei_elicotteri','dialoghi_movimento','lingue_straniere',
-     'dialoghi_mediati','voiceover','crowd_parlante','animali','stunt_effetti'].forEach(k => {
-      (data[k]?.scene||[]).forEach(s => allSceneStrs.push(typeof s==='string'?s:s.scena||''));
-    });
-    ['esibizioni_live','playback_puro','musica_diegetica'].forEach(k => {
-      (data.playback?.[k]||[]).forEach(s => allSceneStrs.push(s.scena||''));
-    });
-    // Parse unique scene headers
-    const parsed = {};
-    allSceneStrs.forEach(str => {
-      const scNum = str.match(/SC\.(\S+)/)?.[1]; if (!scNum) return;
-      if (parsed[scNum]) return;
-      const m = str.match(/SC\.\S+\s*-\s*(INT|EST|EXT|I\/E|E\/I|INT\/EST|EST\/INT)[^-]*-\s*(\w+)/i);
-      if (m) parsed[scNum] = { ie: m[1].toUpperCase(), mom: m[2].toUpperCase() };
-    });
-    let ig=0, in_=0, eg=0, en_=0, it=0, et=0;
-    Object.values(parsed).forEach(({ie, mom}) => {
-      const isI = /^(INT|I)/.test(ie);
-      const isE = /^(EST|EXT|E)/.test(ie);
-      const isG = /^(D|G|DAY|GIORNO|MATTINO|ALBA|TRAMONTO|POME)/.test(mom);
-      const isN = /^(N|NOTTE|NIGHT|SERA)/.test(mom);
-      if (isI) { it++; if(isG) ig++; if(isN) in_++; }
-      if (isE) { et++; if(isG) eg++; if(isN) en_++; }
-    });
-    if (it+et > 0) {
-      data.scene_interno=it; data.scene_esterno=et;
-      data.scene_interno_giorno=ig; data.scene_interno_notte=in_;
-      data.scene_esterno_giorno=eg; data.scene_esterno_notte=en_;
+    // Recalculate INT/EXT/day/night from scene_list (complete list of all scenes)
+    if (data.scene_list?.length) {
+      let ig=0, in_=0, eg=0, en_=0, it=0, et=0;
+      data.scene_list.forEach(({ie, m}) => {
+        const isI = /^(INT|I)/i.test(ie);
+        const isE = /^(EST|EXT|E)/i.test(ie);
+        const isG = /^(D|G|M|T)/i.test(m); // giorno, mattino, tramonto = luce
+        const isN = /^(N|E)/i.test(m);      // notte, sera = buio
+        if (isI) { it++; if(isG) ig++; if(isN) in_++; }
+        if (isE) { et++; if(isG) eg++; if(isN) en_++; }
+      });
+      data.scene_interno = it; data.scene_esterno = et;
+      data.scene_interno_giorno = ig; data.scene_interno_notte = in_;
+      data.scene_esterno_giorno = eg; data.scene_esterno_notte = en_;
+      // Also update totale_scene if scene_list is more accurate
+      if (data.scene_list.length > (data.totale_scene || 0)) {
+        data.totale_scene = data.scene_list.length;
+      }
+    } else {
+      // Fallback: parse from category scene strings
+      const allSceneStrs = [];
+      ['camera_car','location_wild','costume_critico','mezzi_movimento','acqua_pioggia',
+       'subacquee','ambienti_rumorosi','aerei_elicotteri','dialoghi_movimento','lingue_straniere',
+       'dialoghi_mediati','voiceover','crowd_parlante','animali','stunt_effetti'].forEach(k => {
+        (data[k]?.scene||[]).forEach(s => allSceneStrs.push(typeof s==='string'?s:s.scena||''));
+      });
+      ['esibizioni_live','playback_puro','musica_diegetica'].forEach(k => {
+        (data.playback?.[k]||[]).forEach(s => allSceneStrs.push(s.scena||''));
+      });
+      const parsed = {};
+      allSceneStrs.forEach(str => {
+        const scNum = str.match(/SC\.(\S+)/)?.[1]; if (!scNum) return;
+        if (parsed[scNum]) return;
+        const m = str.match(/SC\.\S+\s*-\s*(INT|EST|EXT|I\/E|E\/I|INT\/EST|EST\/INT)[^-]*-\s*(\w+)/i);
+        if (m) parsed[scNum] = { ie: m[1].toUpperCase(), mom: m[2].toUpperCase() };
+      });
+      let ig=0, in_=0, eg=0, en_=0, it=0, et=0;
+      Object.values(parsed).forEach(({ie, mom}) => {
+        const isI = /^(INT|I)/.test(ie); const isE = /^(EST|EXT|E)/.test(ie);
+        const isG = /^(D|G|DAY|GIORNO|MATTINO|ALBA|TRAMONTO|POME)/.test(mom);
+        const isN = /^(N|NOTTE|NIGHT|SERA)/.test(mom);
+        if (isI) { it++; if(isG) ig++; if(isN) in_++; }
+        if (isE) { et++; if(isG) eg++; if(isN) en_++; }
+      });
+      if (it+et > 0) {
+        data.scene_interno=it; data.scene_esterno=et;
+        data.scene_interno_giorno=ig; data.scene_interno_notte=in_;
+        data.scene_esterno_giorno=eg; data.scene_esterno_notte=en_;
+      }
     }
 
     await saveAnalysis(data);
@@ -2320,9 +2339,9 @@ function renderResults(d) {
 
   // Stats
   const intDetail = (d.scene_interno_giorno != null && d.scene_interno_notte != null)
-    ? `<div class="stat-sub">${d.scene_interno_giorno}G · ${d.scene_interno_notte}N</div>` : '';
+    ? `<div class="stat-sub">${d.scene_interno_giorno} Giorno · ${d.scene_interno_notte} Notte</div>` : '';
   const extDetail = (d.scene_esterno_giorno != null && d.scene_esterno_notte != null)
-    ? `<div class="stat-sub">${d.scene_esterno_giorno}G · ${d.scene_esterno_notte}N</div>` : '';
+    ? `<div class="stat-sub">${d.scene_esterno_giorno} Giorno · ${d.scene_esterno_notte} Notte</div>` : '';
 
   document.getElementById('statsRow').innerHTML = [
     { v: d.totale_scene,                    l: 'Scene Totali',              sub: '' },
