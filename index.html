@@ -1417,8 +1417,11 @@ function initOffsetDisplay() {
   if (el) el.textContent = pageOffset;
 }
 
+let skipNextAutoDetect = false;
+
 async function autoDetectOffset() {
   if (!pdfB64Array.length) return;
+  if (skipNextAutoDetect) { skipNextAutoDetect = false; return; }
   try {
     if (!modalPdfDoc) {
       const bin = atob(pdfB64Array[0]);
@@ -1431,7 +1434,7 @@ async function autoDetectOffset() {
       const page = await modalPdfDoc.getPage(i);
       const tc   = await page.getTextContent();
       const text = tc.items.map(x => x.str).join(' ').toUpperCase();
-      if (/\bINT\b/.test(text) || /\bEXT\b/.test(text) || text.includes('FADE IN')) {
+      if (/\b(?:INT|EST|EXT|I\/E|E\/I)\.\s/.test(text) || text.includes('FADE IN:')) {
         const detected = i - 1;
         if (detected !== pageOffset) {
           pageOffset = detected;
@@ -2654,7 +2657,8 @@ async function importNewAnalysis() {
     await sb.storage.from('Screenplays').upload(`${currentUser.id}/${currentAnalysisId}.pdf`, blob, { upsert: true });
     // Update in-memory PDF so scene viewer shows new version
     pdfB64Array = [pendingNewPdfB64];
-    modalPdfDoc = null; // force reload
+    modalPdfDoc = null;
+    skipNextAutoDetect = true; // preserve current offset
   }
 
   // Update UI
