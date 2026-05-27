@@ -171,7 +171,14 @@ header { padding: 28px 0 24px; border-bottom: 1px solid var(--border); margin-bo
   #spoglioSection, #pdlSection, #castSection, #timetableSection, #wrapSection, #scriptSection { padding-bottom: 140px; }
 }
 .result-tab { flex: 1; background: none; border: none; color: var(--muted); font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; padding: 10px; border-radius: 7px; cursor: pointer; transition: all 0.15s; text-transform: uppercase; letter-spacing: 0.05em; }
-.result-tabs-2 { margin-top: 8px; border-top: 1px solid var(--border); }
+.wrap-chip { display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:600;font-family:'Space Grotesk',sans-serif;cursor:pointer;border:1.5px solid var(--border);color:var(--muted);background:none;transition:all 0.15s;user-select:none; }
+.wrap-chip.active { border-color:var(--yellow);color:var(--yellow);background:rgba(245,230,66,0.08); }
+.wrap-place-card { background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px; }
+.wrap-place-card.slow-food { border-color:rgba(245,230,66,0.4);background:rgba(245,230,66,0.04); }
+.wrap-place-name { font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:var(--white); }
+.wrap-place-addr { font-size:11px;color:var(--muted);font-family:'DM Mono',monospace; }
+.wrap-place-meta { display:flex;align-items:center;gap:10px;flex-wrap:wrap; }
+.wrap-badge { font-size:10px;padding:2px 7px;border-radius:4px;font-family:'DM Mono',monospace; }
 .result-tab.coming-soon { opacity: 0.5; }
 .coming-soon-section { display:none;flex-direction:column;align-items:center;justify-content:center;padding:80px 24px;text-align:center;gap:16px; }
 .coming-soon-section svg { opacity: 0.3; }
@@ -943,10 +950,60 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       </div>
 
       <!-- WRAP SECTION -->
-      <div id="wrapSection" class="coming-soon-section">
-        <svg viewBox="0 0 48 48" width="64" height="64" fill="none" stroke="#f5e642" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h28a4 4 0 014 4v20a4 4 0 01-4 4H10a4 4 0 01-4-4V10a4 4 0 014-4z"/><path d="M16 6v8a2 2 0 002 2h12a2 2 0 002-2V6"/><path d="M16 34v8M32 34v8"/><path d="M10 42h28"/><circle cx="24" cy="22" r="5"/></svg>
-        <h3>Wrap</h3>
-        <p>Fine giornata — trova birrerie, ristoranti e locali vicino alla location. In arrivo.</p>
+      <div id="wrapSection" class="coming-soon-section" style="display:none;flex-direction:column;align-items:stretch;padding:0">
+
+        <!-- Header -->
+        <div style="padding:16px 18px 12px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;color:var(--white)">🍺 Wrap</div>
+            <div id="wrapLocationLabel" style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px">Rilevamento posizione...</div>
+          </div>
+          <button onclick="wrapRefreshLocation()" style="padding:7px 12px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--muted);cursor:pointer;font-size:11px;display:flex;align-items:center;gap:5px">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M13 8A5 5 0 113 8"/><path d="M13 4v4h-4"/></svg>
+            Aggiorna
+          </button>
+        </div>
+
+        <!-- Filters -->
+        <div style="padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap;background:var(--surface);border-bottom:1px solid var(--border)">
+          <div class="wrap-chip active" data-filter="pranzo" onclick="wrapToggleFilter(this)">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v12M4 5c0-1.5 1-2 2-2h4c1 0 2 .5 2 2l-1 3H5L4 5z"/><path d="M5 8h6"/></svg>
+            Pranzo
+          </div>
+          <div class="wrap-chip" data-filter="cena" onclick="wrapToggleFilter(this)">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v5a2 2 0 004 0V2"/><path d="M8 9v5"/><path d="M5 14h6"/></svg>
+            Cena
+          </div>
+          <div class="wrap-chip" data-filter="aperitivo" onclick="wrapToggleFilter(this)">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2h10l-3 6v5h-4V8L3 2z"/><path d="M6 13h4"/></svg>
+            Aperitivo
+          </div>
+          <div class="wrap-chip" data-filter="birra" onclick="wrapToggleFilter(this)">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3h7a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M12 6h2v4h-2"/><path d="M6 3V1M9 3V1"/></svg>
+            Birra
+          </div>
+          <div class="wrap-chip" data-filter="vino" onclick="wrapToggleFilter(this)">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11v3M5 14h6"/><path d="M4 2h8l-1 5a3 3 0 01-6 0L4 2z"/></svg>
+            Vino
+          </div>
+          <button onclick="wrapSearch()" style="margin-left:auto;padding:7px 16px;background:var(--yellow);border:none;border-radius:8px;color:#000;font-weight:700;font-size:12px;cursor:pointer">Cerca</button>
+        </div>
+
+        <!-- Map placeholder -->
+        <div id="wrapMap" style="height:220px;background:var(--surface2);position:relative;flex-shrink:0">
+          <div id="wrapMapPlaceholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--muted)">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+            <span style="font-size:12px">La mappa apparirà dopo la ricerca</span>
+          </div>
+        </div>
+
+        <!-- Results list -->
+        <div id="wrapResults" style="flex:1;overflow-y:auto;padding:12px 16px 120px">
+          <div id="wrapResultsInner" style="display:flex;flex-direction:column;gap:10px">
+            <div style="text-align:center;padding:40px 0;color:var(--muted);font-size:13px">Seleziona i filtri e cerca</div>
+          </div>
+        </div>
+
       </div>
 
       <!-- SCRIPT SECTION -->
@@ -3313,7 +3370,7 @@ async function sendChat() {
 
   const SYS = `Sei Gennaro Esposito, fonico di presa diretta napoletano con 20 anni di set alle spalle. Parli italiano ma ogni tanto ti scappa qualche espressione napoletana ("uagliò", "mamm mia", "mo vediamo", "azz", "e che vuo'", "jamm bell'", "statte buono"). Sei simpatico, diretto, un po' brontolone ma sempre disponibile.
 
-Gergo del set: "orata" = un'ora di straordinario, "cestini" = pasti sul set, "craft" = tavolo snack e caffè, "split" = seconda unità. Il PDL lo prepara l'aiuto regia.
+Gergo del set: "un'orata" = un'ora di straordinario (attenzione: si dice "un'orata" non "orata" altrimenti sembra il pesce), "cestini" = pasti sul set, "craft" = tavolo snack e caffè, "split" = seconda unità. Il PDL lo prepara l'aiuto regia.
 
 Spoglio:\n${buildChatContext(analysisData)}${pdlData ? "\n\nPDL (dall'aiuto regia):\n" + buildPdlContext() : "\n\n(Il PDL non è ancora caricato — se ti chiedono quando si gira una scena o info sul piano di lavorazione, di' che devono prima caricare il PDL nella sezione apposita)"}${ragText ? "\n\nTESTO SCENEGGIATURA (pagine rilevanti):\n" + ragText : ""}
 
@@ -3486,6 +3543,7 @@ function switchResultTab(tab) {
   if (tab === 'pdl') { pdl.classList.add('on'); } else { pdl.classList.remove('on'); }
   if (timetable) timetable.style.display = tab === 'timetable' ? 'flex' : 'none';
   if (wrap)      wrap.style.display      = tab === 'wrap'      ? 'flex' : 'none';
+  if (tab === 'wrap') initWrap();
   if (script)    script.style.display    = tab === 'script'    ? 'flex' : 'none';
   if (tab === 'script') initScriptViewer();
 
@@ -3498,7 +3556,217 @@ function switchResultTab(tab) {
   if (activeTab) activeTab.classList.add('active');
 }
 
-// ══ SCRIPT VIEWER ══
+// ══ WRAP ══
+let wrapLocation = null; // { lat, lng, label }
+let wrapMap = null;
+let wrapMarkers = [];
+
+async function initWrap() {
+  // Check if we have saved location
+  const saved = localStorage.getItem('sa_wrap_location');
+  if (saved) {
+    try { wrapLocation = JSON.parse(saved); updateWrapLocationLabel(); return; } catch(e) {}
+  }
+  await wrapRefreshLocation();
+}
+
+async function wrapRefreshLocation() {
+  document.getElementById('wrapLocationLabel').textContent = 'Rilevamento posizione...';
+  try {
+    const pos = await new Promise((res, rej) =>
+      navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000 })
+    );
+    wrapLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: null };
+
+    // Check if PDL has today's location
+    const today = new Date().toISOString().split('T')[0];
+    const todayGiorno = getPdlAllGiorni?.()?.find(g => g.data === today);
+    if (todayGiorno?.location_principale) {
+      // Ask user
+      wrapShowLocationConfirm(todayGiorno.location_principale);
+    } else {
+      wrapLocation.label = 'Posizione attuale';
+      localStorage.setItem('sa_wrap_location', JSON.stringify(wrapLocation));
+      updateWrapLocationLabel();
+    }
+  } catch(e) {
+    document.getElementById('wrapLocationLabel').textContent = '⚠ Posizione non disponibile — abilita GPS';
+  }
+}
+
+function wrapShowLocationConfirm(locationName) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;max-width:340px;width:100%">
+      <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;color:var(--white);margin-bottom:8px">📍 Sei in questa location?</div>
+      <div style="font-size:13px;color:var(--yellow);font-family:'DM Mono',monospace;margin-bottom:20px">${locationName}</div>
+      <div style="display:flex;gap:10px">
+        <button id="wrapLocNo" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:13px">No</button>
+        <button id="wrapLocSi" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--yellow);color:#000;font-weight:700;cursor:pointer;font-size:13px">Sì</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const cleanup = (label) => {
+    wrapLocation.label = label;
+    localStorage.setItem('sa_wrap_location', JSON.stringify(wrapLocation));
+    updateWrapLocationLabel();
+    document.body.removeChild(overlay);
+  };
+  overlay.querySelector('#wrapLocSi').onclick = () => cleanup(locationName);
+  overlay.querySelector('#wrapLocNo').onclick  = () => cleanup('Posizione attuale');
+}
+
+function updateWrapLocationLabel() {
+  const el = document.getElementById('wrapLocationLabel');
+  if (el && wrapLocation) el.textContent = `📍 ${wrapLocation.label || 'Posizione attuale'}`;
+}
+
+function wrapToggleFilter(el) {
+  el.classList.toggle('active');
+}
+
+async function wrapSearch() {
+  if (!wrapLocation) { await wrapRefreshLocation(); return; }
+  const filters = [...document.querySelectorAll('.wrap-chip.active')].map(el => el.dataset.filter);
+  if (!filters.length) { alert('Seleziona almeno un filtro'); return; }
+
+  document.getElementById('wrapResultsInner').innerHTML = `
+    <div style="text-align:center;padding:40px 0;color:var(--muted);font-size:13px">
+      <span class="spin" style="display:inline-block;margin-right:8px"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2z" stroke-opacity=".2"/><path d="M10 2a8 8 0 018 8" stroke-linecap="round"/></svg></span>
+      Cerco locali vicino a te...
+    </div>`;
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const resp = await fetch('/api/wrap', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ lat: wrapLocation.lat, lng: wrapLocation.lng, filters, radius: 1500 })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Errore ricerca');
+    renderWrapResults(data.places || []);
+  } catch(e) {
+    document.getElementById('wrapResultsInner').innerHTML = `<div style="color:rgba(239,68,68,0.8);padding:20px;text-align:center">⚠ ${e.message}</div>`;
+  }
+}
+
+function renderWrapResults(places) {
+  if (!places.length) {
+    document.getElementById('wrapResultsInner').innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--muted);font-size:13px">Nessun locale trovato — prova ad aumentare il raggio</div>`;
+    return;
+  }
+
+  // Render map with markers
+  renderWrapMap(places);
+
+  // Render list
+  document.getElementById('wrapResultsInner').innerHTML = places.map((p, i) => {
+    const name = p.displayName?.text || '—';
+    const addr = p.formattedAddress || '';
+    const rating = p.rating ? `⭐ ${p.rating} (${p.userRatingCount || 0})` : '';
+    const isOpen = p.currentOpeningHours?.openNow;
+    const openBadge = isOpen != null ? `<span class="wrap-badge" style="background:${isOpen?'rgba(110,231,183,0.15)':'rgba(239,68,68,0.12)'};color:${isOpen?'rgba(110,231,183,0.9)':'rgba(239,68,68,0.8)'}">${isOpen?'Aperto':'Chiuso'}</span>` : '';
+    const slowFood = /osteria|trattoria|locanda/i.test(name);
+    const slowBadge = slowFood ? `<span class="wrap-badge" style="background:rgba(245,230,66,0.12);color:var(--yellow)">🐌 Slow Food style</span>` : '';
+    const phone = p.internationalPhoneNumber ? `<a href="tel:${p.internationalPhoneNumber}" style="font-size:11px;color:var(--muted);text-decoration:none">📞 ${p.internationalPhoneNumber}</a>` : '';
+
+    // Distance
+    const dist = wrapLocation ? getDistanceM(wrapLocation.lat, wrapLocation.lng, p.location?.latitude, p.location?.longitude) : null;
+    const distLabel = dist != null ? `<span style="font-size:10px;color:var(--muted)">${dist < 1000 ? dist+'m' : (dist/1000).toFixed(1)+'km'}</span>` : '';
+
+    return `<div class="wrap-place-card ${slowFood?'slow-food':''}" onclick="wrapFocusMap(${i})">
+      <div class="wrap-place-name">${name}</div>
+      <div class="wrap-place-addr">${addr}</div>
+      <div class="wrap-place-meta">
+        ${rating ? `<span style="font-size:11px;color:var(--muted)">${rating}</span>` : ''}
+        ${distLabel}
+        ${openBadge}
+        ${slowBadge}
+      </div>
+      ${phone}
+    </div>`;
+  }).join('');
+}
+
+function getDistanceM(lat1, lng1, lat2, lng2) {
+  if (!lat2 || !lng2) return null;
+  const R = 6371000;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+}
+
+function renderWrapMap(places) {
+  const mapEl = document.getElementById('wrapMap');
+  mapEl.innerHTML = '';
+  if (!places.length || !wrapLocation) return;
+
+  // Use static map image via Google Static Maps API
+  const key = ''; // client side - use embed instead
+  const center = `${wrapLocation.lat},${wrapLocation.lng}`;
+  const markers = places.slice(0,10).map((p,i) =>
+    `markers=color:0xf5e642|label:${i+1}|${p.location?.latitude},${p.location?.longitude}`
+  ).join('&');
+  const myMarker = `markers=color:red|${center}`;
+
+  // Embed OSM map with leaflet (no API key needed)
+  mapEl.innerHTML = `<div id="wrapLeaflet" style="width:100%;height:100%"></div>`;
+
+  if (typeof L === 'undefined') {
+    // Load leaflet dynamically
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+    document.head.appendChild(css);
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+    script.onload = () => initLeafletMap(places);
+    document.head.appendChild(script);
+  } else {
+    initLeafletMap(places);
+  }
+}
+
+function initLeafletMap(places) {
+  if (!wrapLocation) return;
+  const map = L.map('wrapLeaflet').setView([wrapLocation.lat, wrapLocation.lng], 15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+  wrapMap = map;
+  wrapMarkers = [];
+
+  // User position
+  L.circleMarker([wrapLocation.lat, wrapLocation.lng], {
+    radius: 8, fillColor: '#e53e3e', color: '#fff', weight: 2, fillOpacity: 1
+  }).addTo(map);
+
+  // Place markers
+  places.forEach((p, i) => {
+    if (!p.location?.latitude) return;
+    const isSlowFood = /osteria|trattoria|locanda/i.test(p.displayName?.text || '');
+    const marker = L.circleMarker([p.location.latitude, p.location.longitude], {
+      radius: 9,
+      fillColor: isSlowFood ? '#f5e642' : '#888',
+      color: '#fff', weight: 1.5, fillOpacity: 0.9
+    }).bindPopup(`<b>${p.displayName?.text}</b><br>${p.formattedAddress || ''}`).addTo(map);
+    wrapMarkers.push(marker);
+  });
+
+  document.getElementById('wrapMapPlaceholder')?.remove();
+}
+
+function wrapFocusMap(idx) {
+  if (!wrapMap || !wrapMarkers[idx]) return;
+  wrapMarkers[idx].openPopup();
+  wrapMap.setView(wrapMarkers[idx].getLatLng(), 16);
+  document.getElementById('wrapMap').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ══ END WRAP ══
 let scriptDoc = null;
 let scriptCurPage = 1;
 let scriptScale = 1.5;
