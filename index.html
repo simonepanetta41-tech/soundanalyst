@@ -950,10 +950,53 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       </div>
 
       <!-- SCRIPT SECTION -->
-      <div id="scriptSection" class="coming-soon-section">
-        <svg viewBox="0 0 48 48" width="64" height="64" fill="none" stroke="#f5e642" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="32" height="44" rx="3"/><path d="M16 12h16M16 18h16M16 24h10"/><path d="M30 34l6 6-6 6"/></svg>
-        <h3>Script</h3>
-        <p>Consulta la sceneggiatura direttamente nell'app con ricerca, navigazione per scena e zoom. In arrivo.</p>
+      <div id="scriptSection" class="coming-soon-section" style="display:none;flex-direction:column;align-items:stretch;padding:0">
+
+        <!-- Toolbar -->
+        <div id="scriptToolbar" style="display:flex;align-items:center;gap:8px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap;position:sticky;top:0;z-index:10">
+          <!-- Page nav -->
+          <button onclick="scriptChangePage(-1)" style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--white);cursor:pointer">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 3L5 8l5 5"/></svg>
+          </button>
+          <input id="scriptPageInput" type="number" min="1" value="1" onchange="scriptGoToPage(this.value)" style="width:48px;padding:5px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:'DM Mono',monospace;font-size:12px;text-align:center">
+          <span id="scriptPageTotal" style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">/ —</span>
+          <button onclick="scriptChangePage(1)" style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--white);cursor:pointer">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 3l5 5-5 5"/></svg>
+          </button>
+
+          <!-- Divider -->
+          <div style="width:1px;height:20px;background:var(--border)"></div>
+
+          <!-- Zoom -->
+          <button onclick="scriptZoom(-0.2)" style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--white);cursor:pointer;font-size:14px;font-weight:700">−</button>
+          <span id="scriptZoomLabel" style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;min-width:36px;text-align:center">100%</span>
+          <button onclick="scriptZoom(0.2)" style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--white);cursor:pointer;font-size:14px;font-weight:700">+</button>
+
+          <!-- Divider -->
+          <div style="width:1px;height:20px;background:var(--border)"></div>
+
+          <!-- Search -->
+          <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:120px">
+            <input id="scriptSearchInput" type="text" placeholder="Cerca..." onkeydown="if(event.key==='Enter')scriptSearch()" style="flex:1;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:12px;font-family:'DM Mono',monospace">
+            <button onclick="scriptSearch()" style="padding:6px 10px;background:var(--yellow);border:none;border-radius:6px;color:#000;font-weight:700;font-size:11px;cursor:pointer">Vai</button>
+          </div>
+
+          <!-- Go to scene -->
+          <div style="display:flex;align-items:center;gap:6px">
+            <input id="scriptSceneInput" type="text" placeholder="SC." onkeydown="if(event.key==='Enter')scriptGoToScene()" style="width:56px;padding:5px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--yellow);font-family:'DM Mono',monospace;font-size:12px;text-align:center">
+            <button onclick="scriptGoToScene()" style="padding:6px 10px;background:var(--surface2);border:1px solid var(--yellow);border-radius:6px;color:var(--yellow);font-size:11px;font-weight:700;cursor:pointer">Scena</button>
+          </div>
+        </div>
+
+        <!-- Canvas -->
+        <div id="scriptCanvasWrap" style="flex:1;overflow:auto;display:flex;justify-content:center;padding:16px;background:var(--bg)">
+          <div id="scriptNoPdf" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:60px 24px;text-align:center">
+            <svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="#444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="32" height="44" rx="3"/><path d="M16 12h16M16 18h16M16 24h10"/></svg>
+            <div style="font-size:13px;color:var(--muted)">Carica una sceneggiatura per usare lo Script viewer</div>
+          </div>
+          <canvas id="scriptCanvas" style="display:none;max-width:100%;border-radius:4px;box-shadow:0 4px 24px rgba(0,0,0,0.5)"></canvas>
+        </div>
+
       </div>
 
     </div><!-- end resultsPage -->
@@ -2443,7 +2486,7 @@ function renderResults(d) {
 }
 
 function resetApp() {
-  files = []; pdfB64Array = []; modalPdfDoc = null;
+  files = []; pdfB64Array = []; modalPdfDoc = null; scriptDoc = null; scriptCurPage = 1;
   renderFiles();
   document.getElementById('resultsPage').classList.remove('on');
   document.getElementById('chatSection').classList.remove('on');
@@ -3413,6 +3456,7 @@ function switchResultTab(tab) {
   if (timetable) timetable.style.display = tab === 'timetable' ? 'flex' : 'none';
   if (wrap)      wrap.style.display      = tab === 'wrap'      ? 'flex' : 'none';
   if (script)    script.style.display    = tab === 'script'    ? 'flex' : 'none';
+  if (tab === 'script') initScriptViewer();
 
   ['tabSpoglio','tabPdl','tabCast','tabTimetable','tabWrap','tabScript'].forEach(id => {
     const el = document.getElementById(id); if (el) el.classList.remove('active');
@@ -3423,7 +3467,92 @@ function switchResultTab(tab) {
   if (activeTab) activeTab.classList.add('active');
 }
 
-// ══ CAST RENDER ══
+// ══ SCRIPT VIEWER ══
+let scriptDoc = null;
+let scriptCurPage = 1;
+let scriptScale = 1.5;
+let scriptRendering = false;
+
+async function initScriptViewer() {
+  if (!pdfB64Array.length) return;
+  if (!scriptDoc) {
+    try {
+      const bin = atob(pdfB64Array[0]);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      scriptDoc = await pdfjsLib.getDocument({ data: arr }).promise;
+    } catch(e) { console.log('Script viewer error:', e.message); return; }
+  }
+  document.getElementById('scriptPageTotal').textContent = `/ ${scriptDoc.numPages}`;
+  document.getElementById('scriptPageInput').max = scriptDoc.numPages;
+  document.getElementById('scriptNoPdf').style.display = 'none';
+  document.getElementById('scriptCanvas').style.display = 'block';
+  await scriptRenderPage(scriptCurPage);
+}
+
+async function scriptRenderPage(n) {
+  if (!scriptDoc || scriptRendering) return;
+  scriptRendering = true;
+  n = Math.min(Math.max(1, n), scriptDoc.numPages);
+  scriptCurPage = n;
+  document.getElementById('scriptPageInput').value = n;
+  try {
+    const page = await scriptDoc.getPage(n);
+    const viewport = page.getViewport({ scale: scriptScale });
+    const canvas = document.getElementById('scriptCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: ctx, viewport }).promise;
+  } catch(e) { console.log('Render error:', e.message); }
+  scriptRendering = false;
+}
+
+async function scriptChangePage(delta) {
+  await scriptRenderPage(scriptCurPage + delta);
+}
+
+async function scriptGoToPage(n) {
+  await scriptRenderPage(parseInt(n));
+}
+
+async function scriptZoom(delta) {
+  scriptScale = Math.min(3, Math.max(0.5, scriptScale + delta));
+  document.getElementById('scriptZoomLabel').textContent = Math.round(scriptScale * 100) + '%';
+  await scriptRenderPage(scriptCurPage);
+}
+
+async function scriptSearch() {
+  const query = document.getElementById('scriptSearchInput').value.trim().toLowerCase();
+  if (!query || !scriptDoc) return;
+  for (let p = 1; p <= scriptDoc.numPages; p++) {
+    const page = await scriptDoc.getPage(p);
+    const tc = await page.getTextContent();
+    const text = tc.items.map(i => i.str).join(' ').toLowerCase();
+    if (text.includes(query)) {
+      await scriptRenderPage(p);
+      document.getElementById('scriptSearchInput').style.borderColor = 'var(--yellow)';
+      setTimeout(() => document.getElementById('scriptSearchInput').style.borderColor = '', 1500);
+      return;
+    }
+  }
+  document.getElementById('scriptSearchInput').style.borderColor = 'rgba(239,68,68,0.6)';
+  setTimeout(() => document.getElementById('scriptSearchInput').style.borderColor = '', 1500);
+}
+
+async function scriptGoToScene() {
+  const input = document.getElementById('scriptSceneInput').value.trim().replace(/^SC\.?/i, '');
+  if (!input || !analysisData?.scene_index) return;
+  const pg = analysisData.scene_index[input] ?? analysisData.scene_index[input.toLowerCase()];
+  if (pg != null) {
+    await scriptRenderPage(pg + pageOffset);
+  } else {
+    document.getElementById('scriptSceneInput').style.borderColor = 'rgba(239,68,68,0.6)';
+    setTimeout(() => document.getElementById('scriptSceneInput').style.borderColor = '', 1500);
+  }
+}
+
+// ══ END SCRIPT VIEWER ══
 function renderCastTab(rows, showAlert) {
   const alert = document.getElementById('castAlert');
   const wrap  = document.getElementById('castTableWrap');
