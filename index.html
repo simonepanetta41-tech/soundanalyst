@@ -3632,7 +3632,7 @@ async function scriptGoToScene() {
   const idx = buildSceneIndex();
   pg = idx[input] ?? idx[input.toLowerCase()];
   if (pg != null) {
-    await scriptRenderPage(pg); // already absolute
+    await scriptRenderPage(pg + 1); // +1 to land on the scene header
     document.getElementById('scriptSceneInput').style.borderColor = 'var(--yellow)';
     setTimeout(() => document.getElementById('scriptSceneInput').style.borderColor = '', 1500);
     return;
