@@ -2835,6 +2835,7 @@ function initChat(d) {
   analysisData = d;
   chatHistory  = [];
   rotateChatPlaceholder();
+  document.getElementById('chatMessages').innerHTML = '';
   document.getElementById('chatSection').classList.add('on');
   addMsg('assistant', `Ciao! Sono Gennaro. Ho analizzato <em>${d.titolo||'la sceneggiatura'}</em>. Sono pronto per qualsiasi domanda sul reparto suono — criticità, attrezzatura, scene specifiche. Come posso aiutarti?`);
 }
