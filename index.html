@@ -2645,13 +2645,16 @@ async function importNewAnalysis() {
   // Save to Supabase
   await sb.from('analyses').update({ data: data }).eq('id', currentAnalysisId);
 
-  // Update PDF in storage if new b64 available
+  // Update PDF in storage and in memory
   if (pendingNewPdfB64) {
     const bin = atob(pendingNewPdfB64);
     const arr = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
     const blob = new Blob([arr], { type: 'application/pdf' });
     await sb.storage.from('Screenplays').upload(`${currentAnalysisId}.pdf`, blob, { upsert: true });
+    // Update in-memory PDF so scene viewer shows new version
+    pdfB64Array = [pendingNewPdfB64];
+    modalPdfDoc = null; // force reload
   }
 
   // Update UI
