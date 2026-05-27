@@ -2497,7 +2497,7 @@ Ignora rinumerazioni. Ignora scene identiche. Sii conciso.`;
 
   try {
     const resp = await callApi('api/analyze', {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 4000,
       messages: [{ role: 'user', content: prompt }]
     });
@@ -2566,7 +2566,7 @@ async function runNewAnalysisBackground(b64, newText) {
   try {
     const pages = Math.min(20, Math.ceil(newText.length / 3000));
     const resp = await callApi('api/analyze', {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 16000,
       system: getSysprompt(),
       messages: [{ role: 'user', content: newText.slice(0, 120000) }]
