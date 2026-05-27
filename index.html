@@ -2482,7 +2482,15 @@ ${oldText.slice(0, 60000)}
 NUOVA VERSIONE:
 ${newText.slice(0, 60000)}
 
-Scene critiche da monitorare (numeri scena): ${[...criticalScenes].join(', ') || 'nessuna'}
+Scene critiche per il reparto suono (numeri scena): ${[...criticalScenes].join(', ') || 'nessuna'}
+
+Regole TASSATIVE:
+- Ignora COMPLETAMENTE le rinumerazioni — se il contenuto è identico la scena NON va segnalata
+- Non menzionare mai doppiaggio, ADR, post-produzione — i film sono sempre in presa diretta
+- Nessun commento soggettivo o interpretativo — solo descrizione oggettiva di cosa è cambiato
+- scene_da_segnalare: SOLO scene con modifiche reali (non rinumerazioni) che appartengono alle categorie critiche del suono (playback, stunt, camera car, lingue straniere, crowd parlante, mezzi in movimento, acqua/pioggia, subacquee, aerei/elicotteri). Non segnalare scene con semplici variazioni di dialogo normale.
+- Il campo "riassunto" descrive oggettivamente cosa è cambiato (es: "Rimossa battuta di MATTIA", "Aggiunta sequenza musicale dal vivo")
+- Il campo "motivo" indica solo la categoria critica coinvolta (es: "playback", "stunt", "camera car")
 
 Rispondi SOLO con JSON valido:
 {
@@ -2490,10 +2498,7 @@ Rispondi SOLO con JSON valido:
   "scene_eliminate": [{"numero":"string","intestazione":"string"}],
   "scene_modificate": [{"numero":"string","intestazione":"string","riassunto":"string (max 20 parole)"}],
   "scene_da_segnalare": [{"numero":"string","intestazione":"string","riassunto":"string","motivo":"string"}]
-}
-
-scene_da_segnalare = solo scene modificate/eliminate che erano critiche per il suono (numeri: ${[...criticalScenes].join(',')}).
-Ignora rinumerazioni. Ignora scene identiche. Sii conciso.`;
+}`;
 
   try {
     const resp = await callApi('api/analyze', {
