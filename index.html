@@ -2241,6 +2241,39 @@ async function startAnalysis() {
       if (data[key] && hasData(data[key])) data[key].presente = true;
     });
 
+    // Recalculate INT/EXT/day/night from actual scene strings (more reliable than Claude's estimate)
+    const allSceneStrs = [];
+    ['camera_car','location_wild','costume_critico','mezzi_movimento','acqua_pioggia',
+     'subacquee','ambienti_rumorosi','aerei_elicotteri','dialoghi_movimento','lingue_straniere',
+     'dialoghi_mediati','voiceover','crowd_parlante','animali','stunt_effetti'].forEach(k => {
+      (data[k]?.scene||[]).forEach(s => allSceneStrs.push(typeof s==='string'?s:s.scena||''));
+    });
+    ['esibizioni_live','playback_puro','musica_diegetica'].forEach(k => {
+      (data.playback?.[k]||[]).forEach(s => allSceneStrs.push(s.scena||''));
+    });
+    // Parse unique scene headers
+    const parsed = {};
+    allSceneStrs.forEach(str => {
+      const scNum = str.match(/SC\.(\S+)/)?.[1]; if (!scNum) return;
+      if (parsed[scNum]) return;
+      const m = str.match(/SC\.\S+\s*-\s*(INT|EST|EXT|I\/E|E\/I|INT\/EST|EST\/INT)[^-]*-\s*(\w+)/i);
+      if (m) parsed[scNum] = { ie: m[1].toUpperCase(), mom: m[2].toUpperCase() };
+    });
+    let ig=0, in_=0, eg=0, en_=0, it=0, et=0;
+    Object.values(parsed).forEach(({ie, mom}) => {
+      const isI = /^(INT|I)/.test(ie);
+      const isE = /^(EST|EXT|E)/.test(ie);
+      const isG = /^(D|G|DAY|GIORNO|MATTINO|ALBA|TRAMONTO|POME)/.test(mom);
+      const isN = /^(N|NOTTE|NIGHT|SERA)/.test(mom);
+      if (isI) { it++; if(isG) ig++; if(isN) in_++; }
+      if (isE) { et++; if(isG) eg++; if(isN) en_++; }
+    });
+    if (it+et > 0) {
+      data.scene_interno=it; data.scene_esterno=et;
+      data.scene_interno_giorno=ig; data.scene_interno_notte=in_;
+      data.scene_esterno_giorno=eg; data.scene_esterno_notte=en_;
+    }
+
     await saveAnalysis(data);
 
     // Save cast silently (always)
