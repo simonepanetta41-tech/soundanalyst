@@ -3019,8 +3019,17 @@ function buildChatContext(d) {
   ];
   cats.forEach(([l,obj,fn]) => { if(obj?.presente){const v=fn(obj);if(v)lines.push(`${l}: ${v}`);}});
 
-  // Mappa personaggi→scene (compatta, solo se disponibile)
-  if (d.personaggi_scene && Object.keys(d.personaggi_scene).length) {
+  // Tutte le scene (scene_list)
+  if (d.scene_list?.length) {
+    const scList = d.scene_list.map(s => `${s.n}-${s.ie}-${s.m}`).join(' ');
+    lines.push(`\nTUTTE LE SCENE: ${scList}`);
+  }
+
+  // Cast provvisorio
+  if (d.cast_provvisorio?.length) {
+    const castStr = d.cast_provvisorio.slice(0,25).map(c => `${c.character_id}.${c.nome}(${c.pose_stimate}gg)`).join(' ');
+    lines.push(`CAST: ${castStr}`);
+  }
     const mapStr = Object.entries(d.personaggi_scene)
       .map(([nome, scene]) => `${nome}:${Array.isArray(scene) ? scene.join(',') : scene}`)
       .join(' | ');
