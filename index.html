@@ -2153,26 +2153,37 @@ async function startAnalysis() {
     autoDetectOffset();
 
     setStep(2);
-    document.getElementById('progLabel').textContent = 'Invio a Gennaro...';
+    document.getElementById('progLabel').textContent = 'Estrazione testo...';
 
-    const blocks = pdfs.map(p => ({ type:'document', source:{ type:'base64', media_type:'application/pdf', data:p.data } }));
-    blocks.push({ type:'text', text: pdfs.length > 1
-      ? `Analizza questi ${pdfs.length} script come corpus unico: ${pdfs.map(p=>p.name).join(', ')}.`
-      : 'Analizza questa sceneggiatura.' });
-
-    // Count total pages to calibrate progress bar
+    // Extract text from all PDFs
+    const textsArray = [];
     let totalPages = 0;
-    try {
-      for (const p of pdfs) {
+    for (const p of pdfs) {
+      try {
+        const text = await extractFullText(p.data);
+        textsArray.push({ name: p.name, text });
         const doc = await pdfjsLib.getDocument({ data: atob(p.data) }).promise;
         totalPages += doc.numPages;
+      } catch(e) {
+        totalPages += 80;
+        textsArray.push({ name: p.name, text: '' });
       }
-    } catch(e) { totalPages = 80; } // fallback estimate
+    }
+    const fullText = textsArray.map(t =>
+      textsArray.length > 1 ? `### ${t.name}\n${t.text}` : t.text
+    ).join('\n\n');
 
     setStep(3);
     const estimatedSeconds = Math.round(totalPages / 50 * 60);
     document.getElementById('progLabel').textContent = `Gennaro sta analizzando... (~${Math.round(estimatedSeconds/60)} min)`;
     startProgressSimulation(estimatedSeconds);
+
+    const blocks = [
+      { type: 'text', text: fullText.slice(0, 120000) },
+      { type: 'text', text: textsArray.length > 1
+        ? `Analizza questi ${textsArray.length} script come corpus unico: ${textsArray.map(t=>t.name).join(', ')}.`
+        : 'Analizza questa sceneggiatura.' }
+    ];
 
     let resp;
     for (let attempt = 1; attempt <= 3; attempt++) {
