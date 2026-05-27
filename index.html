@@ -2539,6 +2539,7 @@ Rispondi SOLO con JSON valido:
 }
 
 function renderCompareResult(data) {
+  window._lastCompareReport = data; // save for import
   const body = document.getElementById('compareBody');
   const ico_plus   = `<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="rgba(110,231,183,0.9)" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v6M5 8h6"/></svg>`;
   const ico_minus  = `<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="rgba(239,68,68,0.8)" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6.5"/><path d="M5 8h6"/></svg>`;
@@ -2645,8 +2646,12 @@ async function importNewAnalysis() {
     if (data[key] && hasData(data[key])) data[key].presente = true;
   });
 
-  // Save to Supabase
-  await sb.from('analyses').update({ data: data }).eq('id', currentAnalysisId);
+  // Save current analysis as prev + save compare report before overwriting
+  await sb.from('analyses').update({
+    data: data,
+    data_prev: analysisData,
+    compare_report: window._lastCompareReport || null
+  }).eq('id', currentAnalysisId);
 
   // Update PDF in storage and in memory
   if (pendingNewPdfB64) {
@@ -2681,13 +2686,62 @@ async function importNewAnalysis() {
   document.body.appendChild(toast); setTimeout(()=>toast.remove(), 3500);
 }
 
-function openCompareModal(isNew) {
+async function openCompareModal(isNew) {
   const modal = document.getElementById('compareModal');
+  const body  = document.getElementById('compareBody');
+  const footer = document.getElementById('compareFooter');
   modal.classList.add('open');
+
   if (!isNew) {
-    // Show cached comparison result — just reopen modal
-    document.getElementById('compareFooter').style.display = pendingNewAnalysis ? 'flex' : 'none';
+    // Load saved report from Supabase
+    body.innerHTML = `<div class="compare-loading"><span class="spin"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2z" stroke-opacity=".2"/><path d="M10 2a8 8 0 018 8" stroke-linecap="round"/></svg></span> Caricamento...</div>`;
+    footer.style.display = 'none';
+    try {
+      const { data: row } = await sb.from('analyses').select('compare_report,data_prev').eq('id', currentAnalysisId).single();
+      if (row?.compare_report) {
+        renderCompareResult(row.compare_report);
+        // Show restore button instead of import
+        footer.style.display = 'flex';
+        document.getElementById('btnImportNew').style.display = 'none';
+        let btnRestore = document.getElementById('btnRestorePrev');
+        if (!btnRestore) {
+          btnRestore = document.createElement('button');
+          btnRestore.id = 'btnRestorePrev';
+          btnRestore.className = 'btn-new-version';
+          btnRestore.style.background = 'none';
+          btnRestore.style.borderColor = 'var(--muted)';
+          btnRestore.style.color = 'var(--muted)';
+          btnRestore.innerHTML = `<svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10a7 7 0 1014 0 7 7 0 00-14 0"/><path d="M3 6v4h4"/></svg> Ripristina versione precedente`;
+          btnRestore.onclick = () => restorePrevAnalysis(row.data_prev);
+          footer.appendChild(btnRestore);
+        }
+      } else {
+        body.innerHTML = `<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px">Nessun confronto disponibile.</div>`;
+      }
+    } catch(e) {
+      body.innerHTML = `<div style="text-align:center;padding:32px;color:rgba(239,68,68,0.8);font-size:13px">⚠ ${e.message}</div>`;
+    }
+  } else {
+    // Reset for new comparison
+    document.getElementById('btnImportNew').style.display = 'flex';
+    const btnRestore = document.getElementById('btnRestorePrev');
+    if (btnRestore) btnRestore.style.display = 'none';
   }
+}
+
+async function restorePrevAnalysis(prevData) {
+  if (!prevData || !currentAnalysisId) return;
+  await sb.from('analyses').update({ data: prevData, data_prev: null, compare_report: null }).eq('id', currentAnalysisId);
+  analysisData = prevData;
+  document.getElementById('compareModal').classList.remove('open');
+  renderResults(prevData);
+  loadNotes(null);
+  document.getElementById('btnPrevVersion').style.display = 'none';
+  document.getElementById('versionLabel').textContent = 'Versione precedente ripristinata';
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--yellow);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--yellow);z-index:9999;white-space:nowrap';
+  toast.textContent = '✓ Versione precedente ripristinata';
+  document.body.appendChild(toast); setTimeout(()=>toast.remove(), 3500);
 }
 
 // ══ END VERSION COMPARISON ══
