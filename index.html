@@ -2567,6 +2567,13 @@ function renderCompareResult(data) {
 }
 
 async function runNewAnalysisBackground(b64, newText) {
+  // Update import button to show loading
+  const btn = document.getElementById('btnImportNew');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spin"><svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2z" stroke-opacity=".2"/><path d="M10 2a8 8 0 018 8" stroke-linecap="round"/></svg></span> Preparazione analisi...`;
+    btn.style.opacity = '0.6';
+  }
   try {
     const sysprompt = getSysprompt();
     console.log('[NewAnalysis] SYSPROMPT length:', sysprompt.length);
@@ -2580,9 +2587,20 @@ async function runNewAnalysisBackground(b64, newText) {
     const raw = resp.content.map(b => b.text||'').join('').replace(/```json|```/g,'').trim();
     pendingNewAnalysis = JSON.parse(raw);
     console.log('[NewAnalysis] pronta:', Object.keys(pendingNewAnalysis));
+    // Update button to ready state
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.innerHTML = `<svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v8M6 8l4 4 4-4"/><path d="M4 16h12"/></svg> Importa nuova analisi`;
+    }
   } catch(e) {
     console.log('[NewAnalysis] fallita:', e.message);
     pendingNewAnalysis = null;
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.innerHTML = `⚠ Analisi fallita — riprova`;
+    }
   }
 }
 
@@ -2592,7 +2610,7 @@ function getSysprompt() {
 
 async function importNewAnalysis() {
   if (!pendingNewAnalysis) {
-    alert('Analisi nuova versione ancora in corso, riprova tra poco.');
+    console.log('[Import] pendingNewAnalysis ancora null');
     return;
   }
   if (!currentAnalysisId) return;
