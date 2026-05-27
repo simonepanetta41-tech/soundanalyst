@@ -2567,27 +2567,27 @@ function renderCompareResult(data) {
 }
 
 async function runNewAnalysisBackground(b64, newText) {
-  // Reuse existing SYSPROMPT — full analysis of new version
   try {
-    const pages = Math.min(20, Math.ceil(newText.length / 3000));
+    const sysprompt = getSysprompt();
+    console.log('[NewAnalysis] SYSPROMPT length:', sysprompt.length);
+    if (!sysprompt) { console.log('[NewAnalysis] SYSPROMPT vuoto!'); return; }
     const resp = await callApi('api/analyze', {
       model: 'claude-sonnet-4-6',
       max_tokens: 16000,
-      system: getSysprompt(),
+      system: sysprompt,
       messages: [{ role: 'user', content: newText.slice(0, 120000) }]
     });
     const raw = resp.content.map(b => b.text||'').join('').replace(/```json|```/g,'').trim();
     pendingNewAnalysis = JSON.parse(raw);
-    console.log('[VersionCompare] nuova analisi pronta, in attesa di import');
+    console.log('[NewAnalysis] pronta:', Object.keys(pendingNewAnalysis));
   } catch(e) {
-    console.log('[VersionCompare] nuova analisi fallita:', e.message);
+    console.log('[NewAnalysis] fallita:', e.message);
     pendingNewAnalysis = null;
   }
 }
 
 function getSysprompt() {
-  // Return the same SYSPROMPT used in startAnalysis
-  return document.querySelector('script')?.textContent?.match(/const SYSPROMPT = `([^`]+)`/)?.[1] || '';
+  return typeof SYSPROMPT !== 'undefined' ? SYSPROMPT : '';
 }
 
 async function importNewAnalysis() {
