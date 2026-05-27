@@ -2976,11 +2976,23 @@ let chatTyping   = false;
 
 function buildPdlContext() {
   if (!pdlData) return '';
-  const giorni = getPdlAllGiorni().slice(0, 40); // limit to avoid token overflow
-  return giorni.map(g => {
+  const giorni = getPdlAllGiorni();
+
+  // Reverse index: scene → giorno
+  const sceneToDay = {};
+  giorni.forEach(g => {
+    (g.scene||[]).forEach(s => { sceneToDay[s.numero] = g.numero_giorno; });
+  });
+  const sceneIndex = Object.entries(sceneToDay)
+    .map(([sc, d]) => `SC.${sc}→G.${d}`).join(' ');
+
+  // Days summary (first 40)
+  const daySummary = giorni.slice(0, 40).map(g => {
     const scene = (g.scene||[]).map(s=>s.numero).join(',');
-    return `G.${g.numero_giorno} ${g.data||''} ${g.ora_inizio||''} ${g.location_principale||''} [${scene}]`;
+    return `G.${g.numero_giorno} ${g.data||''} ${g.ora_inizio||''} ${g.location_principale||''} [${scene}]${g.trasferimento?' 🚌'+g.trasferimento:''}`;
   }).join('\n');
+
+  return `SCENE→GIORNO: ${sceneIndex}\n\nGIORNI:\n${daySummary}`;
 }
 
 function buildChatContext(d) {
