@@ -1005,7 +1005,33 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
           </div>
         </div>
 
-        <!-- Results list -->
+        <!-- Legend -->
+        <div style="padding:8px 16px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;gap:16px;font-size:11px;color:var(--muted)">
+          <span>🔴 Tu sei qui</span>
+          <span style="color:var(--yellow)">🟡 Locali trovati</span>
+          <span>🐌 Slow Food style</span>
+        </div>
+
+        <!-- Reviews Modal -->
+        <div id="wrapReviewsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;padding:16px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:500px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+              <div id="wrapReviewsTitle" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;color:var(--white)"></div>
+              <button onclick="document.getElementById('wrapReviewsModal').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px">
+                <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+              </button>
+            </div>
+            <div id="wrapReviewsBody" style="overflow-y:auto;flex:1;padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+              <div style="text-align:center;padding:32px 0;color:var(--muted)">Caricamento...</div>
+            </div>
+            <div style="padding:12px 20px;border-top:1px solid var(--border);flex-shrink:0">
+              <a id="wrapReviewsMapsLink" href="#" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:8px;border:1px solid var(--border);color:var(--muted);text-decoration:none;font-size:12px;font-family:'Space Grotesk',sans-serif;font-weight:600">
+                <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2C7.24 2 5 4.24 5 7c0 3.75 5 11 5 11s5-7.25 5-11c0-2.76-2.24-5-5-5z"/><circle cx="10" cy="7" r="1.5"/></svg>
+                Vedi tutte le recensioni su Google Maps
+              </a>
+            </div>
+          </div>
+        </div>
         <div id="wrapResults" style="flex:1;overflow-y:auto;padding:12px 16px 120px">
           <div id="wrapResultsInner" style="display:flex;flex-direction:column;gap:10px">
             <div style="text-align:center;padding:40px 0;color:var(--muted);font-size:13px">Seleziona i filtri e cerca</div>
@@ -3684,21 +3710,25 @@ function renderWrapResults(places) {
     const isOpen = p.currentOpeningHours?.openNow;
     const openBadge = isOpen != null ? `<span class="wrap-badge" style="background:${isOpen?'rgba(110,231,183,0.15)':'rgba(239,68,68,0.12)'};color:${isOpen?'rgba(110,231,183,0.9)':'rgba(239,68,68,0.8)'}">${isOpen?'Aperto':'Chiuso'}</span>` : '';
     const slowFood = /osteria|trattoria|locanda/i.test(name);
-    const slowBadge = slowFood ? `<span class="wrap-badge" style="background:rgba(245,230,66,0.12);color:var(--yellow)">🐌 Slow Food style</span>` : '';
-    const phone = p.internationalPhoneNumber ? `<a href="tel:${p.internationalPhoneNumber}" style="font-size:11px;color:var(--muted);text-decoration:none">📞 ${p.internationalPhoneNumber}</a>` : '';
+    const slowBadge = slowFood ? `<span class="wrap-badge" style="background:rgba(245,230,66,0.12);color:var(--yellow);font-size:13px">🐌</span>` : '';
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}&query_place_id=${p.id}`;
+    const ratingHtml = rating ? `<span style="font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline;text-decoration-color:rgba(255,255,255,0.2)" onclick="wrapOpenReviews('${p.id}','${name.replace(/'/g,"\\'")}','${mapsUrl}')">${rating}</span>` : '';
 
     // Distance
     const dist = wrapLocation ? getDistanceM(wrapLocation.lat, wrapLocation.lng, p.location?.latitude, p.location?.longitude) : null;
     const distLabel = dist != null ? `<span style="font-size:10px;color:var(--muted)">${dist < 1000 ? dist+'m' : (dist/1000).toFixed(1)+'km'}</span>` : '';
 
+    const phone = p.internationalPhoneNumber ? `<a href="tel:${p.internationalPhoneNumber}" style="font-size:11px;color:var(--muted);text-decoration:none">📞 ${p.internationalPhoneNumber}</a>` : '';
+
     return `<div class="wrap-place-card ${slowFood?'slow-food':''}" onclick="wrapFocusMap(${i})">
-      <div class="wrap-place-name">${name}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="wrap-place-name">${name} ${slowBadge}</div>
+      </div>
       <div class="wrap-place-addr">${addr}</div>
       <div class="wrap-place-meta">
-        ${rating ? `<span style="font-size:11px;color:var(--muted)">${rating}</span>` : ''}
+        ${ratingHtml}
         ${distLabel}
         ${openBadge}
-        ${slowBadge}
       </div>
       ${phone}
     </div>`;
@@ -3790,6 +3820,51 @@ function wrapFocusMap(idx) {
   wrapMap.setZoom(17);
   google.maps.event.trigger(marker, 'click');
   document.getElementById('wrapMap').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function wrapOpenReviews(placeId, name, mapsUrl) {
+  const modal = document.getElementById('wrapReviewsModal');
+  const body  = document.getElementById('wrapReviewsBody');
+  const title = document.getElementById('wrapReviewsTitle');
+  const link  = document.getElementById('wrapReviewsMapsLink');
+  modal.style.display = 'flex';
+  title.textContent = name;
+  link.href = mapsUrl;
+  body.innerHTML = '<div style="text-align:center;padding:32px 0;color:var(--muted);font-size:13px">Caricamento recensioni...</div>';
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const resp = await fetch('/api/wrap', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ placeId, action: 'reviews' })
+    });
+    const data = await resp.json();
+    if (!data.reviews?.length) {
+      body.innerHTML = '<div style="text-align:center;padding:32px 0;color:var(--muted);font-size:13px">Nessuna recensione disponibile</div>';
+      return;
+    }
+
+    // Render photos if available
+    let photosHtml = '';
+    if (data.photos?.length) {
+      photosHtml = `<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px">
+        ${data.photos.slice(0,4).map(url => `<img src="${url}" style="height:100px;border-radius:8px;object-fit:cover;flex-shrink:0">`).join('')}
+      </div>`;
+    }
+
+    body.innerHTML = photosHtml + data.reviews.map(r => `
+      <div style="padding:12px;background:var(--surface2);border-radius:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:600;color:var(--white)">${r.authorName}</span>
+          <span style="font-size:11px;color:var(--yellow)">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">${r.text || '—'}</div>
+        <div style="font-size:10px;color:var(--border);margin-top:4px">${r.relativeTime || ''}</div>
+      </div>`).join('');
+  } catch(e) {
+    body.innerHTML = `<div style="text-align:center;padding:32px 0;color:rgba(239,68,68,0.8);font-size:13px">⚠ ${e.message}</div>`;
+  }
 }
 
 // ══ END WRAP ══
