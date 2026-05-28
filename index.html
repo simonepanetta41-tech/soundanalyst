@@ -2587,6 +2587,8 @@ function renderResults(d) {
 }
 
 function resetApp() {
+  // Save PDL before leaving if loaded
+  if (pdlData && currentAnalysisId) savePdlToSupabase();
   files = []; pdfB64Array = []; modalPdfDoc = null; scriptDoc = null; scriptCurPage = 1;
   renderFiles();
   document.getElementById('resultsPage').classList.remove('on');
@@ -4501,10 +4503,10 @@ async function savePdlToSupabase() {
 async function loadPdlFromSupabase(analysisId) {
   try {
     const { data, error } = await sb.from('pdl_versions').select('data, shooting_data').eq('analysis_id', analysisId).single();
-    if (error || !data) return false;
+    if (error) { console.log('PDL load error:', error.message, error.code); return false; }
+    if (!data || !data.data) { console.log('PDL: no data found for', analysisId); return false; }
     pdlData = data.data;
     pdlShootingData = data.shooting_data || {};
-    // Set calendar to PDL start month
     if (pdlData.data_inizio) {
       const d = new Date(pdlData.data_inizio);
       pdlCurrentMonth = d.getMonth();
@@ -4513,8 +4515,9 @@ async function loadPdlFromSupabase(analysisId) {
     document.getElementById('pdlUploadArea').style.display = 'none';
     document.getElementById('pdlDashboard').style.display = 'block';
     renderPdlDashboard();
+    console.log('PDL caricato:', pdlData.titolo);
     return true;
-  } catch(e) { console.log('PDL load error:', e.message); return false; }
+  } catch(e) { console.log('PDL load exception:', e.message); return false; }
 }
 
 // Check if a scene number is critical for sound (from analysisData)
