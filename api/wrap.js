@@ -7,13 +7,45 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { lat, lng, filters, radius = 2000 } = req.body;
-  if (!lat || !lng) return res.status(400).json({ error: 'lat/lng required' });
-
   const key = process.env.GOOGLE_PLACES_KEY;
   if (!key) return res.status(500).json({ error: 'GOOGLE_PLACES_KEY not configured' });
 
-  // Map filters to Google Places types
+  const body = req.body;
+
+  // ── Reviews request ──
+  if (body.action === 'reviews') {
+    const { placeId } = body;
+    if (!placeId) return res.status(400).json({ error: 'placeId required' });
+
+    const r = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
+      headers: {
+        'X-Goog-Api-Key': key,
+        'X-Goog-FieldMask': 'reviews,photos',
+        'Accept-Language': 'it'
+      }
+    });
+    const data = await r.json();
+    if (data.error) return res.status(500).json({ error: data.error.message });
+
+    const reviews = (data.reviews || []).map(rv => ({
+      authorName: rv.authorAttribution?.displayName || 'Anonimo',
+      rating: rv.rating || 0,
+      text: rv.text?.text || '',
+      relativeTime: rv.relativePublishTimeDescription || ''
+    }));
+
+    // Photo URLs
+    const photos = (data.photos || []).slice(0, 4).map(p =>
+      `https://places.googleapis.com/v1/${p.name}/media?maxHeightPx=200&maxWidthPx=300&key=${key}`
+    );
+
+    return res.status(200).json({ reviews, photos });
+  }
+
+  // ── Nearby search ──
+  const { lat, lng, filters, radius = 5000 } = body;
+  if (!lat || !lng) return res.status(400).json({ error: 'lat/lng required' });
+
   const typeMap = {
     pranzo:    ['restaurant'],
     cena:      ['restaurant'],
@@ -29,7 +61,7 @@ export default async function handler(req, res) {
   const results = [];
 
   for (const type of activeTypes) {
-    const body = {
+    const reqBody = {
       includedTypes: [type],
       maxResultCount: 15,
       locationRestriction: {
@@ -46,30 +78,25 @@ export default async function handler(req, res) {
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': key,
-          'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.currentOpeningHours,places.internationalPhoneNumber,places.websiteUri,places.location,places.types'
+          'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.currentOpeningHours,places.internationalPhoneNumber,places.websiteUri,places.location,places.types',
+          'Accept-Language': 'it'
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(reqBody)
       });
-
       const data = await r.json();
-      if (data.error) {
-        console.error('Google Places error:', JSON.stringify(data.error));
-        return res.status(500).json({ error: data.error.message });
-      }
+      if (data.error) return res.status(500).json({ error: data.error.message });
       if (data.places) results.push(...data.places);
     } catch(e) {
       console.error('Fetch error:', e.message);
     }
   }
 
-  // Deduplicate by place id
   const seen = new Set();
   const unique = results.filter(p => {
     if (seen.has(p.id)) return false;
     seen.add(p.id); return true;
   });
 
-  // Sort: osterie/trattorie first, then by rating
   unique.sort((a, b) => {
     const aName = a.displayName?.text?.toLowerCase() || '';
     const bName = b.displayName?.text?.toLowerCase() || '';
@@ -81,6 +108,6 @@ export default async function handler(req, res) {
 
   return res.status(200).json({
     places: unique.slice(0, 15),
-    gmapsKey: process.env.GOOGLE_PLACES_KEY
+    gmapsKey: key
   });
 }
