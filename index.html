@@ -952,22 +952,19 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       </div>
 
       <!-- WRAP SECTION -->
-      <div id="wrapSection" class="coming-soon-section" style="display:none;flex-direction:column;align-items:stretch;padding:0">
+      <div id="wrapSection" class="coming-soon-section" style="display:none;flex-direction:column;align-items:stretch;padding:12px 16px;gap:12px;overflow-y:auto;padding-bottom:140px">
 
-        <!-- Header -->
-        <div style="padding:16px 18px 12px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;color:var(--white)">🍺 Wrap</div>
-            <div id="wrapLocationLabel" style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px">Rilevamento posizione...</div>
-          </div>
-          <button onclick="wrapRefreshLocation()" style="padding:7px 12px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--muted);cursor:pointer;font-size:11px;display:flex;align-items:center;gap:5px">
+        <!-- Header card -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+          <div id="wrapLocationLabel" style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace">Rilevamento posizione...</div>
+          <button onclick="wrapRefreshLocation()" style="padding:7px 12px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;font-size:11px;display:flex;align-items:center;gap:5px;flex-shrink:0">
             <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M13 8A5 5 0 113 8"/><path d="M13 4v4h-4"/></svg>
             Aggiorna
           </button>
         </div>
 
-        <!-- Filters -->
-        <div style="padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap;background:var(--surface);border-bottom:1px solid var(--border)">
+        <!-- Filters card -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <div class="wrap-chip active" data-filter="pranzo" onclick="wrapToggleFilter(this)">
             <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v12M4 5c0-1.5 1-2 2-2h4c1 0 2 .5 2 2l-1 3H5L4 5z"/><path d="M5 8h6"/></svg>
             Pranzo
@@ -997,17 +994,18 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
           </select>
         </div>
 
-        <!-- Map placeholder -->
-        <div id="wrapMap" style="height:320px;background:var(--surface2);position:relative;flex-shrink:0">
-          <div id="wrapMapPlaceholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--muted)">
-            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-            <span style="font-size:12px">La mappa apparirà dopo la ricerca</span>
+        <!-- Map card -->
+        <div style="border:1px solid var(--border);border-radius:14px;overflow:hidden;flex-shrink:0">
+          <div id="wrapMap" style="height:320px;background:var(--surface2);position:relative">
+            <div id="wrapMapPlaceholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--muted)">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+              <span style="font-size:12px">La mappa apparirà dopo la ricerca</span>
+            </div>
           </div>
-        </div>
-
-        <!-- Legend -->
-        <div style="padding:8px 16px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);font-size:11px;color:var(--muted)">
-          🐌 Slow Food
+          <!-- Legend -->
+          <div style="padding:8px 14px;background:var(--surface);border-top:1px solid var(--border);font-size:11px;color:var(--muted)">
+            🐌 Slow Food
+          </div>
         </div>
 
         <!-- Reviews Modal -->
@@ -1031,10 +1029,9 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
             </div>
           </div>
         </div>
-        <div id="wrapResults" style="flex:1;overflow-y:auto;padding:12px 16px 120px">
-          <div id="wrapResultsInner" style="display:flex;flex-direction:column;gap:10px">
-            <div style="text-align:center;padding:40px 0;color:var(--muted);font-size:13px">Seleziona i filtri e cerca</div>
-          </div>
+        <!-- Results -->
+        <div id="wrapResultsInner" style="display:flex;flex-direction:column;gap:10px">
+          <div style="text-align:center;padding:40px 0;color:var(--muted);font-size:13px">Seleziona i filtri e cerca</div>
         </div>
 
       </div>
