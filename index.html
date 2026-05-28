@@ -3952,7 +3952,8 @@ function saReviewForm(rating, note, anon, placeId, name, username) {
         <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);cursor:pointer">
           <input type="checkbox" id="saAnon" ${anon?'checked':''} style="accent-color:var(--yellow)"> Anonimo
         </label>
-        ${rating > 0 ? `<button onclick="saConfirmDelete()" style="padding:5px 10px;background:none;border:1px solid rgba(239,68,68,0.4);border-radius:6px;color:rgba(239,68,68,0.7);font-size:10px;cursor:pointer">Elimina</button>` : ''}
+        ${rating > 0 ? `<button id="saDeleteBtn" onclick="saConfirmDelete()" style="padding:5px 10px;background:none;border:1px solid rgba(239,68,68,0.4);border-radius:6px;color:rgba(239,68,68,0.7);font-size:10px;cursor:pointer">Elimina</button>
+        <span id="saDeleteConfirm" style="display:none;font-size:10px;color:rgba(239,68,68,0.9)">Sicuro? <span onclick="saDeleteReviewFromForm()" style="cursor:pointer;text-decoration:underline;font-weight:700">Sì</span> · <span onclick="saHideDeleteConfirm()" style="cursor:pointer;text-decoration:underline">No</span></span>` : ''}
       </div>
       <button onclick="saSaveReviewFromForm()" style="padding:7px 16px;background:var(--yellow);border:none;border-radius:7px;color:#000;font-weight:700;font-size:12px;cursor:pointer">Salva</button>
     </div>
@@ -4002,24 +4003,13 @@ async function saDeleteReview(placeId, placeName) {
 }
 
 function saConfirmDelete() {
-  const btn = document.querySelector('#saEditForm button[onclick="saConfirmDelete()"]');
-  if (!btn) return;
-  if (btn.dataset.confirming) {
-    saDeleteReviewFromForm();
-  } else {
-    btn.dataset.confirming = '1';
-    btn.textContent = 'Conferma elimina';
-    btn.style.borderColor = 'rgba(239,68,68,0.9)';
-    btn.style.color = 'rgba(239,68,68,0.9)';
-    setTimeout(() => {
-      if (btn.dataset.confirming) {
-        delete btn.dataset.confirming;
-        btn.textContent = 'Elimina';
-        btn.style.borderColor = 'rgba(239,68,68,0.4)';
-        btn.style.color = 'rgba(239,68,68,0.7)';
-      }
-    }, 3000);
-  }
+  document.getElementById('saDeleteBtn').style.display = 'none';
+  document.getElementById('saDeleteConfirm').style.display = 'inline';
+}
+
+function saHideDeleteConfirm() {
+  document.getElementById('saDeleteBtn').style.display = 'inline-block';
+  document.getElementById('saDeleteConfirm').style.display = 'none';
 }
 
 function saSetStar(n) {
