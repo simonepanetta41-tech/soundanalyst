@@ -176,7 +176,7 @@ header { padding: 28px 0 24px; border-bottom: 1px solid var(--border); margin-bo
 .wrap-place-card { background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px; }
 .wrap-place-card.slow-food { border-color:rgba(245,230,66,0.4);background:rgba(245,230,66,0.04); }
 [data-theme="light"] .wrap-place-card,
-[data-theme="light"] .wrap-place-card.slow-food { background:#fff;border-color:#e5e5e5; }
+[data-theme="light"] .wrap-place-card.slow-food { background:#fff !important;border-color:#e5e5e5 !important; }
 .wrap-place-name { font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:var(--white); }
 .wrap-place-addr { font-size:11px;color:var(--muted);font-family:'DM Mono',monospace; }
 .wrap-place-meta { display:flex;align-items:center;gap:10px;flex-wrap:wrap; }
@@ -1007,7 +1007,7 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
 
         <!-- Legend -->
         <div style="padding:8px 16px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);font-size:11px;color:var(--muted)">
-          🐌 Slow Food style
+          🐌 Slow Food
         </div>
 
         <!-- Reviews Modal -->
@@ -1019,6 +1019,7 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
                 <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
               </button>
             </div>
+            <div id="wrapReviewsPhotos" style="display:none;padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;white-space:nowrap;gap:8px"></div>
             <div id="wrapReviewsBody" style="overflow-y:auto;flex:1;padding:16px 20px;display:flex;flex-direction:column;gap:12px">
               <div style="text-align:center;padding:32px 0;color:var(--muted)">Caricamento...</div>
             </div>
@@ -3830,6 +3831,8 @@ async function wrapOpenReviews(placeId, name, mapsUrl) {
   title.textContent = name;
   link.href = mapsUrl;
   body.innerHTML = '<div style="text-align:center;padding:32px 0;color:var(--muted);font-size:13px">Caricamento recensioni...</div>';
+  const photosEl = document.getElementById('wrapReviewsPhotos');
+  if (photosEl) { photosEl.style.display = 'none'; photosEl.innerHTML = ''; }
 
   try {
     const { data: { session } } = await sb.auth.getSession();
@@ -3844,15 +3847,19 @@ async function wrapOpenReviews(placeId, name, mapsUrl) {
       return;
     }
 
-    // Render photos if available
-    let photosHtml = '';
+    // Render photos in fixed section above reviews
+    const photosEl = document.getElementById('wrapReviewsPhotos');
     if (data.photos?.length) {
-      photosHtml = `<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:4px">
-        ${data.photos.slice(0,4).map(url => `<img src="${url}" style="height:140px;width:180px;border-radius:8px;object-fit:cover;flex-shrink:0">`).join('')}
-      </div>`;
+      photosEl.style.display = 'flex';
+      photosEl.innerHTML = data.photos.slice(0,4).map(url =>
+        `<img src="${url}" style="height:120px;width:160px;border-radius:8px;object-fit:cover;flex-shrink:0;display:inline-block">`
+      ).join('');
+    } else {
+      photosEl.style.display = 'none';
+      photosEl.innerHTML = '';
     }
 
-    body.innerHTML = photosHtml + data.reviews.map(r => `
+    body.innerHTML = data.reviews.map(r => `
       <div style="padding:12px;background:var(--surface2);border-radius:8px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
           <span style="font-size:12px;font-weight:600;color:var(--white)">${r.authorName}</span>
