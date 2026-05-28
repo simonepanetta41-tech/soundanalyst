@@ -79,5 +79,8 @@ export default async function handler(req, res) {
     return (b.rating || 0) - (a.rating || 0);
   });
 
-  return res.status(200).json({ places: unique.slice(0, 15) });
+  return res.status(200).json({
+    places: unique.slice(0, 15),
+    gmapsKey: process.env.GOOGLE_PLACES_KEY
+  });
 }
