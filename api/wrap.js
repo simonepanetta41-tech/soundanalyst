@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { lat, lng, filters, radius = 1500 } = req.body;
+  const { lat, lng, filters, radius = 2000 } = req.body;
   if (!lat || !lng) return res.status(400).json({ error: 'lat/lng required' });
 
   const key = process.env.GOOGLE_PLACES_KEY;
@@ -15,49 +15,51 @@ export default async function handler(req, res) {
 
   // Map filters to Google Places types
   const typeMap = {
-    pranzo:    ['restaurant', 'trattoria'],
+    pranzo:    ['restaurant'],
+    cena:      ['restaurant'],
     birra:     ['bar'],
     vino:      ['wine_bar'],
     aperitivo: ['bar'],
-    cena:      ['restaurant'],
   };
 
   const activeTypes = [...new Set(
     (filters || ['pranzo']).flatMap(f => typeMap[f] || ['restaurant'])
   )];
 
-  // Build keyword for Osterie d'Italia / slow food preference
-  const slowFoodKeyword = filters?.includes('pranzo') || filters?.includes('cena')
-    ? 'osteria trattoria' : '';
-
   const results = [];
 
-  for (const type of activeTypes.slice(0, 2)) {
-    const url = new URL('https://places.googleapis.com/v1/places:searchNearby');
+  for (const type of activeTypes) {
     const body = {
       includedTypes: [type],
-      maxResultCount: 10,
+      maxResultCount: 15,
       locationRestriction: {
         circle: {
-          center: { latitude: lat, longitude: lng },
-          radius
+          center: { latitude: parseFloat(lat), longitude: parseFloat(lng) },
+          radius: parseInt(radius)
         }
-      },
-      ...(slowFoodKeyword ? { textQuery: slowFoodKeyword } : {})
+      }
     };
 
-    const r = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': key,
-        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.priceLevel,places.currentOpeningHours,places.internationalPhoneNumber,places.websiteUri,places.location,places.photos,places.types,places.editorialSummary'
-      },
-      body: JSON.stringify(body)
-    });
+    try {
+      const r = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': key,
+          'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.currentOpeningHours,places.internationalPhoneNumber,places.websiteUri,places.location,places.types'
+        },
+        body: JSON.stringify(body)
+      });
 
-    const data = await r.json();
-    if (data.places) results.push(...data.places);
+      const data = await r.json();
+      if (data.error) {
+        console.error('Google Places error:', JSON.stringify(data.error));
+        return res.status(500).json({ error: data.error.message });
+      }
+      if (data.places) results.push(...data.places);
+    } catch(e) {
+      console.error('Fetch error:', e.message);
+    }
   }
 
   // Deduplicate by place id
@@ -67,7 +69,7 @@ export default async function handler(req, res) {
     seen.add(p.id); return true;
   });
 
-  // Sort: prefer places with "osteria", "trattoria" in name (Slow Food style)
+  // Sort: osterie/trattorie first, then by rating
   unique.sort((a, b) => {
     const aName = a.displayName?.text?.toLowerCase() || '';
     const bName = b.displayName?.text?.toLowerCase() || '';
