@@ -3716,7 +3716,8 @@ function renderWrapResults(places) {
     const distLabel = dist != null ? `<span style="font-size:10px;color:var(--muted)">${dist < 1000 ? dist+'m' : (dist/1000).toFixed(1)+'km'}</span>` : '';
 
     const phone = p.internationalPhoneNumber ? `<a href="tel:${p.internationalPhoneNumber}" onclick="event.stopPropagation()" style="font-size:11px;color:var(--muted);text-decoration:none">📞 ${p.internationalPhoneNumber}</a>` : '';
-    const website = p.websiteUri ? `<button onclick="event.stopPropagation();wrapOpenWebsite('${p.websiteUri.replace(/'/g,"\\'")}','${name.replace(/'/g,"\\'")}');" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;white-space:nowrap">🔗 Prenota</button>` : '';
+    const reserveUrl = `https://www.google.com/maps/search/?api=1&query_place_id=${p.id}`;
+    const website = p.reservable ? `<a href="${reserveUrl}" target="_blank" onclick="event.stopPropagation()" style="padding:4px 10px;background:none;border:1px solid var(--yellow);border-radius:6px;color:var(--yellow);font-size:10px;font-weight:600;font-family:'Space Grotesk',sans-serif;white-space:nowrap;text-decoration:none">📅 Prenota</a>` : '';
 
     return `<div class="wrap-place-card ${slowFood?'slow-food':''}" onclick="wrapFocusMap(${i})">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
