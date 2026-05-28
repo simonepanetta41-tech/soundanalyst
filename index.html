@@ -3931,9 +3931,12 @@ function saReviewForm(rating, note, anon, placeId, name, username) {
     </div>
     <textarea id="saNote" placeholder="Lascia una nota..." style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:7px;color:var(--white);font-size:12px;resize:none;height:60px;box-sizing:border-box;font-family:'DM Mono',monospace">${note}</textarea>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
-      <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);cursor:pointer">
-        <input type="checkbox" id="saAnon" ${anon?'checked':''} style="accent-color:var(--yellow)"> Anonimo
-      </label>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);cursor:pointer">
+          <input type="checkbox" id="saAnon" ${anon?'checked':''} style="accent-color:var(--yellow)"> Anonimo
+        </label>
+        ${rating > 0 ? `<button onclick="saDeleteReview('${placeId}','${name.replace(/'/g,"\\'")}','${username}')" style="padding:5px 10px;background:none;border:1px solid rgba(239,68,68,0.4);border-radius:6px;color:rgba(239,68,68,0.7);font-size:10px;cursor:pointer">Elimina</button>` : ''}
+      </div>
       <button onclick="saSaveReview('${placeId}','${name.replace(/'/g,"\\'")}','${username}')" style="padding:7px 16px;background:var(--yellow);border:none;border-radius:7px;color:#000;font-weight:700;font-size:12px;cursor:pointer">Salva</button>
     </div>
   </div>`;
@@ -3952,6 +3955,15 @@ function saShowEditForm(placeId, name, username, rating) {
     formDiv.innerHTML = saReviewForm(rating, currentNote, false, placeId, name, username);
     ownCard.replaceWith(formDiv.firstChild);
   }
+}
+
+async function saDeleteReview(placeId, placeName, username) {
+  if (!confirm('Eliminare la tua recensione?')) return;
+  const { data: { session } } = await sb.auth.getSession();
+  const { error } = await sb.from('wrap_reviews').delete()
+    .eq('place_id', placeId).eq('user_id', session.user.id);
+  if (error) { alert('Errore: ' + error.message); return; }
+  wrapOpenReviews(placeId, placeName, document.getElementById('wrapReviewsMapsLink').href);
 }
 
 function saSetStar(n) {
