@@ -3925,7 +3925,7 @@ async function wrapOpenReviews(placeId, name, mapsUrl) {
 }
 
 function saReviewForm(rating, note, anon, placeId, name, username) {
-  return `<div id="saEditForm" style="background:var(--surface2);border-radius:10px;padding:12px">
+  return `<div id="saEditForm" data-place-id="${placeId}" data-place-name="${encodeURIComponent(name)}" data-username="${encodeURIComponent(username)}" style="background:var(--surface2);border-radius:10px;padding:12px">
     <div id="saStars" data-rating="${rating}" style="display:flex;gap:4px;margin-bottom:8px">
       ${[1,2,3,4,5].map(i=>`<span onclick="saSetStar(${i})" style="font-size:22px;cursor:pointer;color:${i<=rating?'#f5e642':'#444'}">★</span>`).join('')}
     </div>
@@ -3935,9 +3935,9 @@ function saReviewForm(rating, note, anon, placeId, name, username) {
         <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);cursor:pointer">
           <input type="checkbox" id="saAnon" ${anon?'checked':''} style="accent-color:var(--yellow)"> Anonimo
         </label>
-        ${rating > 0 ? `<button onclick="saDeleteReview('${placeId}','${name.replace(/'/g,"\\'")}','${username}')" style="padding:5px 10px;background:none;border:1px solid rgba(239,68,68,0.4);border-radius:6px;color:rgba(239,68,68,0.7);font-size:10px;cursor:pointer">Elimina</button>` : ''}
+        ${rating > 0 ? `<button onclick="saDeleteReviewFromForm()" style="padding:5px 10px;background:none;border:1px solid rgba(239,68,68,0.4);border-radius:6px;color:rgba(239,68,68,0.7);font-size:10px;cursor:pointer">Elimina</button>` : ''}
       </div>
-      <button onclick="saSaveReview('${placeId}','${name.replace(/'/g,"\\'")}','${username}')" style="padding:7px 16px;background:var(--yellow);border:none;border-radius:7px;color:#000;font-weight:700;font-size:12px;cursor:pointer">Salva</button>
+      <button onclick="saSaveReviewFromForm()" style="padding:7px 16px;background:var(--yellow);border:none;border-radius:7px;color:#000;font-weight:700;font-size:12px;cursor:pointer">Salva</button>
     </div>
   </div>`;
 }
@@ -3957,7 +3957,26 @@ function saShowEditForm(placeId, name, username, rating) {
   }
 }
 
-async function saDeleteReview(placeId, placeName, username) {
+function saGetFormData() {
+  const form = document.getElementById('saEditForm');
+  return {
+    placeId: form?.dataset.placeId,
+    placeName: decodeURIComponent(form?.dataset.placeName || ''),
+    username: decodeURIComponent(form?.dataset.username || '')
+  };
+}
+
+function saSaveReviewFromForm() {
+  const { placeId, placeName, username } = saGetFormData();
+  saSaveReview(placeId, placeName, username);
+}
+
+async function saDeleteReviewFromForm() {
+  const { placeId, placeName } = saGetFormData();
+  await saDeleteReview(placeId, placeName);
+}
+
+async function saDeleteReview(placeId, placeName) {
   if (!confirm('Eliminare la tua recensione?')) return;
   const { data: { session } } = await sb.auth.getSession();
   const { error } = await sb.from('wrap_reviews').delete()
