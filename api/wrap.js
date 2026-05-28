@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     const r = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
       headers: {
         'X-Goog-Api-Key': key,
-        'X-Goog-FieldMask': 'reviews,photos',
+        'X-Goog-FieldMask': 'reviews,photos,currentOpeningHours,websiteUri',
         'Accept-Language': 'it'
       }
     });
@@ -34,12 +34,14 @@ export default async function handler(req, res) {
       relativeTime: rv.relativePublishTimeDescription || ''
     }));
 
-    // Photo URLs
     const photos = (data.photos || []).slice(0, 4).map(p =>
       `https://places.googleapis.com/v1/${p.name}/media?maxHeightPx=200&maxWidthPx=300&key=${key}`
     );
 
-    return res.status(200).json({ reviews, photos });
+    const hours = data.currentOpeningHours?.weekdayDescriptions || [];
+    const website = data.websiteUri || null;
+
+    return res.status(200).json({ reviews, photos, hours, website });
   }
 
   // ── Nearby search ──
