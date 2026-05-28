@@ -3646,6 +3646,7 @@ async function wrapSearch() {
     });
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || 'Errore ricerca');
+    if (data.gmapsKey) window._gmapsKey = data.gmapsKey;
     renderWrapResults(data.places || []);
   } catch(e) {
     document.getElementById('wrapResultsInner').innerHTML = `<div style="color:rgba(239,68,68,0.8);padding:20px;text-align:center">⚠ ${e.message}</div>`;
@@ -3701,70 +3702,75 @@ function getDistanceM(lat1, lng1, lat2, lng2) {
 
 function renderWrapMap(places) {
   const mapEl = document.getElementById('wrapMap');
-  mapEl.innerHTML = '';
-  if (!places.length || !wrapLocation) return;
+  mapEl.innerHTML = '<div id="wrapLeaflet" style="width:100%;height:100%"></div>';
+  if (!wrapLocation) return;
 
-  // Use static map image via Google Static Maps API
-  const key = ''; // client side - use embed instead
-  const center = `${wrapLocation.lat},${wrapLocation.lng}`;
-  const markers = places.slice(0,10).map((p,i) =>
-    `markers=color:0xf5e642|label:${i+1}|${p.location?.latitude},${p.location?.longitude}`
-  ).join('&');
-  const myMarker = `markers=color:red|${center}`;
-
-  // Embed OSM map with leaflet (no API key needed)
-  mapEl.innerHTML = `<div id="wrapLeaflet" style="width:100%;height:100%"></div>`;
-
-  if (typeof L === 'undefined') {
-    // Load leaflet dynamically
-    const css = document.createElement('link');
-    css.rel = 'stylesheet';
-    css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
-    document.head.appendChild(css);
+  const key = ''; // loaded via script tag
+  if (!window.google?.maps) {
     const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
-    script.onload = () => initLeafletMap(places);
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${window._gmapsKey}&callback=initGoogleMap&libraries=places`;
+    script.async = true;
+    window._gmapsPlaces = places;
     document.head.appendChild(script);
   } else {
-    initLeafletMap(places);
+    initGoogleMap();
   }
 }
 
-function initLeafletMap(places) {
-  if (!wrapLocation) return;
-  const map = L.map('wrapLeaflet').setView([wrapLocation.lat, wrapLocation.lng], 16);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap © CARTO',
-    subdomains: 'abcd',
-    maxZoom: 19
-  }).addTo(map);
+window.initGoogleMap = function() {
+  const places = window._gmapsPlaces || [];
+  const center = { lat: wrapLocation.lat, lng: wrapLocation.lng };
+  const map = new google.maps.Map(document.getElementById('wrapLeaflet'), {
+    center,
+    zoom: 16,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: false,
+    styles: []
+  });
   wrapMap = map;
   wrapMarkers = [];
 
   // User position
-  L.circleMarker([wrapLocation.lat, wrapLocation.lng], {
-    radius: 8, fillColor: '#e53e3e', color: '#fff', weight: 2, fillOpacity: 1
-  }).addTo(map);
+  new google.maps.Marker({
+    position: center,
+    map,
+    icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#e53e3e', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+    title: 'Tu sei qui'
+  });
 
   // Place markers
   places.forEach((p, i) => {
     if (!p.location?.latitude) return;
     const isSlowFood = /osteria|trattoria|locanda/i.test(p.displayName?.text || '');
-    const marker = L.circleMarker([p.location.latitude, p.location.longitude], {
-      radius: 9,
-      fillColor: isSlowFood ? '#f5e642' : '#888',
-      color: '#fff', weight: 1.5, fillOpacity: 0.9
-    }).bindPopup(`<b>${p.displayName?.text}</b><br>${p.formattedAddress || ''}`).addTo(map);
+    const marker = new google.maps.Marker({
+      position: { lat: p.location.latitude, lng: p.location.longitude },
+      map,
+      label: { text: String(i+1), color: '#000', fontWeight: 'bold', fontSize: '11px' },
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 14,
+        fillColor: isSlowFood ? '#f5e642' : '#fff',
+        fillOpacity: 1,
+        strokeColor: isSlowFood ? '#c8b800' : '#888',
+        strokeWeight: 1.5
+      },
+      title: p.displayName?.text
+    });
+    const infoWindow = new google.maps.InfoWindow({
+      content: `<div style="font-family:sans-serif;max-width:180px"><b>${p.displayName?.text}</b><br><small>${p.formattedAddress||''}</small>${p.rating?`<br>⭐ ${p.rating}`:''}</div>`
+    });
+    marker.addListener('click', () => infoWindow.open(map, marker));
     wrapMarkers.push(marker);
   });
-
-  document.getElementById('wrapMapPlaceholder')?.remove();
-}
+};
 
 function wrapFocusMap(idx) {
   if (!wrapMap || !wrapMarkers[idx]) return;
-  wrapMarkers[idx].openPopup();
-  wrapMap.setView(wrapMarkers[idx].getLatLng(), 16);
+  const marker = wrapMarkers[idx];
+  wrapMap.setCenter(marker.getPosition());
+  wrapMap.setZoom(17);
+  google.maps.event.trigger(marker, 'click');
   document.getElementById('wrapMap').scrollIntoView({ behavior: 'smooth' });
 }
 
