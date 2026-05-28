@@ -987,6 +987,12 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
             Vino
           </div>
           <button onclick="wrapSearch()" style="margin-left:auto;padding:7px 16px;background:var(--yellow);border:none;border-radius:8px;color:#000;font-weight:700;font-size:12px;cursor:pointer">Cerca</button>
+          <select id="wrapRadius" style="padding:6px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--white);font-size:11px;font-family:'DM Mono',monospace">
+            <option value="5000" selected>5 km</option>
+            <option value="10000">10 km</option>
+            <option value="15000">15 km</option>
+            <option value="50000">+15 km</option>
+          </select>
         </div>
 
         <!-- Map placeholder -->
@@ -3628,7 +3634,7 @@ function wrapToggleFilter(el) {
 
 async function wrapSearch() {
   if (!wrapLocation) { await wrapRefreshLocation(); return; }
-  const filters = [...document.querySelectorAll('.wrap-chip.active')].map(el => el.dataset.filter);
+  const radius = parseInt(document.getElementById('wrapRadius')?.value || 2000);
   if (!filters.length) { alert('Seleziona almeno un filtro'); return; }
 
   document.getElementById('wrapResultsInner').innerHTML = `
@@ -3642,7 +3648,7 @@ async function wrapSearch() {
     const resp = await fetch('/api/wrap', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-      body: JSON.stringify({ lat: wrapLocation.lat, lng: wrapLocation.lng, filters, radius: 1500 })
+      body: JSON.stringify({ lat: wrapLocation.lat, lng: wrapLocation.lng, filters, radius })
     });
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || 'Errore ricerca');
@@ -3720,13 +3726,16 @@ function renderWrapMap(places) {
 window.initGoogleMap = function() {
   const places = window._gmapsPlaces || [];
   const center = { lat: wrapLocation.lat, lng: wrapLocation.lng };
+  const radius = parseInt(document.getElementById('wrapRadius')?.value || 5000);
+  const zoomMap = { 5000: 13, 10000: 12, 15000: 11, 50000: 10 };
+  const zoom = zoomMap[radius] || 12;
+
   const map = new google.maps.Map(document.getElementById('wrapLeaflet'), {
     center,
-    zoom: 16,
+    zoom,
     mapTypeControl: false,
     streetViewControl: false,
     fullscreenControl: false,
-    styles: []
   });
   wrapMap = map;
   wrapMarkers = [];
