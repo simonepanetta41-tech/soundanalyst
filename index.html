@@ -175,6 +175,8 @@ header { padding: 28px 0 24px; border-bottom: 1px solid var(--border); margin-bo
 .wrap-chip.active { border-color:var(--yellow);color:var(--yellow);background:rgba(245,230,66,0.08); }
 .wrap-place-card { background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px; }
 .wrap-place-card.slow-food { border-color:rgba(245,230,66,0.4);background:rgba(245,230,66,0.04); }
+[data-theme="light"] .wrap-place-card { background:#fff;border-color:#e5e5e5; }
+[data-theme="light"] .wrap-place-card.slow-food { background:#fffde7;border-color:rgba(200,180,0,0.3); }
 .wrap-place-name { font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:var(--white); }
 .wrap-place-addr { font-size:11px;color:var(--muted);font-family:'DM Mono',monospace; }
 .wrap-place-meta { display:flex;align-items:center;gap:10px;flex-wrap:wrap; }
@@ -3742,6 +3744,7 @@ window.initGoogleMap = function() {
     mapTypeControl: false,
     streetViewControl: false,
     fullscreenControl: false,
+    gestureHandling: 'greedy',
   });
   wrapMap = map;
   wrapMarkers = [];
