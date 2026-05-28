@@ -705,9 +705,14 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       <div class="res-header">
         <div class="res-title" id="resTitle">Analisi <span>Completata</span></div>
         <div class="res-actions">
-          <button class="btn-share" id="btnShare" onclick="openShareModal()">🔗 Condividi</button>
-          <button class="btn-export" onclick="exportPdf()">⬇ Esporta PDF</button>
-          <button class="btn-reset" onclick="resetApp()">↩ Nuova Analisi</button>
+          <div id="spoglioActions" style="display:flex;gap:6px">
+            <button class="btn-share" id="btnShare" onclick="openShareModal()">🔗 Condividi</button>
+            <button class="btn-export" onclick="exportPdf()">⬇ Esporta PDF</button>
+          </div>
+          <button class="btn-reset" onclick="resetApp()" title="Home" style="display:flex;align-items:center;gap:5px">
+            <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L10 3l7 6.5"/><path d="M5 8v8a1 1 0 001 1h3v-4h2v4h3a1 1 0 001-1V8"/></svg>
+            Home
+          </button>
         </div>
       </div>
 
@@ -3583,6 +3588,8 @@ function switchResultTab(tab) {
   });
   const tabMap = { spoglio:'tabSpoglio', pdl:'tabPdl', cast:'tabCast',
     timetable:'tabTimetable', wrap:'tabWrap', script:'tabScript' };
+  const spoglioActions = document.getElementById('spoglioActions');
+  if (spoglioActions) spoglioActions.style.display = tab === 'spoglio' ? 'flex' : 'none';
   const activeTab = document.getElementById(tabMap[tab]);
   if (activeTab) activeTab.classList.add('active');
 }
