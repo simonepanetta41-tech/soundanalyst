@@ -175,8 +175,8 @@ header { padding: 28px 0 24px; border-bottom: 1px solid var(--border); margin-bo
 .wrap-chip.active { border-color:var(--yellow);color:var(--yellow);background:rgba(245,230,66,0.08); }
 .wrap-place-card { background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px; }
 .wrap-place-card.slow-food { border-color:rgba(245,230,66,0.4);background:rgba(245,230,66,0.04); }
-[data-theme="light"] .wrap-place-card { background:#fff;border-color:#e5e5e5; }
-[data-theme="light"] .wrap-place-card.slow-food { background:#fffde7;border-color:rgba(200,180,0,0.3); }
+[data-theme="light"] .wrap-place-card,
+[data-theme="light"] .wrap-place-card.slow-food { background:#fff;border-color:#e5e5e5; }
 .wrap-place-name { font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:var(--white); }
 .wrap-place-addr { font-size:11px;color:var(--muted);font-family:'DM Mono',monospace; }
 .wrap-place-meta { display:flex;align-items:center;gap:10px;flex-wrap:wrap; }
@@ -1006,10 +1006,8 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
         </div>
 
         <!-- Legend -->
-        <div style="padding:8px 16px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;gap:16px;font-size:11px;color:var(--muted)">
-          <span>🔴 Tu sei qui</span>
-          <span style="color:var(--yellow)">🟡 Locali trovati</span>
-          <span>🐌 Slow Food style</span>
+        <div style="padding:8px 16px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);font-size:11px;color:var(--muted)">
+          🐌 Slow Food style
         </div>
 
         <!-- Reviews Modal -->
@@ -3700,6 +3698,7 @@ function renderWrapResults(places) {
   }
 
   // Render map with markers
+  window._gmapsPlaces = places;
   renderWrapMap(places);
 
   // Render list
@@ -3819,7 +3818,7 @@ function wrapFocusMap(idx) {
   wrapMap.setCenter(marker.getPosition());
   wrapMap.setZoom(17);
   google.maps.event.trigger(marker, 'click');
-  document.getElementById('wrapMap').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('wrapMap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 async function wrapOpenReviews(placeId, name, mapsUrl) {
@@ -3848,8 +3847,8 @@ async function wrapOpenReviews(placeId, name, mapsUrl) {
     // Render photos if available
     let photosHtml = '';
     if (data.photos?.length) {
-      photosHtml = `<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px">
-        ${data.photos.slice(0,4).map(url => `<img src="${url}" style="height:100px;border-radius:8px;object-fit:cover;flex-shrink:0">`).join('')}
+      photosHtml = `<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:4px">
+        ${data.photos.slice(0,4).map(url => `<img src="${url}" style="height:140px;width:180px;border-radius:8px;object-fit:cover;flex-shrink:0">`).join('')}
       </div>`;
     }
 
