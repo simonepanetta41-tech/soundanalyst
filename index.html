@@ -1010,7 +1010,7 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
 
         <!-- Reviews Modal -->
         <div id="wrapReviewsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;padding:16px">
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:500px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:500px;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column">
             <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
               <div id="wrapReviewsTitle" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;color:var(--white)"></div>
               <button onclick="document.getElementById('wrapReviewsModal').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px">
@@ -1018,7 +1018,7 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
               </button>
             </div>
             <div id="wrapReviewsPhotos" style="display:none;padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;white-space:nowrap;gap:8px"></div>
-            <div id="wrapReviewsBody" style="overflow-y:auto;flex:1;padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+            <div id="wrapReviewsBody" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
               <div style="text-align:center;padding:32px 0;color:var(--muted)">Caricamento...</div>
             </div>
             <div style="padding:12px 20px;border-top:1px solid var(--border);flex-shrink:0">
@@ -3940,9 +3940,18 @@ function saReviewForm(rating, note, anon, placeId, name, username) {
 }
 
 function saShowEditForm(placeId, name, username, rating) {
+  // Find the own review card and replace with edit form
   const body = document.getElementById('wrapReviewsBody');
-  const mapsUrl = document.getElementById('wrapReviewsMapsLink').href;
-  wrapOpenReviews(placeId, name, mapsUrl);
+  // Get current note from the card text if any
+  const noteEl = body.querySelector('div[style*="border:1px solid rgba(245,230,66"] div[style*="font-size:12px"]');
+  const currentNote = noteEl?.textContent || '';
+  // Replace first child (own review card) with form
+  const ownCard = body.querySelector('div[style*="border:1px solid rgba(245,230,66"]');
+  if (ownCard) {
+    const formDiv = document.createElement('div');
+    formDiv.innerHTML = saReviewForm(rating, currentNote, false, placeId, name, username);
+    ownCard.replaceWith(formDiv.firstChild);
+  }
 }
 
 function saSetStar(n) {
