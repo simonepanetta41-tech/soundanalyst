@@ -3710,6 +3710,7 @@ function renderWrapResults(places) {
     const slowBadge = slowFood ? `<span class="wrap-badge" style="background:rgba(245,230,66,0.12);color:var(--yellow);font-size:13px">🐌</span>` : '';
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}&query_place_id=${p.id}`;
     const ratingHtml = rating ? `<span style="font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline;text-decoration-color:rgba(255,255,255,0.2)" onclick="event.stopPropagation();wrapOpenReviews('${p.id}','${name.replace(/'/g,"\\'")}','${mapsUrl}')">${rating}</span>` : '';
+    const saRatingHtml = `<span id="sa-rating-${p.id}" style="font-size:11px;color:var(--yellow);cursor:pointer" onclick="event.stopPropagation();wrapOpenReviews('${p.id}','${name.replace(/'/g,"\\'")}','${mapsUrl}')">★ —</span>`;
 
     // Distance
     const dist = wrapLocation ? getDistanceM(wrapLocation.lat, wrapLocation.lng, p.location?.latitude, p.location?.longitude) : null;
@@ -3724,6 +3725,7 @@ function renderWrapResults(places) {
       </div>
       <div class="wrap-place-meta">
         ${ratingHtml}
+        ${saRatingHtml}
         ${distLabel}
         ${openBadge}
       </div>
@@ -3829,63 +3831,115 @@ async function wrapOpenReviews(placeId, name, mapsUrl) {
   modal.style.display = 'flex';
   title.textContent = name;
   link.href = mapsUrl;
-  body.innerHTML = '<div style="text-align:center;padding:32px 0;color:var(--muted);font-size:13px">Caricamento recensioni...</div>';
+  body.innerHTML = '<div style="text-align:center;padding:32px 0;color:var(--muted);font-size:13px">Caricamento...</div>';
   const photosEl = document.getElementById('wrapReviewsPhotos');
   if (photosEl) { photosEl.style.display = 'none'; photosEl.innerHTML = ''; }
+  const oldHours = document.getElementById('wrapReviewsHours');
+  if (oldHours) oldHours.remove();
 
   try {
     const { data: { session } } = await sb.auth.getSession();
-    const resp = await fetch('/api/wrap', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-      body: JSON.stringify({ placeId, action: 'reviews' })
-    });
-    const data = await resp.json();
-    if (!data.reviews?.length) {
-      body.innerHTML = '<div style="text-align:center;padding:32px 0;color:var(--muted);font-size:13px">Nessuna recensione disponibile</div>';
-      return;
-    }
+    const [apiResp, saResp] = await Promise.all([
+      fetch('/api/wrap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ placeId, action: 'reviews' })
+      }),
+      sb.from('wrap_reviews').select('*').eq('place_id', placeId).order('created_at', { ascending: false })
+    ]);
+    const data = await apiResp.json();
+    const saData = saResp.data || [];
+    const myReview = saData.find(r => r.user_id === session.user?.id) || null;
+    const username = session.user?.email?.split('@')[0] || 'Anonimo';
 
-    // Orari
-    let hoursHtml = '';
+    // Hours
+    const photosEl2 = document.getElementById('wrapReviewsPhotos');
+    const oldHours2 = document.getElementById('wrapReviewsHours');
+    if (oldHours2) oldHours2.remove();
     if (data.hours?.length) {
-      hoursHtml = `<div style="padding:10px 20px;border-bottom:1px solid var(--border);flex-shrink:0">
-        <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Orari</div>
-        <div style="display:flex;flex-direction:column;gap:3px">
-          ${data.hours.map(h => `<div style="font-size:11px;color:var(--white);font-family:'DM Mono',monospace">${h}</div>`).join('')}
-        </div>
-      </div>`;
-    }
-
-    // Insert hours before photos
-    const photosEl = document.getElementById('wrapReviewsPhotos');
-    if (hoursHtml) {
       const hoursEl = document.createElement('div');
-      hoursEl.innerHTML = hoursHtml;
-      photosEl.parentNode.insertBefore(hoursEl.firstChild, photosEl);
+      hoursEl.id = 'wrapReviewsHours';
+      hoursEl.style.cssText = 'padding:10px 20px;border-bottom:1px solid var(--border);flex-shrink:0';
+      hoursEl.innerHTML = `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Orari</div>${data.hours.map(h=>`<div style="font-size:11px;color:var(--white);font-family:'DM Mono',monospace">${h}</div>`).join('')}`;
+      photosEl2.parentNode.insertBefore(hoursEl, photosEl2);
     }
     if (data.photos?.length) {
-      photosEl.style.display = 'flex';
-      photosEl.innerHTML = data.photos.slice(0,4).map(url =>
+      photosEl2.style.display = 'flex';
+      photosEl2.innerHTML = data.photos.slice(0,4).map(url =>
         `<img src="${url}" style="height:120px;width:160px;border-radius:8px;object-fit:cover;flex-shrink:0;display:inline-block">`
       ).join('');
     } else {
-      photosEl.style.display = 'none';
-      photosEl.innerHTML = '';
+      photosEl2.style.display = 'none';
+      photosEl2.innerHTML = '';
     }
 
-    body.innerHTML = data.reviews.map(r => `
-      <div style="padding:12px;background:var(--surface2);border-radius:8px">
+    // SA avg
+    const saAvg = saData.length ? (saData.reduce((s,r)=>s+r.rating,0)/saData.length).toFixed(1) : null;
+    const saEl = document.getElementById(`sa-rating-${placeId}`);
+    if (saEl) saEl.textContent = saAvg ? `★ ${saAvg} SA (${saData.length})` : '★ — SA';
+
+    // Build body
+    const myRating = myReview?.rating || 0;
+    const myNote = myReview?.note || '';
+    const myAnon = myReview?.anonymous || false;
+    let html = `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;color:var(--yellow);text-transform:uppercase;margin-bottom:4px">Recensioni SoundAnalyst</div>`;
+    html += `<div style="background:var(--surface2);border-radius:10px;padding:12px">
+      <div id="saStars" data-rating="${myRating}" style="display:flex;gap:4px;margin-bottom:8px">
+        ${[1,2,3,4,5].map(i=>`<span onclick="saSetStar(${i})" style="font-size:22px;cursor:pointer;color:${i<=myRating?'#f5e642':'#444'}" data-star="${i}">★</span>`).join('')}
+      </div>
+      <textarea id="saNote" placeholder="Lascia una nota..." style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:7px;color:var(--white);font-size:12px;resize:none;height:60px;box-sizing:border-box;font-family:'DM Mono',monospace">${myNote}</textarea>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);cursor:pointer">
+          <input type="checkbox" id="saAnon" ${myAnon?'checked':''} style="accent-color:var(--yellow)"> Anonimo
+        </label>
+        <button onclick="saSaveReview('${placeId}','${name.replace(/'/g,"\'")}','${username}')" style="padding:7px 16px;background:var(--yellow);border:none;border-radius:7px;color:#000;font-weight:700;font-size:12px;cursor:pointer">${myReview ? 'Aggiorna' : 'Salva'}</button>
+      </div>
+    </div>`;
+    const others = saData.filter(r => r.user_id !== session.user?.id);
+    if (others.length) {
+      html += others.map(r => `<div style="padding:10px;background:var(--surface2);border-radius:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:11px;font-weight:600;color:var(--white)">${r.anonymous?'Anonimo':r.username}</span>
+          <span style="color:var(--yellow);font-size:12px">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+        </div>
+        ${r.note?`<div style="font-size:12px;color:var(--muted)">${r.note}</div>`:''}</div>`).join('');
+    }
+    if (data.reviews?.length) {
+      html += `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;color:var(--muted);text-transform:uppercase;margin:8px 0 4px">Recensioni Google</div>`;
+      html += data.reviews.map(r => `<div style="padding:12px;background:var(--surface2);border-radius:8px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
           <span style="font-size:12px;font-weight:600;color:var(--white)">${r.authorName}</span>
           <span style="font-size:11px;color:var(--yellow)">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
         </div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">${r.text || '—'}</div>
-        <div style="font-size:10px;color:var(--border);margin-top:4px">${r.relativeTime || ''}</div>
-      </div>`).join('');
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">${r.text||'—'}</div>
+        <div style="font-size:10px;color:var(--border);margin-top:4px">${r.relativeTime||''}</div></div>`).join('');
+    }
+    body.innerHTML = html;
   } catch(e) {
     body.innerHTML = `<div style="text-align:center;padding:32px 0;color:rgba(239,68,68,0.8);font-size:13px">⚠ ${e.message}</div>`;
   }
+}
+
+function saSetStar(n) {
+  document.querySelectorAll('#saStars span').forEach((s,i) => {
+    s.style.color = i < n ? '#f5e642' : '#444';
+  });
+  document.getElementById('saStars').dataset.rating = n;
+}
+
+async function saSaveReview(placeId, placeName, username) {
+  const rating = parseInt(document.getElementById('saStars').dataset.rating || 0);
+  if (!rating) { alert('Seleziona almeno una stella'); return; }
+  const note = document.getElementById('saNote').value.trim();
+  const anonymous = document.getElementById('saAnon').checked;
+  const { data: { session } } = await sb.auth.getSession();
+  const { error } = await sb.from('wrap_reviews').upsert({
+    place_id: placeId, place_name: placeName,
+    user_id: session.user.id, rating, note, anonymous,
+    username: anonymous ? 'Anonimo' : username
+  }, { onConflict: 'place_id,user_id' });
+  if (error) { alert('Errore: ' + error.message); return; }
+  wrapOpenReviews(placeId, placeName, document.getElementById('wrapReviewsMapsLink').href);
 }
 
 function wrapOpenWebsite(url, name) {
