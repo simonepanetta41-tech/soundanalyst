@@ -1671,11 +1671,7 @@ async function autoDetectOffset() {
           pageOffset = detected;
           localStorage.setItem('sa_offset', pageOffset);
           initOffsetDisplay();
-          const toast = document.createElement('div');
-          toast.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--yellow);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--yellow);z-index:9999;white-space:nowrap;';
-          toast.textContent = `📄 Offset pagine rilevato: ${detected}`;
-          document.body.appendChild(toast);
-          setTimeout(() => toast.remove(), 3500);
+          showToast(`Offset pagine rilevato: ${detected}`, 'yellow', 3500);
         }
         return;
       }
@@ -2088,11 +2084,7 @@ async function loadFromHistory(id) {
   // Try to load PDL from Supabase in background
   loadPdlFromSupabase(id).then(loaded => {
     if (loaded) {
-      const toast = document.createElement('div');
-      toast.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--muted);z-index:9999;white-space:nowrap;';
-      toast.textContent = 'PDL caricato correttamente';
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
+      showToast('PDL caricato correttamente', 'default', 3000);
     }
   });
 
@@ -2108,11 +2100,7 @@ async function loadFromHistory(id) {
       for (let i = 0; i < bytes.byteLength; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i+chunk));
       pdfB64Array = [btoa(bin)];
       // Show toast confirmation
-      const toast = document.createElement('div');
-      toast.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--yellow);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--yellow);z-index:9999;white-space:nowrap;';
-      toast.textContent = '📄 PDF caricato — scene cliccabili disponibili';
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
+      showToast('📄 PDF caricato — scene cliccabili disponibili', 'yellow', 3000);
     }
   } catch(e) { console.log('PDF load from storage:', e.message); }
 
@@ -2652,7 +2640,29 @@ function resetApp() {
   showPage('home');
 }
 
-// ══ SERIE ANALYSIS ══
+// ══ TOAST SYSTEM ══
+function showToast(msg, type = 'default', duration = 3000) {
+  const container = (() => {
+    let el = document.getElementById('toastContainer');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'toastContainer';
+      el.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none';
+      document.body.appendChild(el);
+    }
+    return el;
+  })();
+  const toast = document.createElement('div');
+  const isYellow = type === 'yellow';
+  toast.style.cssText = `background:var(--surface);border:1px solid ${isYellow?'var(--yellow)':'var(--border)'};border-radius:8px;padding:10px 18px;font-size:11px;color:${isYellow?'var(--yellow)':'var(--muted)'};white-space:nowrap;pointer-events:auto;transition:opacity 0.3s`;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+// ══ END TOAST SYSTEM ══
 async function startSerieAnalysis() {
   const loaded = episodeFiles.filter(ep => ep.file !== null);
   if (!loaded.length) return;
@@ -3170,10 +3180,7 @@ async function importNewAnalysis() {
   pendingNewPdfB64 = null;
 
   // Toast
-  const toast = document.createElement('div');
-  toast.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--yellow);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--yellow);z-index:9999;white-space:nowrap';
-  toast.textContent = '✓ Analisi aggiornata alla nuova versione';
-  document.body.appendChild(toast); setTimeout(()=>toast.remove(), 3500);
+  showToast('Analisi aggiornata alla nuova versione', 'yellow', 3500);
 }
 
 async function openCompareModal(isNew) {
@@ -3228,10 +3235,7 @@ async function restorePrevAnalysis(prevData) {
   loadNotes(null);
   document.getElementById('btnPrevVersion').style.display = 'none';
   document.getElementById('versionLabel').textContent = 'Versione precedente ripristinata';
-  const toast = document.createElement('div');
-  toast.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--yellow);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--yellow);z-index:9999;white-space:nowrap';
-  toast.textContent = '✓ Versione precedente ripristinata';
-  document.body.appendChild(toast); setTimeout(()=>toast.remove(), 3500);
+  showToast('Versione precedente ripristinata', 'yellow', 3500);
 }
 
 // ══ END VERSION COMPARISON ══
@@ -3769,11 +3773,7 @@ document.getElementById('resultsPage').addEventListener('click', e => {
   if (!el) return;
 
   if (!pdfB64Array.length) {
-    const toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--muted);z-index:9999;white-space:nowrap;';
-    toast.textContent = '📄 PDF non disponibile — ricarica la sceneggiatura per usare questa funzione';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3500);
+    showToast('📄 PDF non disponibile — ricarica la sceneggiatura per usare questa funzione', 'default', 3500);
     return;
   }
 
@@ -3810,11 +3810,7 @@ document.getElementById('shareResultsContainer').addEventListener('click', e => 
   const el = e.target.closest('.ref.clickable');
   if (!el) return;
   if (!pdfB64Array.length) {
-    const toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--muted);z-index:9999;white-space:nowrap;';
-    toast.textContent = '📄 PDF non disponibile per questa analisi condivisa';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+    showToast('📄 PDF non disponibile per questa analisi condivisa', 'default', 3000);
     return;
   }
   const text = el.textContent;
@@ -4937,10 +4933,7 @@ async function processPdlCast(b64) {
     castData = await loadCastFromSupabase(currentAnalysisId);
     renderCastTab(castData, false); // no alert — list is official
     // Toast
-    const toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--yellow);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--yellow);z-index:9999;white-space:nowrap;';
-    toast.textContent = `✓ Lista Cast aggiornata — ${cast.length} personaggi`;
-    document.body.appendChild(toast); setTimeout(() => toast.remove(), 3500);
+    showToast(`Lista Cast aggiornata — ${cast.length} personaggi`, 'yellow', 3500);
   }
 }
 
@@ -5026,10 +5019,7 @@ async function loadUpdatedPdlFile(input) {
     if(currentAnalysisId) savePdlToSupabase();
     extractAndApplyTrasferimenti(b64);
     processPdlCast(b64);
-    const toast=document.createElement('div');
-    toast.style.cssText='position:fixed;top:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--yellow);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--yellow);z-index:9999;white-space:nowrap;';
-    toast.textContent='✓ PDL aggiornato — '+(pdlData.versione||'nuova versione');
-    document.body.appendChild(toast); setTimeout(()=>toast.remove(),4000);
+    showToast('PDL aggiornato — '+(pdlData.versione||'nuova versione'), 'yellow', 4000);
   } catch(err) { alert('⚠ '+err.message); }
   btn.innerHTML='📋 Carica PDL aggiornato<input type="file" accept=".pdf" style="display:none" onchange="loadUpdatedPdlFile(this)">';
 }
@@ -5403,11 +5393,7 @@ async function deletePdl() {
     document.getElementById('pdlDashboard').style.display = 'none';
     document.getElementById('pdlUploadArea').style.display = 'block';
     // Toast
-    const toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:11px;color:var(--muted);z-index:9999;white-space:nowrap;';
-    toast.textContent = '🗑 PDL eliminato';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+    showToast('🗑 PDL eliminato', 'default', 3000);
   } catch(e) { alert('Errore eliminazione: ' + e.message); }
 }
 
