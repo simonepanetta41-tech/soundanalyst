@@ -4489,15 +4489,13 @@ function savePdlShootingData() {
 async function savePdlToSupabase() {
   if (!pdlData || !currentAnalysisId) return;
   try {
-    // Check if record exists
-    const { data: existing } = await sb.from('pdl_versions').select('id').eq('analysis_id', currentAnalysisId).single();
-    if (existing) {
-      await sb.from('pdl_versions').update({ data: pdlData, shooting_data: pdlShootingData }).eq('analysis_id', currentAnalysisId);
-    } else {
-      await sb.from('pdl_versions').insert({ analysis_id: currentAnalysisId, user_id: currentUser.id, data: pdlData, shooting_data: pdlShootingData });
-    }
-    console.log('PDL saved to Supabase');
-  } catch(e) { console.log('PDL save error:', e.message); }
+    const { error } = await sb.from('pdl_versions').upsert(
+      { analysis_id: currentAnalysisId, user_id: currentUser.id, data: pdlData, shooting_data: pdlShootingData },
+      { onConflict: 'analysis_id' }
+    );
+    if (error) console.log('PDL save error:', error.message);
+    else console.log('PDL saved to Supabase ✓');
+  } catch(e) { console.log('PDL save exception:', e.message); }
 }
 
 async function loadPdlFromSupabase(analysisId) {
