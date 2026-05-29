@@ -1107,8 +1107,8 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
             <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Settimana N°</div><input id="tt-settimana" type="text" placeholder="Auto/PDL" style="width:100%;background:var(--surface2);border:1px dashed var(--border);color:var(--white-dim);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none;font-style:italic" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Dal</div><input id="tt-dal" type="date" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
-            <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Al</div><input id="tt-al" type="date" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
+            <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Dal</div><input id="tt-dal" type="text" placeholder="gg/mm/aaaa" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
+            <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Al</div><input id="tt-al" type="text" placeholder="gg/mm/aaaa" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
           </div>
         </div>
 
@@ -1147,12 +1147,12 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
           </div>
           <div style="padding-top:12px;border-top:1px solid var(--border);margin-top:12px">
             <div style="font-size:10px;color:var(--muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:0.06em">Ore viaggio concesse / giorno</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
-              <button class="tt-tog tt-vtog" data-mins="0" onclick="ttSetViaggio(0)">Nessuna</button>
-              <button class="tt-tog tt-vtog" data-mins="30" onclick="ttSetViaggio(30)">30 min</button>
-              <button class="tt-tog tt-vtog active" data-mins="60" onclick="ttSetViaggio(60)">1h</button>
-              <button class="tt-tog tt-vtog" data-mins="90" onclick="ttSetViaggio(90)">1h 30</button>
-              <button class="tt-tog tt-vtog" data-mins="120" onclick="ttSetViaggio(120)">2h</button>
+            <div style="display:flex;gap:5px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px">
+              <button class="tt-tog tt-vtog" data-mins="0" onclick="ttSetViaggio(0)" style="white-space:nowrap;flex-shrink:0;padding:6px 10px">Nessuna</button>
+              <button class="tt-tog tt-vtog" data-mins="30" onclick="ttSetViaggio(30)" style="white-space:nowrap;flex-shrink:0;padding:6px 10px">30 min</button>
+              <button class="tt-tog tt-vtog active" data-mins="60" onclick="ttSetViaggio(60)" style="white-space:nowrap;flex-shrink:0;padding:6px 10px">1h</button>
+              <button class="tt-tog tt-vtog" data-mins="90" onclick="ttSetViaggio(90)" style="white-space:nowrap;flex-shrink:0;padding:6px 10px">1h 30</button>
+              <button class="tt-tog tt-vtog" data-mins="120" onclick="ttSetViaggio(120)" style="white-space:nowrap;flex-shrink:0;padding:6px 10px">2h</button>
             </div>
           </div>
         </div>
