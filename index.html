@@ -232,6 +232,7 @@ table.tt2{width:100%;border-collapse:collapse;font-size:11px;min-width:620px}
 .tt-stor-tab{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 8px 20px;border-bottom:1px solid var(--border);background:var(--surface)}
 .tt-stor-tab:last-child{border-bottom:none}
 .tt2 td.sesto2{background:rgba(245,166,35,0.04)}
+input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(0.6);cursor:pointer;}
 .result-tab:disabled { opacity: 0.3; cursor: not-allowed; }
 .result-tab svg { vertical-align: middle; flex-shrink: 0; }
 
@@ -1107,8 +1108,8 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
             <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Settimana N°</div><input id="tt-settimana" type="text" placeholder="Auto/PDL" style="width:100%;background:var(--surface2);border:1px dashed var(--border);color:var(--white-dim);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none;font-style:italic" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Dal</div><input id="tt-dal" type="text" placeholder="gg/mm/aaaa" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
-            <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Al</div><input id="tt-al" type="text" placeholder="gg/mm/aaaa" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
+            <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Dal</div><input id="tt-dal" type="date" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none;-webkit-appearance:none;appearance:none;min-height:36px" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
+            <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Al</div><input id="tt-al" type="date" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none;-webkit-appearance:none;appearance:none;min-height:36px" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
           </div>
         </div>
 
