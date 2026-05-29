@@ -194,6 +194,43 @@ body.light .wrap-place-card.slow-food { background:#fff !important;border-color:
 .coming-soon-section svg { opacity: 0.3; }
 .coming-soon-section h3 { font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--white);margin:0; }
 .coming-soon-section p { font-size:13px;color:var(--muted);margin:0;max-width:260px;line-height:1.6; }
+/* ── TIMETABLE ── */
+.tt-tog{padding:6px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;transition:all 0.15s}
+.tt-tog:hover{border-color:var(--border-l);color:var(--white-dim)}
+.tt-tog.active{background:var(--surface2);border-color:var(--yellow);color:var(--yellow);font-weight:500}
+.tt-tog-o{padding:6px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;transition:all 0.15s}
+.tt-tog-o.active-o{border-color:var(--orange);color:var(--orange);font-weight:500}
+.tt-chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border-l);border-radius:999px;padding:3px 10px 3px 12px;font-size:10px;color:var(--white-dim)}
+.tt-chip-x{background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;line-height:1;padding:0;transition:color 0.1s}
+.tt-chip-x:hover{color:var(--danger)}
+table.tt2{width:100%;border-collapse:collapse;font-size:11px;min-width:620px}
+.tt2 th{padding:7px 4px;text-align:center;font-size:9px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
+.tt2 th.lbl2{text-align:left;width:130px;padding-left:0}
+.tt2 td{padding:2px 3px;border-bottom:1px solid var(--border);text-align:center}
+.tt2 td.lbl2{text-align:left;padding-left:0;font-size:10px;color:var(--white-dim)}
+.tt2 td.lbl2.calc2{color:var(--muted);font-style:italic}
+.tt2 td.sat2{background:rgba(245,166,35,0.06)}
+.tt2 td.tot2{background:var(--surface2);font-family:'DM Mono',monospace;font-size:11px;color:var(--white);font-weight:500;border-left:1px solid var(--border);width:82px;min-width:82px;padding:4px 8px}
+.tt2 tr.secrow2 td{background:rgba(255,255,255,0.03);font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:4px 3px}
+.tt2 td input.ti{width:100%;background:transparent;border:none;text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--white);padding:4px 1px;outline:none;border-radius:3px;transition:background 0.1s}
+.tt2 td input.ti:focus{background:rgba(245,230,66,0.07)}
+.tt2 td input.ti::placeholder{color:var(--border-l)}
+.tt2 td.comp2{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);background:var(--surface2)}
+.tt2 td.comp2.hv{color:var(--white-dim)}
+.tt2 td.gold2{color:var(--orange)!important;background:rgba(245,166,35,0.07)!important}
+.tt2 td.nott2{color:#5090e0!important;background:rgba(80,144,224,0.07)!important}
+.tt-sc-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;margin-bottom:7px;cursor:pointer;transition:border-color 0.15s}
+.tt-sc-row:hover{border-color:var(--border-l)}
+.tt-sc-row.sel{border-color:var(--yellow);background:rgba(245,230,66,0.04)}
+.tt-sc-chk{width:17px;height:17px;border:1px solid var(--border-l);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.tt-sc-row.sel .tt-sc-chk{background:var(--yellow);border-color:var(--yellow);color:#000}
+.tt-stor-hdr{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;transition:border-color 0.15s;margin-bottom:2px}
+.tt-stor-hdr:hover{border-color:var(--border-l)}
+.tt-stor-hdr.open{border-radius:7px 7px 0 0;margin-bottom:0}
+.tt-stor-tabs{display:none;border:1px solid var(--border);border-top:none;border-radius:0 0 7px 7px;margin-bottom:8px;overflow:hidden}
+.tt-stor-tabs.open{display:block}
+.tt-stor-tab{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 8px 20px;border-bottom:1px solid var(--border);background:var(--surface)}
+.tt-stor-tab:last-child{border-bottom:none}
 .result-tab:disabled { opacity: 0.3; cursor: not-allowed; }
 .result-tab svg { vertical-align: middle; flex-shrink: 0; }
 
@@ -1040,11 +1077,121 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       </div><!-- end castSection -->
 
       <!-- TIMETABLE SECTION -->
-      <div id="timetableSection" class="coming-soon-section">
-        <svg viewBox="0 0 48 48" width="64" height="64" fill="none" stroke="#f5e642" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="40" height="36" rx="3"/><path d="M4 16h40"/><path d="M14 4v8M34 4v8"/><path d="M12 24h6v8h-6zM21 24h6v4h-6zM30 24h6v8h-6z"/></svg>
-        <h3>Timetable</h3>
-        <p>Gestisci gli orari settimanali del reparto ed esporta la tabella per la produzione. In arrivo.</p>
-      </div>
+      <div id="timetableSection" style="display:none;flex-direction:column;padding:12px 16px;gap:12px;overflow-y:auto;padding-bottom:140px">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700">Orari Settimana</div>
+          <div style="display:flex;gap:8px">
+            <button onclick="ttExportModal()" style="padding:7px 14px;background:none;border:1px solid var(--border-l);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;border-radius:7px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--orange)';this.style.color='var(--orange)'" onmouseout="this.style.borderColor='var(--border-l)';this.style.color='var(--muted)'">↓ PDF</button>
+            <button onclick="ttSave()" style="padding:7px 14px;background:var(--yellow);color:#000;border:none;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;border-radius:7px;cursor:pointer">Salva</button>
+          </div>
+        </div>
+
+        <!-- Intestazione -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+          <div style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Intestazione</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Produzione</div><input id="tt-produzione" type="text" placeholder="Es. Indigo Film" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
+            <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Film</div><input id="tt-film" type="text" placeholder="Da analisi..." style="width:100%;background:var(--surface2);border:1px dashed var(--border);color:var(--white-dim);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none;font-style:italic" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+            <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Reparto</div><select id="tt-reparto" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none"><option value="Suono">Suono</option><option value="Fotografia">Fotografia</option></select></div>
+            <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Settimana N°</div><input id="tt-settimana" type="text" placeholder="Auto/PDL" style="width:100%;background:var(--surface2);border:1px dashed var(--border);color:var(--white-dim);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none;font-style:italic" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
+            <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Dal</div><input id="tt-dal" type="date" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
+            <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Al</div><input id="tt-al" type="date" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
+          </div>
+        </div>
+
+        <!-- Regole di calcolo -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+          <div style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Regole di calcolo</div>
+          <div style="margin-bottom:12px">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:0.06em">Tipo giornata</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="tt-tog active" id="tt-tg10" onclick="ttSetGiornata(10)">10h <span style="opacity:0.6;font-size:10px">9h+1h pausa</span></button>
+              <button class="tt-tog" id="tt-tg8" onclick="ttSetGiornata(8)">8h <span style="opacity:0.6;font-size:10px">continuate</span></button>
+            </div>
+          </div>
+          <div style="margin-bottom:12px;padding-top:12px;border-top:1px solid var(--border)">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:0.06em">Raddoppio ore golden</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:7px">
+              <button class="tt-tog active" id="tt-rd0" onclick="ttSetRaddoppio(0)">Off</button>
+              <button class="tt-tog" id="tt-rd1" onclick="ttSetRaddoppio(1)">Dopo 1h</button>
+              <button class="tt-tog" id="tt-rd2" onclick="ttSetRaddoppio(2)">Dopo 2h</button>
+              <button class="tt-tog" id="tt-rd3" onclick="ttSetRaddoppio(3)">Dopo 3h</button>
+            </div>
+            <div id="tt-rdExtra" style="display:none">
+              <div style="font-size:10px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em">Applicazione</div>
+              <div style="display:flex;gap:6px">
+                <button class="tt-tog-o active-o" id="tt-applG" onclick="ttSetApplicazione('giornaliero')">Giornaliero</button>
+                <button class="tt-tog-o" id="tt-applS" onclick="ttSetApplicazione('settimanale')">Settimanale</button>
+              </div>
+            </div>
+          </div>
+          <div style="padding-top:12px;border-top:1px solid var(--border)">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:0.06em">Maggiorazioni notturne</div>
+            <div style="display:flex;gap:6px">
+              <button class="tt-tog" id="tt-nOff" onclick="ttSetNott(false)">Off</button>
+              <button class="tt-tog active" id="tt-nOn" onclick="ttSetNott(true)">On — automatico</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabelle dinamiche -->
+        <div id="tt-tabelle"></div>
+
+        <!-- Note -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+          <div style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Note</div>
+          <textarea id="tt-note" placeholder="Note libere — incluse nell'export PDF..." style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;padding:10px;border-radius:6px;outline:none;resize:vertical;min-height:70px;line-height:1.6" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)';ttMeta.note=this.value" oninput="ttMeta.note=this.value"></textarea>
+        </div>
+
+        <!-- Storico -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+          <div style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Storico settimane</div>
+          <div id="tt-storico"><div style="font-size:11px;color:var(--muted)">Nessuna settimana salvata.</div></div>
+        </div>
+
+        <!-- MANCATA PAUSA MODAL -->
+        <div id="tt-mancataOv" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;align-items:center;justify-content:center">
+          <div style="background:var(--surface);border:1px solid var(--border-l);border-radius:12px;padding:22px;width:380px;max-width:92vw">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;margin-bottom:12px">⚠ Mancata pausa</div>
+            <div id="tt-mancataItems"></div>
+            <div style="font-size:10px;color:var(--muted);margin-top:10px">+1h golden ordinaria aggiunta automaticamente.</div>
+            <button onclick="document.getElementById('tt-mancataOv').style.display='none'" style="margin-top:12px;width:100%;padding:8px;background:none;border:1px solid var(--border-l);color:var(--white-dim);font-family:'DM Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer">Chiudi</button>
+          </div>
+        </div>
+
+        <!-- SCORPORO MODAL -->
+        <div id="tt-scorporoOv" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:300;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto">
+          <div style="background:var(--surface);border:1px solid var(--border-l);border-radius:12px;padding:22px;width:460px;max-width:100%">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px">Scorporo lavoratori</div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:16px">Seleziona chi ha orari diversi — verrà creata una nuova tabella con gli orari già copiati. I selezionati vengono rimossi dalla tabella di origine.</div>
+            <div id="tt-scorporoList"></div>
+            <div style="display:flex;gap:8px;margin-top:14px">
+              <button onclick="ttConfirmScorporo()" style="flex:1;padding:9px;background:var(--yellow);color:#000;border:none;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;border-radius:7px;cursor:pointer">Crea nuova tabella</button>
+              <button onclick="ttCloseScorporo()" style="padding:9px 16px;background:none;border:1px solid var(--border-l);color:var(--white-dim);font-family:'DM Mono',monospace;font-size:11px;border-radius:7px;cursor:pointer">Annulla</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- EXPORT MODAL -->
+        <div id="tt-exportOv" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;align-items:center;justify-content:center">
+          <div style="background:var(--surface);border:1px solid var(--border-l);border-radius:12px;padding:22px;width:360px;max-width:92vw">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px">Export PDF</div>
+            <div onclick="ttDoExport('unico')" style="padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer" onmouseover="this.style.borderColor='var(--yellow)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-size:12px;font-weight:500;margin-bottom:2px">PDF unico</div>
+              <div style="font-size:10px;color:var(--muted)">Tutte le tabelle in un solo file</div>
+            </div>
+            <div onclick="ttDoExport('separati')" style="padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer" onmouseover="this.style.borderColor='var(--yellow)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-size:12px;font-weight:500;margin-bottom:2px">PDF separati</div>
+              <div style="font-size:10px;color:var(--muted)">Un file per ogni tabella</div>
+            </div>
+            <button onclick="document.getElementById('tt-exportOv').style.display='none'" style="width:100%;padding:8px;background:none;border:1px solid var(--border-l);color:var(--white-dim);font-family:'DM Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;margin-top:4px">Annulla</button>
+          </div>
+        </div>
+
+      </div><!-- end timetableSection -->
 
       <!-- WRAP SECTION -->
       <div id="wrapSection" class="coming-soon-section" style="display:none;flex-direction:column;align-items:stretch;padding:12px 16px;gap:12px;overflow-y:auto;padding-bottom:140px">
@@ -4071,6 +4218,7 @@ function switchResultTab(tab) {
   cast.style.display      = tab === 'cast' ? '' : 'none';
   if (tab === 'pdl') { pdl.classList.add('on'); } else { pdl.classList.remove('on'); }
   if (timetable) timetable.style.display = tab === 'timetable' ? 'flex' : 'none';
+  if (tab === 'timetable') initTimetable();
   if (wrap)      wrap.style.display      = tab === 'wrap'      ? 'flex' : 'none';
   if (tab === 'wrap') initWrap();
   if (script)    script.style.display    = tab === 'script'    ? 'flex' : 'none';
@@ -5638,6 +5786,302 @@ async function deletePdl() {
 
 function closePdlDayModal() { document.getElementById('pdlDayModal').classList.remove('open'); pdlModalDayNum=null; }
 document.getElementById('pdlDayModal').addEventListener('click',e=>{if(e.target===document.getElementById('pdlDayModal'))closePdlDayModal();});
+</script>
+<script>
+// ══════════════════════════════════════════════
+// TIMETABLE ENGINE v1.0
+// ══════════════════════════════════════════════
+const TT_DAYS=['LUN','MAR','MER','GIO','VEN','SAB'];
+let ttMeta={tipoGiornata:10,raddoppio:0,applicazione:'giornaliero',maggiorazioniNott:true,note:''};
+let ttTabelle=[];
+let ttScorporoSrcId=null,ttScorporoSel=new Set();
+let ttInited=false;
+
+function initTimetable(){
+  if(ttInited)return;
+  ttInited=true;
+  // Auto-popola film dall'analisi corrente se disponibile
+  try{
+    const filmEl=document.getElementById('tt-film');
+    if(filmEl&&typeof currentAnalysisData!=='undefined'&&currentAnalysisData?.titolo){
+      filmEl.value=currentAnalysisData.titolo;
+      filmEl.style.fontStyle='normal';filmEl.style.color='var(--white)';
+    }
+  }catch(e){}
+  ttTabelle=[ttMkTab([])];
+  ttRenderAll();ttRenderStorico();
+}
+
+function ttMkTab(workers,orariSrc){
+  const o=orariSrc?JSON.parse(JSON.stringify(orariSrc))
+    :{partenza:Array(6).fill(''),inizio:Array(6).fill(''),pausa:Array(6).fill(''),stop:Array(6).fill(''),fine:Array(6).fill(''),rientro:Array(6).fill('')};
+  return{id:Date.now()+Math.random(),workers:[...workers],orari:o};
+}
+
+function ttToMin(t){
+  if(!t||!t.trim())return null;
+  const m=t.replace(',','.').match(/^(\d{1,2})[.:](\d{2})$/);
+  if(!m)return null;
+  let h=parseInt(m[1]),mn=parseInt(m[2]);
+  if(h<6)h+=24;
+  return h*60+mn;
+}
+function ttToHM(mins){
+  if(!mins||mins<=0)return'—';
+  const h=Math.floor(mins/60),m=mins%60;
+  return h===0?m+'min':m===0?h+'h':h+'h '+String(m).padStart(2,'0');
+}
+function ttSum(arr){const s=arr.reduce((a,v)=>a+(v||0),0);return s>0?s:null;}
+
+function ttCalcDay(d,orari){
+  const par=orari.partenza[d],ini=orari.inizio[d],pau=orari.pausa[d],fin=orari.fine[d],rie=orari.rientro[d];
+  const isTrasf=!!par&&par.trim()!=='',isSab=d===5;
+  let r={oreLav:null,oreViaggio:null,nottOrd:null,nottStr:null,goldenOrd:null,goldenNott:null,golden6:null,mancataPausa:false};
+  if(!ini||!fin)return r;
+  const iniM=ttToMin(ini),finM=ttToMin(fin);
+  if(iniM===null||finM===null||finM<=iniM)return r;
+  r.oreLav=finM-iniM;
+  const soglia=ttMeta.tipoGiornata*60;
+  const goldenRaw=Math.max(0,r.oreLav-soglia);
+  let mancataG=0;
+  if(pau&&pau.trim()){const pM=ttToMin(pau);if(pM!==null&&(pM-iniM)>360){r.mancataPausa=true;mancataG=60;}}
+  if(isTrasf){
+    const parM=ttToMin(par),rieM=rie&&rie.trim()?ttToMin(rie):null;
+    let v=0;
+    if(parM!==null)v+=Math.max(0,iniM-parM);
+    if(rieM!==null)v+=Math.max(0,rieM-finM);
+    r.oreViaggio=Math.min(v,60);
+  }
+  if(ttMeta.maggiorazioniNott){
+    const N1=23*60,N2=24*60+150;
+    const o55=Math.max(0,Math.min(finM,N2)-Math.max(iniM,N1));
+    const o80=Math.max(0,finM-Math.max(iniM,N2));
+    if(o55>0)r.nottOrd=o55;
+    if(o80>0)r.nottStr=o80;
+  }
+  const isNott=finM>(24*60+150);
+  let gMin=goldenRaw+mancataG;
+  if(gMin>0){
+    if(isSab)r.golden6=gMin;
+    else if(isNott)r.goldenNott=gMin;
+    else r.goldenOrd=gMin;
+  }
+  return r;
+}
+function ttApplyRd(v){
+  if(ttMeta.raddoppio===0||!v||v<=0)return v;
+  const s=ttMeta.raddoppio*60;
+  return v<=s?v:s+(v-s)*2;
+}
+function ttCalcTab(orari){
+  const days=TT_DAYS.map((_,i)=>ttCalcDay(i,orari));
+  if(ttMeta.raddoppio>0&&ttMeta.applicazione==='giornaliero')
+    days.forEach(d=>{if(d.goldenOrd)d.goldenOrd=ttApplyRd(d.goldenOrd);if(d.goldenNott)d.goldenNott=ttApplyRd(d.goldenNott);if(d.golden6)d.golden6=ttApplyRd(d.golden6);});
+  const tot={oreViaggio:ttSum(days.map(d=>d.oreViaggio)),nottOrd:ttSum(days.map(d=>d.nottOrd)),nottStr:ttSum(days.map(d=>d.nottStr)),goldenOrd:ttSum(days.map(d=>d.goldenOrd)),goldenNott:ttSum(days.map(d=>d.goldenNott)),golden6:ttSum(days.map(d=>d.golden6))};
+  if(ttMeta.raddoppio>0&&ttMeta.applicazione==='settimanale'){tot.goldenOrd=ttApplyRd(tot.goldenOrd);tot.goldenNott=ttApplyRd(tot.goldenNott);tot.golden6=ttApplyRd(tot.golden6);}
+  return{days,tot};
+}
+
+function ttRenderAll(){
+  const c=document.getElementById('tt-tabelle');if(!c)return;
+  if(ttTabelle.length===0){
+    c.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px;text-align:center;color:var(--muted);font-size:12px">Nessuna tabella.<br><button onclick="ttAddFirst()" style="margin-top:12px;padding:7px 16px;background:var(--yellow);color:#000;border:none;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;border-radius:6px;cursor:pointer">+ Crea tabella</button></div>`;
+    return;
+  }
+  c.innerHTML=ttTabelle.map(t=>ttRenderTab(t)).join('');
+}
+
+function ttRenderTab(tab){
+  const{days,tot}=ttCalcTab(tab.orari);
+  const mancDays=days.map((d,i)=>d.mancataPausa?TT_DAYS[i]:null).filter(Boolean);
+  const mancBadge=mancDays.length>0?`<span onclick="ttShowMancata('${mancDays.join(',')}')" style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,85,85,0.15);border:1px solid rgba(255,85,85,0.3);color:var(--danger);border-radius:999px;padding:2px 9px;font-size:9px;cursor:pointer;margin-left:8px">⚠ Mancata pausa</span>`:'';
+  const wLabel=tab.workers.length>0?tab.workers.join(', '):`<span style="color:var(--muted)">Nessun lavoratore</span>`;
+  const chips=tab.workers.map((w,i)=>`<span class="tt-chip">${w}<button class="tt-chip-x" onclick="ttRemoveW('${tab.id}',${i})">×</button></span>`).join('');
+  const iRows=[{k:'partenza',l:'Partenza'},{k:'inizio',l:'Inizio'},{k:'pausa',l:'Pausa'},{k:'stop',l:'Stop'},{k:'fine',l:'Fine'},{k:'rientro',l:'Rientro'}];
+  const cRows=[{k:'oreViaggio',l:'Ore viaggio 55%',c:''},{k:'nottOrd',l:'Magg. nott. 55%',c:'nott2'},{k:'nottStr',l:'Magg. nott. 80%',c:'nott2'},{k:'goldenOrd',l:'Golden ord.',c:'gold2'},{k:'goldenNott',l:'Golden nott.',c:'gold2'},{k:'golden6',l:'Golden 6°g.',c:'gold2'}];
+  let th=`<table class="tt2"><thead><tr><th class="lbl2"></th><th>LUN</th><th>MAR</th><th>MER</th><th>GIO</th><th>VEN</th><th class="sat2">SAB<br><span style="font-size:8px;opacity:0.7;font-weight:400">6°g.</span></th><th style="width:82px;min-width:82px">TOTALE</th></tr></thead><tbody>`;
+  th+=`<tr class="secrow2"><td colspan="8">orari</td></tr>`;
+  iRows.forEach(r=>{
+    th+=`<tr><td class="lbl2">${r.l}</td>`;
+    TT_DAYS.forEach((_,i)=>{
+      const cl=i===5?'sat2':'',v=tab.orari[r.k][i]||'';
+      th+=`<td class="${cl}"><input class="ti" type="text" placeholder="—" value="${v}" onchange="ttSetO('${tab.id}','${r.k}',${i},this.value)" onblur="ttSetO('${tab.id}','${r.k}',${i},this.value)"></td>`;
+    });
+    th+=`<td class="tot2">—</td></tr>`;
+  });
+  th+=`<tr class="secrow2"><td colspan="8">calcolato</td></tr>`;
+  cRows.forEach(r=>{
+    const dv=days.map(d=>d[r.k]||null),tv=tot[r.k]||null;
+    th+=`<tr><td class="lbl2 calc2">${r.l}</td>`;
+    dv.forEach((v,i)=>{const cl=[i===5?'sat2':'','comp2',v&&r.c?r.c:'',v?'hv':''].filter(Boolean).join(' ');th+=`<td class="${cl}">${v?ttToHM(v):'—'}</td>`;});
+    th+=`<td class="${['tot2',tv&&r.c?r.c:''].filter(Boolean).join(' ')}">${tv?ttToHM(tv):'—'}</td></tr>`;
+  });
+  th+=`</tbody></table>`;
+  const delBtn=ttTabelle.length>1?`<button onclick="ttDelTab('${tab.id}')" style="padding:5px 10px;background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;border-radius:6px;cursor:pointer" onmouseover="this.style.borderColor='var(--danger)';this.style.color='var(--danger)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">✕</button>`:'';
+  return `<div id="ttb-${tab.id}" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)">
+      <div>
+        <div style="font-size:11px;color:var(--white);font-weight:500">${wLabel}${mancBadge}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">${tab.workers.length} lavorator${tab.workers.length===1?'e':'i'}</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button onclick="ttOpenScorporo('${tab.id}')" style="padding:5px 12px;background:none;border:1px solid var(--border-l);color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;border-radius:6px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--yellow)';this.style.color='var(--yellow)'" onmouseout="this.style.borderColor='var(--border-l)';this.style.color='var(--muted)'">⊕ Scorporo</button>
+        ${delBtn}
+      </div>
+    </div>
+    <div style="padding:14px 16px">
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:28px">${chips}</div>
+      <div style="display:flex;gap:7px;margin-bottom:12px">
+        <input type="text" id="ttawi-${tab.id}" placeholder="Aggiungi lavoratore..." style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:11px;padding:5px 9px;border-radius:5px;outline:none" onkeydown="if(event.key==='Enter')ttAddW('${tab.id}')" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'">
+        <button onclick="ttAddW('${tab.id}')" style="padding:5px 12px;background:none;border:1px solid var(--border-l);color:var(--white-dim);font-family:'DM Mono',monospace;font-size:10px;border-radius:5px;cursor:pointer">+</button>
+      </div>
+      <div style="overflow-x:auto">${th}</div>
+    </div>
+  </div>`;
+}
+
+function ttAddFirst(){ttTabelle.push(ttMkTab([]));ttRenderAll();}
+function ttDelTab(id){if(ttTabelle.length<=1)return;if(!confirm('Eliminare questa tabella?'))return;ttTabelle=ttTabelle.filter(t=>t.id!=id);ttRenderAll();}
+function ttSetO(tabId,field,di,val){const t=ttTabelle.find(t=>t.id==tabId);if(!t)return;t.orari[field][di]=val;const el=document.getElementById(`ttb-${tabId}`);if(el)el.outerHTML=ttRenderTab(t);}
+function ttAddW(tabId){const inp=document.getElementById(`ttawi-${tabId}`);if(!inp)return;const n=inp.value.trim();if(!n)return;const t=ttTabelle.find(t=>t.id==tabId);if(!t)return;t.workers.push(n);ttRenderAll();}
+function ttRemoveW(tabId,wi){const t=ttTabelle.find(t=>t.id==tabId);if(!t)return;t.workers.splice(wi,1);ttRenderAll();}
+
+function ttOpenScorporo(tabId){
+  ttScorporoSrcId=tabId;ttScorporoSel=new Set();
+  const tab=ttTabelle.find(t=>t.id==tabId);
+  if(!tab||tab.workers.length===0){showToast('Nessun lavoratore da scorporare.');return;}
+  document.getElementById('tt-scorporoList').innerHTML=tab.workers.map((w,i)=>
+    `<div class="tt-sc-row" id="ttscr-${i}" onclick="ttToggleSc(${i})">
+      <span style="font-size:12px">${w}</span>
+      <span class="tt-sc-chk" id="ttscck-${i}"></span>
+    </div>`).join('');
+  document.getElementById('tt-scorporoOv').style.display='flex';
+}
+function ttToggleSc(i){
+  const row=document.getElementById(`ttscr-${i}`),chk=document.getElementById(`ttscck-${i}`);
+  if(ttScorporoSel.has(i)){ttScorporoSel.delete(i);row.classList.remove('sel');chk.textContent='';}
+  else{ttScorporoSel.add(i);row.classList.add('sel');chk.textContent='✓';}
+}
+function ttConfirmScorporo(){
+  if(ttScorporoSel.size===0){showToast('Seleziona almeno un lavoratore.');return;}
+  const src=ttTabelle.find(t=>t.id==ttScorporoSrcId);if(!src)return;
+  const sel=[...ttScorporoSel].sort((a,b)=>a-b).map(i=>src.workers[i]);
+  src.workers=src.workers.filter((_,i)=>!ttScorporoSel.has(i));
+  ttTabelle.push(ttMkTab(sel,src.orari));
+  ttCloseScorporo();ttRenderAll();
+  showToast(`Nuova tabella: ${sel.join(', ')}`);
+}
+function ttCloseScorporo(){document.getElementById('tt-scorporoOv').style.display='none';ttScorporoSrcId=null;ttScorporoSel=new Set();}
+
+function ttShowMancata(daysStr){
+  const days=daysStr.split(',').filter(Boolean);
+  document.getElementById('tt-mancataItems').innerHTML=days.map(d=>`<div style="padding:8px 10px;background:var(--surface2);border-left:2px solid var(--danger);border-radius:5px;margin-bottom:7px;font-size:11px;color:var(--white-dim)"><strong style="color:var(--danger)">${d}</strong> — INIZIO→PAUSA &gt; 6h → +1h golden ord.</div>`).join('');
+  document.getElementById('tt-mancataOv').style.display='flex';
+}
+
+function ttSetGiornata(h){
+  ttMeta.tipoGiornata=h;
+  document.getElementById('tt-tg10').classList.toggle('active',h===10);
+  document.getElementById('tt-tg8').classList.toggle('active',h===8);
+  ttRenderAll();
+}
+function ttSetRaddoppio(n){
+  ttMeta.raddoppio=n;
+  [0,1,2,3].forEach(v=>document.getElementById(`tt-rd${v}`).classList.toggle('active',v===n));
+  document.getElementById('tt-rdExtra').style.display=n>0?'block':'none';
+  ttRenderAll();
+}
+function ttSetApplicazione(tipo){
+  ttMeta.applicazione=tipo;
+  document.getElementById('tt-applG').classList.toggle('active-o',tipo==='giornaliero');
+  document.getElementById('tt-applS').classList.toggle('active-o',tipo==='settimanale');
+  ttRenderAll();
+}
+function ttSetNott(on){
+  ttMeta.maggiorazioniNott=on;
+  document.getElementById('tt-nOn').classList.toggle('active',on);
+  document.getElementById('tt-nOff').classList.toggle('active',!on);
+  ttRenderAll();
+}
+
+function ttSave(){
+  const rec={id:Date.now(),meta:{
+    produzione:document.getElementById('tt-produzione').value,
+    film:document.getElementById('tt-film').value,
+    reparto:document.getElementById('tt-reparto').value,
+    settimana:document.getElementById('tt-settimana').value,
+    dal:document.getElementById('tt-dal').value,
+    al:document.getElementById('tt-al').value,
+    note:ttMeta.note||'',
+    tipoGiornata:ttMeta.tipoGiornata,raddoppio:ttMeta.raddoppio,
+    applicazione:ttMeta.applicazione,maggiorazioniNott:ttMeta.maggiorazioniNott
+  },tabelle:JSON.parse(JSON.stringify(ttTabelle))};
+  const saved=JSON.parse(localStorage.getItem('sa_tt3')||'[]');
+  const ex=saved.findIndex(s=>s.meta.settimana===rec.meta.settimana&&s.meta.film===rec.meta.film&&s.meta.reparto===rec.meta.reparto);
+  if(ex>=0)saved[ex]=rec;else saved.unshift(rec);
+  localStorage.setItem('sa_tt3',JSON.stringify(saved));
+  ttRenderStorico();showToast('Settimana salvata!');
+}
+
+function ttRenderStorico(){
+  const saved=JSON.parse(localStorage.getItem('sa_tt3')||'[]');
+  const el=document.getElementById('tt-storico');if(!el)return;
+  if(saved.length===0){el.innerHTML='<div style="font-size:11px;color:var(--muted)">Nessuna settimana salvata.</div>';return;}
+  el.innerHTML=saved.map((s,si)=>{
+    const m=s.meta;
+    const tabs=s.tabelle.map(t=>`<div class="tt-stor-tab">
+      <span style="font-size:11px;color:var(--white-dim)">${t.workers.length>0?t.workers.join(', '):'Nessun lavoratore'}</span>
+      <div style="display:flex;gap:5px">
+        <button onclick="ttLoad(${si})" style="padding:3px 9px;background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:9px;border-radius:4px;cursor:pointer" onmouseover="this.style.borderColor='var(--yellow)';this.style.color='var(--yellow)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Carica</button>
+        <button onclick="ttDelS(${si})" style="padding:3px 9px;background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:9px;border-radius:4px;cursor:pointer" onmouseover="this.style.borderColor='var(--danger)';this.style.color='var(--danger)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">✕</button>
+      </div></div>`).join('');
+    return `<div style="margin-bottom:8px">
+      <div class="tt-stor-hdr" id="ttsh-${si}" onclick="ttTogS(${si})">
+        <div>
+          <div style="font-size:12px;font-weight:500;color:var(--white)">Sett. ${m.settimana||'?'} · ${m.reparto} · ${m.film||m.produzione||'—'}</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px">${m.dal||'?'} → ${m.al||'?'} · ${s.tabelle.length} tabell${s.tabelle.length===1?'a':'e'}</div>
+        </div>
+        <span id="ttsa-${si}" style="font-size:11px;color:var(--muted);transition:transform 0.2s;display:inline-block">▾</span>
+      </div>
+      <div class="tt-stor-tabs" id="ttst-${si}">${tabs}</div>
+    </div>`;
+  }).join('');
+}
+
+function ttTogS(i){
+  document.getElementById(`ttsh-${i}`).classList.toggle('open');
+  document.getElementById(`ttst-${i}`).classList.toggle('open');
+}
+function ttLoad(si){
+  const saved=JSON.parse(localStorage.getItem('sa_tt3')||'[]');
+  const s=saved[si];if(!s)return;
+  const m=s.meta;
+  document.getElementById('tt-produzione').value=m.produzione||'';
+  document.getElementById('tt-film').value=m.film||'';
+  document.getElementById('tt-reparto').value=m.reparto||'Suono';
+  document.getElementById('tt-settimana').value=m.settimana||'';
+  document.getElementById('tt-dal').value=m.dal||'';
+  document.getElementById('tt-al').value=m.al||'';
+  document.getElementById('tt-note').value=m.note||'';
+  Object.assign(ttMeta,m);
+  ttTabelle=JSON.parse(JSON.stringify(s.tabelle));
+  ttSetGiornata(ttMeta.tipoGiornata);
+  ttSetRaddoppio(ttMeta.raddoppio);
+  ttSetNott(ttMeta.maggiorazioniNott);
+  ttRenderAll();showToast('Settimana caricata.');
+}
+function ttDelS(si){
+  const saved=JSON.parse(localStorage.getItem('sa_tt3')||'[]');
+  saved.splice(si,1);localStorage.setItem('sa_tt3',JSON.stringify(saved));ttRenderStorico();
+}
+function ttExportModal(){document.getElementById('tt-exportOv').style.display='flex';}
+function ttDoExport(tipo){
+  document.getElementById('tt-exportOv').style.display='none';
+  showToast(tipo==='unico'?'PDF unico — export in arrivo.':'PDF separati — export in arrivo.');
+}
+// ══════════════════════════════════════════════
+// END TIMETABLE ENGINE
+// ══════════════════════════════════════════════
 </script>
 <script>
 // Unregister any old service workers
