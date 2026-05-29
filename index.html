@@ -183,6 +183,14 @@ body.light .wrap-place-card.slow-food { background:#fff !important;border-color:
 .wrap-badge { font-size:10px;padding:2px 7px;border-radius:4px;font-family:'DM Mono',monospace; }
 .result-tab.coming-soon { opacity: 0.5; }
 .coming-soon-section { display:none;flex-direction:column;align-items:center;justify-content:center;padding:80px 24px;text-align:center;gap:16px; }
+.type-selector { display:flex;align-items:center;gap:7px;padding:9px 18px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12px;cursor:pointer;transition:all 0.15s;flex:1;justify-content:center; }
+.type-selector.active { background:rgba(245,230,66,0.08);border-color:var(--yellow);color:var(--yellow); }
+.episode-card { display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px; }
+.episode-label { font-size:11px;font-weight:700;color:var(--muted);font-family:'DM Mono',monospace;white-space:nowrap;min-width:80px; }
+.episode-filename { flex:1;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.episode-filename.loaded { color:var(--yellow); }
+.episode-upload-btn { display:flex;align-items:center;gap:5px;padding:6px 12px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap;font-family:'Space Grotesk',sans-serif;font-weight:600; }
+.episode-remove-btn { padding:4px;background:none;border:none;color:var(--muted);cursor:pointer;opacity:0.5;flex-shrink:0; }
 .coming-soon-section svg { opacity: 0.3; }
 .coming-soon-section h3 { font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--white);margin:0; }
 .coming-soon-section p { font-size:13px;color:var(--muted);margin:0;max-width:260px;line-height:1.6; }
@@ -621,15 +629,44 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       </div>
       <div class="panel" id="uploadPanel">
         <div class="panel-label">Nuova Analisi</div>
-        <div class="upload-zone" id="uploadZone">
-          <input type="file" id="fileInput" accept=".pdf" multiple>
-          <div class="upload-icon"><svg viewBox="0 0 60 80" width="44" height="44" fill="none" stroke="#f5e642" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M30 14V4"/><path d="M26 8l4-4 4 4"/><path d="M22 14h16"/><rect x="8" y="22" width="44" height="56" rx="3"/><path d="M44 22 L52 30 L44 30 L44 22"/><path d="M16 44h28M16 52h20M16 60h24"/></svg></div>
-          <div class="upload-primary">Trascina il PDF qui o clicca per selezionare</div>
-          <div class="upload-secondary">Accetta PDF — anche più episodi per serie TV</div>
+
+        <!-- Selettore Film / Serie TV -->
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button id="btnTypeFilm" class="type-selector active" onclick="setAnalysisType('film')">
+            <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="18" height="14" rx="2"/><path d="M1 8h18M5 4V2M15 4V2"/><circle cx="10" cy="13" r="2.5"/></svg>
+            Film
+          </button>
+          <button id="btnTypeSerie" class="type-selector" onclick="setAnalysisType('serie')">
+            <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="18" height="12" rx="2"/><path d="M5 18h10M7 15v3M13 15v3"/><path d="M6 8l3 2-3 2V8z" fill="currentColor" stroke="none"/></svg>
+            Serie TV
+          </button>
         </div>
-        <div class="file-list" id="fileList"></div>
+
+        <!-- Upload singolo (Film) -->
+        <div id="uploadFilm">
+          <div class="upload-zone" id="uploadZone">
+            <input type="file" id="fileInput" accept=".pdf" multiple>
+            <div class="upload-icon"><svg viewBox="0 0 60 80" width="44" height="44" fill="none" stroke="#f5e642" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M30 14V4"/><path d="M26 8l4-4 4 4"/><path d="M22 14h16"/><rect x="8" y="22" width="44" height="56" rx="3"/><path d="M44 22 L52 30 L44 30 L44 22"/><path d="M16 44h28M16 52h20M16 60h24"/></svg></div>
+            <div class="upload-primary">Trascina il PDF qui o clicca per selezionare</div>
+            <div class="upload-secondary">Accetta PDF</div>
+          </div>
+          <div class="file-list" id="fileList"></div>
+        </div>
+
+        <!-- Upload serie (episodi) -->
+        <div id="uploadSerie" style="display:none">
+          <div id="episodeList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+          <button onclick="addEpisode()" style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:none;border:1px dashed var(--border);border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-weight:600;width:100%;justify-content:center">
+            <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v6M5 8h6"/></svg>
+            Aggiungi episodio
+          </button>
+        </div>
+
         <div class="error-box" id="errorBox"></div>
-        <button class="btn-analyze" id="analyzeBtn" disabled onclick="startAnalysis()">▶ &nbsp; Avvia Analisi</button>
+        <button class="btn-analyze" id="analyzeBtn" disabled onclick="startAnalysis()">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l10 5-10 5V3z" fill="currentColor" stroke="none"/></svg>
+          Avvia Analisi
+        </button>
       </div>
     </div>
 
@@ -2221,7 +2258,14 @@ function renderFiles() {
 function removeFile(i) { files.splice(i,1); renderFiles(); checkReady(); }
 
 function checkReady() {
-  document.getElementById('analyzeBtn').disabled = files.length === 0;
+  let ready = false;
+  if (analysisType === 'film') {
+    ready = files.length > 0;
+  } else {
+    ready = episodeFiles.some(ep => ep.file !== null);
+  }
+  const btn = document.getElementById('analyzeBtn');
+  if (btn) btn.disabled = !ready;
 }
 
 async function fileToB64(file) {
@@ -2310,6 +2354,10 @@ Rispondi SOLO con il JSON.`;
 
 // ══ ANALYSIS ══
 async function startAnalysis() {
+  if (analysisType === 'serie') {
+    await startSerieAnalysis();
+    return;
+  }
   document.getElementById('errorBox').classList.remove('show');
   document.getElementById('analyzeBtn').disabled = true;
   document.getElementById('homePage').style.display = 'none';
@@ -2604,7 +2652,220 @@ function resetApp() {
   showPage('home');
 }
 
-// ══ VERSION COMPARISON ══
+// ══ SERIE ANALYSIS ══
+async function startSerieAnalysis() {
+  const loaded = episodeFiles.filter(ep => ep.file !== null);
+  if (!loaded.length) return;
+
+  document.getElementById('errorBox').classList.remove('show');
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('homePage').style.display = 'none';
+  document.getElementById('mainNav').style.display = 'none';
+  document.getElementById('progressPanel').classList.add('active');
+  document.getElementById('resultsPage').classList.remove('on');
+  setStep(1);
+
+  const results = [];
+  const total = loaded.length;
+
+  try {
+    for (let i = 0; i < total; i++) {
+      const ep = loaded[i];
+      document.getElementById('progLabel').textContent = `Analisi episodio ${i+1} di ${total}...`;
+      setStep(2);
+
+      ep.b64 = await fileToB64(ep.file);
+      const text = await extractFullText(ep.b64);
+
+      const bar = document.getElementById('progressBar');
+      if (bar) bar.style.width = Math.round(((i+0.5)/total)*100) + '%';
+
+      setStep(3);
+      const serieCtx = `Stai analizzando l'episodio ${i+1} di ${total} della serie. La numerazione scene include il numero episodio (es. SC.${String(i+1).padStart(2,'0')}01 = episodio ${i+1}, scena 1).`;
+      const sysPromptSerie = SYSPROMPT + `\n\nCONTESTO SERIE TV: ${serieCtx}`;
+
+      const apiData = await callApi('api/analyze', {
+        model: 'claude-sonnet-4-6', max_tokens: 16000,
+        system: sysPromptSerie,
+        messages: [{ role: 'user', content: [{ type: 'text', text: text.slice(0, 120000) }] }]
+      });
+
+      const raw = apiData.content.map(b => b.text||'').join('').replace(/```json|```/g,'').trim();
+      results.push({ ep: i+1, data: JSON.parse(raw), b64: ep.b64 });
+
+      if (bar) bar.style.width = Math.round(((i+1)/total)*100) + '%';
+    }
+
+    setStep(4);
+    document.getElementById('progLabel').textContent = 'Unificazione risultati...';
+    const merged = mergeSerieResults(results);
+
+    // Normalize presente flags
+    const catKeys = ['camera_car','location_wild','playback','costume_critico','mezzi_movimento',
+      'acqua_pioggia','subacquee','ambienti_rumorosi','aerei_elicotteri','dialoghi_movimento',
+      'lingue_straniere','dialoghi_mediati','voiceover','crowd_parlante','animali','stunt_effetti'];
+    catKeys.forEach(k => {
+      const cat = merged[k]; if (!cat) return;
+      if (cat.scene?.length || cat.esibizioni_live?.length || cat.playback_puro?.length || cat.musica_diegetica?.length) cat.presente = true;
+    });
+
+    // Recalculate INT/EXT
+    if (merged.scene_list?.length) {
+      let ig=0,in_=0,eg=0,en_=0,it=0,et=0;
+      merged.scene_list.forEach(({ie,m}) => {
+        const isI=/^(INT|I)/i.test(ie),isE=/^(EST|EXT|E)/i.test(ie);
+        const isG=/^(D|G|M|T)/i.test(m),isN=/^(N|E)/i.test(m);
+        if(isI){it++;if(isG)ig++;if(isN)in_++;}
+        if(isE){et++;if(isG)eg++;if(isN)en_++;}
+      });
+      merged.scene_interno=it;merged.scene_esterno=et;
+      merged.scene_interno_giorno=ig;merged.scene_interno_notte=in_;
+      merged.scene_esterno_giorno=eg;merged.scene_esterno_notte=en_;
+    }
+
+    const { data: saved } = await sb.from('analyses').insert({
+      user_id: currentUser.id, data: merged, version_label: merged.titolo || 'Serie TV'
+    }).select('id').single();
+
+    if (saved?.id) {
+      currentAnalysisId = saved.id;
+      pdfB64Array = [results[0].b64];
+      const text0 = await extractFullText(results[0].b64);
+      await saveScreenplayText(saved.id, text0);
+    }
+
+    if (merged.cast_provvisorio?.length && currentAnalysisId) {
+      await saveCastToSupabase(currentAnalysisId, merged.cast_provvisorio);
+    }
+
+    setStep(5);
+    document.getElementById('progressPanel').classList.remove('active');
+    hideHomeShowResults();
+    renderResults(merged);
+    loadNotes(null);
+    updateVersionBar();
+    checkPrevVersion();
+
+  } catch(e) {
+    document.getElementById('progressPanel').classList.remove('active');
+    document.getElementById('homePage').style.display = '';
+    document.getElementById('mainNav').style.display = '';
+    document.getElementById('analyzeBtn').disabled = false;
+    const eb = document.getElementById('errorBox');
+    eb.textContent = 'Errore analisi: ' + e.message;
+    eb.classList.add('show');
+  }
+}
+
+function mergeSerieResults(results) {
+  if (results.length === 1) return results[0].data;
+  const first = results[0].data;
+  const merged = { ...first };
+  merged.titolo = first.titolo?.replace(/episodio.*/i,'').trim() || 'Serie TV';
+  merged.riassunto = results.map((r,i) => `EP.${i+1}: ${r.data.riassunto||''}`).join('\n\n');
+  merged.totale_scene = results.reduce((s,r) => s + (r.data.totale_scene||0), 0);
+  merged.scene_list = results.flatMap(r => r.data.scene_list || []);
+
+  const catKeys = ['camera_car','location_wild','costume_critico','mezzi_movimento',
+    'acqua_pioggia','subacquee','ambienti_rumorosi','aerei_elicotteri','dialoghi_movimento',
+    'lingue_straniere','dialoghi_mediati','voiceover','crowd_parlante','animali','stunt_effetti'];
+  catKeys.forEach(k => {
+    merged[k] = { presente: results.some(r => r.data[k]?.presente), scene: results.flatMap(r => r.data[k]?.scene || []) };
+    if (k === 'lingue_straniere') merged[k].lingue = [...new Set(results.flatMap(r => r.data[k]?.lingue || []))];
+  });
+
+  merged.playback = {
+    presente: results.some(r => r.data.playback?.presente),
+    esibizioni_live: results.flatMap(r => r.data.playback?.esibizioni_live || []),
+    playback_puro: results.flatMap(r => r.data.playback?.playback_puro || []),
+    musica_diegetica: results.flatMap(r => r.data.playback?.musica_diegetica || [])
+  };
+
+  const maxEp = results.reduce((best,r) => (r.data.max_attori_parlanti?.numero||0) > (best.data.max_attori_parlanti?.numero||0) ? r : best, results[0]);
+  merged.max_attori_parlanti = maxEp.data.max_attori_parlanti;
+  merged.media_attori_parlanti = Math.ceil(results.reduce((s,r) => s + (parseFloat(r.data.media_attori_parlanti)||0), 0) / results.length);
+
+  const castMap = {};
+  results.forEach(r => {
+    (r.data.cast_provvisorio||[]).forEach(c => {
+      if (!castMap[c.nome]) castMap[c.nome] = { ...c };
+      else castMap[c.nome].pose_stimate += c.pose_stimate || 0;
+    });
+  });
+  merged.cast_provvisorio = Object.values(castMap).sort((a,b) => b.pose_stimate - a.pose_stimate).map((c,i) => ({ ...c, character_id: i+1 }));
+
+  const psMap = {};
+  results.forEach(r => {
+    Object.entries(r.data.personaggi_scene||{}).forEach(([nome, scene]) => {
+      if (!psMap[nome]) psMap[nome] = [];
+      psMap[nome].push(...(Array.isArray(scene) ? scene : []));
+    });
+  });
+  merged.personaggi_scene = psMap;
+  return merged;
+}
+// ══ END SERIE ANALYSIS ══
+
+// ══ FILM / SERIE SELECTOR ══
+let analysisType = 'film'; // 'film' | 'serie'
+let episodeFiles = []; // [{label, file, b64, text}]
+let episodeCount = 6;
+
+function setAnalysisType(type) {
+  analysisType = type;
+  document.getElementById('btnTypeFilm').classList.toggle('active', type === 'film');
+  document.getElementById('btnTypeSerie').classList.toggle('active', type === 'serie');
+  document.getElementById('uploadFilm').style.display = type === 'film' ? '' : 'none';
+  document.getElementById('uploadSerie').style.display = type === 'serie' ? '' : 'none';
+  if (type === 'serie' && episodeFiles.length === 0) initEpisodes(6);
+  checkReady();
+}
+
+function initEpisodes(n) {
+  episodeFiles = Array.from({length: n}, (_, i) => ({ label: `Episodio ${i+1}`, file: null, b64: null, text: null }));
+  renderEpisodes();
+}
+
+function renderEpisodes() {
+  const list = document.getElementById('episodeList');
+  list.innerHTML = episodeFiles.map((ep, i) => `
+    <div class="episode-card" id="epCard${i}">
+      <div class="episode-label">Ep. ${i+1}</div>
+      <div class="episode-filename ${ep.file ? 'loaded' : ''}" id="epName${i}">
+        ${ep.file ? ep.file.name : 'Nessun file caricato'}
+      </div>
+      <input type="file" accept=".pdf" style="display:none" id="epInput${i}" onchange="loadEpisodeFile(${i}, this)">
+      <button class="episode-upload-btn" onclick="document.getElementById('epInput${i}').click()">
+        <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10V4M5 7l3-3 3 3"/><path d="M3 12h10"/></svg>
+        ${ep.file ? 'Cambia' : 'Carica'}
+      </button>
+      ${episodeFiles.length > 1 ? `<button class="episode-remove-btn" onclick="removeEpisode(${i})" title="Rimuovi">
+        <svg viewBox="0 0 14 14" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg>
+      </button>` : ''}
+    </div>`).join('');
+  checkReady();
+}
+
+async function loadEpisodeFile(idx, input) {
+  const file = input.files[0];
+  if (!file) return;
+  episodeFiles[idx].file = file;
+  episodeFiles[idx].b64 = null;
+  episodeFiles[idx].text = null;
+  renderEpisodes();
+}
+
+function addEpisode() {
+  episodeFiles.push({ label: `Episodio ${episodeFiles.length+1}`, file: null, b64: null, text: null });
+  renderEpisodes();
+}
+
+function removeEpisode(idx) {
+  episodeFiles.splice(idx, 1);
+  renderEpisodes();
+}
+
+// ══ END FILM / SERIE SELECTOR ══
 let pendingNewAnalysis = null; // hidden new analysis waiting to be imported
 let pendingNewPdfB64   = null; // b64 of new PDF
 
