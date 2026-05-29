@@ -1081,7 +1081,7 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       <div id="timetableSection" style="display:none;flex-direction:column;padding:12px 16px;gap:12px;overflow-y:auto;padding-bottom:140px">
 
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-          <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700">Orari Settimana</div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700">Timetables</div>
           <div style="display:flex;gap:8px">
             <button onclick="ttExportModal()" style="padding:7px 14px;background:none;border:1px solid var(--border-l);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;border-radius:7px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--orange)';this.style.color='var(--orange)'" onmouseout="this.style.borderColor='var(--border-l)';this.style.color='var(--muted)'">↓ PDF</button>
             <button onclick="ttClear()" style="padding:7px 14px;background:none;border:1px solid var(--border-l);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;border-radius:7px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--danger)';this.style.color='var(--danger)'" onmouseout="this.style.borderColor='var(--border-l)';this.style.color='var(--muted)'">✕ Clear</button>
@@ -1100,7 +1100,7 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
           <div style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Intestazione</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
             <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Produzione</div><input id="tt-produzione" type="text" placeholder="Es. Indigo Film" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
-            <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Film</div><input id="tt-film" type="text" placeholder="Da analisi..." style="width:100%;background:var(--surface2);border:1px dashed var(--border);color:var(--white-dim);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none;font-style:italic" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></div>
+            <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Film</div><input id="tt-film" type="text" placeholder="Da analisi..." style="width:100%;background:var(--surface2);border:1px dashed var(--border);color:var(--white-dim);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none;font-style:italic" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'" oninput="this.dataset.manuallyEdited='1'"></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
             <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Reparto</div><select id="tt-reparto" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;border-radius:6px;outline:none"><option value="Suono">Suono</option><option value="Fotografia">Fotografia</option></select></div>
@@ -1152,7 +1152,6 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
               <button class="tt-tog tt-vtog" data-mins="90" onclick="ttSetViaggio(90)">1h 30</button>
               <button class="tt-tog tt-vtog" data-mins="120" onclick="ttSetViaggio(120)">2h</button>
             </div>
-            <div style="font-size:10px;color:var(--muted);margin-top:7px;padding:6px 9px;background:var(--surface2);border-radius:5px;border-left:2px solid var(--border-l)">La franchigia viene sottratta dal totale viaggio giornaliero prima del calcolo 55%.</div>
           </div>
         </div>
 
@@ -4243,7 +4242,18 @@ function switchResultTab(tab) {
   cast.style.display      = tab === 'cast' ? '' : 'none';
   if (tab === 'pdl') { pdl.classList.add('on'); } else { pdl.classList.remove('on'); }
   if (timetable) timetable.style.display = tab === 'timetable' ? 'flex' : 'none';
-  if (tab === 'timetable') initTimetable();
+  if (tab === 'timetable') {
+    initTimetable();
+    // Aggiorna film dall'analisi corrente ogni volta che si apre il tab
+    try {
+      const filmEl = document.getElementById('tt-film');
+      if (filmEl && typeof analysisData !== 'undefined' && analysisData?.titolo && !filmEl.dataset.manuallyEdited) {
+        filmEl.value = analysisData.titolo;
+        filmEl.style.fontStyle = 'normal';
+        filmEl.style.color = 'var(--white)';
+      }
+    } catch(e) {}
+  }
   if (wrap)      wrap.style.display      = tab === 'wrap'      ? 'flex' : 'none';
   if (tab === 'wrap') initWrap();
   if (script)    script.style.display    = tab === 'script'    ? 'flex' : 'none';
@@ -5826,14 +5836,6 @@ let ttSestoPopupCb=null; // callback per popup sesto giorno
 function initTimetable(){
   if(ttInited)return;
   ttInited=true;
-  // Auto-popola film dall'analisi corrente se disponibile
-  try{
-    const filmEl=document.getElementById('tt-film');
-    if(filmEl&&typeof currentAnalysisData!=='undefined'&&currentAnalysisData?.titolo){
-      filmEl.value=currentAnalysisData.titolo;
-      filmEl.style.fontStyle='normal';filmEl.style.color='var(--white)';
-    }
-  }catch(e){}
   ttTabelle=[ttMkTab([])];
   ttRenderAll();ttRenderStorico();
 }
@@ -6000,6 +6002,7 @@ function ttClear(){
   if(!confirm('Resettare tutti i campi? I dati non salvati andranno persi.'))return;
   document.getElementById('tt-produzione').value='';
   document.getElementById('tt-film').value='';
+  document.getElementById('tt-film').dataset.manuallyEdited='';
   document.getElementById('tt-settimana').value='';
   document.getElementById('tt-dal').value='';
   document.getElementById('tt-al').value='';
