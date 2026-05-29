@@ -1084,8 +1084,15 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
           <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700">Orari Settimana</div>
           <div style="display:flex;gap:8px">
             <button onclick="ttExportModal()" style="padding:7px 14px;background:none;border:1px solid var(--border-l);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;border-radius:7px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--orange)';this.style.color='var(--orange)'" onmouseout="this.style.borderColor='var(--border-l)';this.style.color='var(--muted)'">↓ PDF</button>
+            <button onclick="ttClear()" style="padding:7px 14px;background:none;border:1px solid var(--border-l);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;border-radius:7px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--danger)';this.style.color='var(--danger)'" onmouseout="this.style.borderColor='var(--border-l)';this.style.color='var(--muted)'">✕ Clear</button>
             <button onclick="ttSave()" style="padding:7px 14px;background:var(--yellow);color:#000;border:none;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;border-radius:7px;cursor:pointer">Salva</button>
           </div>
+        </div>
+
+        <!-- Storico -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+          <div style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Storico settimane</div>
+          <div id="tt-storico"><div style="font-size:11px;color:var(--muted)">Nessuna settimana salvata.</div></div>
         </div>
 
         <!-- Intestazione -->
@@ -1156,12 +1163,6 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
           <div style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Note</div>
           <textarea id="tt-note" placeholder="Note libere — incluse nell'export PDF..." style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--white);font-family:'DM Mono',monospace;font-size:12px;padding:10px;border-radius:6px;outline:none;resize:vertical;min-height:70px;line-height:1.6" onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)';ttMeta.note=this.value" oninput="ttMeta.note=this.value"></textarea>
-        </div>
-
-        <!-- Storico -->
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
-          <div style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Storico settimane</div>
-          <div id="tt-storico"><div style="font-size:11px;color:var(--muted)">Nessuna settimana salvata.</div></div>
         </div>
 
         <!-- MANCATA PAUSA MODAL -->
@@ -5995,6 +5996,19 @@ function ttRenderTab(tab){
 }
 
 function ttAddFirst(){ttTabelle.push(ttMkTab([]));ttRenderAll();}
+function ttClear(){
+  if(!confirm('Resettare tutti i campi? I dati non salvati andranno persi.'))return;
+  document.getElementById('tt-produzione').value='';
+  document.getElementById('tt-film').value='';
+  document.getElementById('tt-settimana').value='';
+  document.getElementById('tt-dal').value='';
+  document.getElementById('tt-al').value='';
+  document.getElementById('tt-note').value='';
+  ttMeta.note='';
+  ttTabelle=[ttMkTab([])];
+  ttRenderAll();
+  showToast('Campi resettati.');
+}
 function ttDelTab(id){if(ttTabelle.length<=1)return;if(!confirm('Eliminare questa tabella?'))return;ttTabelle=ttTabelle.filter(t=>t.id!=id);ttRenderAll();}
 function ttSetO(tabId,field,di,val){const t=ttTabelle.find(t=>t.id==tabId);if(!t)return;t.orari[field][di]=val;const el=document.getElementById(`ttb-${tabId}`);if(el)el.outerHTML=ttRenderTab(t);}
 function ttAddW(tabId){const inp=document.getElementById(`ttawi-${tabId}`);if(!inp)return;const n=inp.value.trim();if(!n)return;const t=ttTabelle.find(t=>t.id==tabId);if(!t)return;t.workers.push(n);ttRenderAll();}
