@@ -231,6 +231,7 @@ table.tt2{width:100%;border-collapse:collapse;font-size:11px;min-width:620px}
 .tt-stor-tabs.open{display:block}
 .tt-stor-tab{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 8px 20px;border-bottom:1px solid var(--border);background:var(--surface)}
 .tt-stor-tab:last-child{border-bottom:none}
+.tt2 td.sesto2{background:rgba(245,166,35,0.04)}
 .result-tab:disabled { opacity: 0.3; cursor: not-allowed; }
 .result-tab svg { vertical-align: middle; flex-shrink: 0; }
 
@@ -1135,6 +1136,17 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
               <button class="tt-tog active" id="tt-nOn" onclick="ttSetNott(true)">On — automatico</button>
             </div>
           </div>
+          <div style="padding-top:12px;border-top:1px solid var(--border);margin-top:12px">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:0.06em">Ore viaggio concesse / giorno</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="tt-tog tt-vtog" data-mins="0" onclick="ttSetViaggio(0)">Nessuna</button>
+              <button class="tt-tog tt-vtog" data-mins="30" onclick="ttSetViaggio(30)">30 min</button>
+              <button class="tt-tog tt-vtog active" data-mins="60" onclick="ttSetViaggio(60)">1h</button>
+              <button class="tt-tog tt-vtog" data-mins="90" onclick="ttSetViaggio(90)">1h 30</button>
+              <button class="tt-tog tt-vtog" data-mins="120" onclick="ttSetViaggio(120)">2h</button>
+            </div>
+            <div style="font-size:10px;color:var(--muted);margin-top:7px;padding:6px 9px;background:var(--surface2);border-radius:5px;border-left:2px solid var(--border-l)">La franchigia viene sottratta dal totale viaggio giornaliero prima del calcolo 55%.</div>
+          </div>
         </div>
 
         <!-- Tabelle dinamiche -->
@@ -1177,6 +1189,18 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
 
         <!-- EXPORT MODAL -->
         <div id="tt-exportOv" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;align-items:center;justify-content:center">
+
+        <!-- SESTO GIORNO POPUP -->
+        <div id="tt-sestoOv" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:310;align-items:center;justify-content:center">
+          <div style="background:var(--surface);border:1px solid var(--orange);border-radius:12px;padding:22px;width:360px;max-width:92vw">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;margin-bottom:12px;color:var(--orange)">★ Straordinario 6° giorno</div>
+            <div id="tt-sestoInfo"></div>
+            <div style="display:flex;gap:8px;margin-top:16px">
+              <button onclick="if(ttSestoPopupCb)ttSestoPopupCb(true)" style="flex:1;padding:9px;background:var(--orange);color:#000;border:none;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;border-radius:7px;cursor:pointer">Sì, raddoppia</button>
+              <button onclick="if(ttSestoPopupCb)ttSestoPopupCb(false)" style="padding:9px 16px;background:none;border:1px solid var(--border-l);color:var(--white-dim);font-family:'DM Mono',monospace;font-size:11px;border-radius:7px;cursor:pointer">No</button>
+            </div>
+          </div>
+        </div>
           <div style="background:var(--surface);border:1px solid var(--border-l);border-radius:12px;padding:22px;width:360px;max-width:92vw">
             <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px">Export PDF</div>
             <div onclick="ttDoExport('unico')" style="padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer" onmouseover="this.style.borderColor='var(--yellow)'" onmouseout="this.style.borderColor='var(--border)'">
@@ -5792,10 +5816,11 @@ document.getElementById('pdlDayModal').addEventListener('click',e=>{if(e.target=
 // TIMETABLE ENGINE v1.0
 // ══════════════════════════════════════════════
 const TT_DAYS=['LUN','MAR','MER','GIO','VEN','SAB'];
-let ttMeta={tipoGiornata:10,raddoppio:0,applicazione:'giornaliero',maggiorazioniNott:true,note:''};
+let ttMeta={tipoGiornata:10,raddoppio:0,applicazione:'giornaliero',maggiorazioniNott:true,note:'',viaggioConcesso:60};
 let ttTabelle=[];
 let ttScorporoSrcId=null,ttScorporoSel=new Set();
 let ttInited=false;
+let ttSestoPopupCb=null; // callback per popup sesto giorno
 
 function initTimetable(){
   if(ttInited)return;
@@ -5833,24 +5858,28 @@ function ttToHM(mins){
 }
 function ttSum(arr){const s=arr.reduce((a,v)=>a+(v||0),0);return s>0?s:null;}
 
-function ttCalcDay(d,orari){
+function ttCalcDay(d,orari,isSestoGiorno){
   const par=orari.partenza[d],ini=orari.inizio[d],pau=orari.pausa[d],fin=orari.fine[d],rie=orari.rientro[d];
-  const isTrasf=!!par&&par.trim()!=='',isSab=d===5;
-  let r={oreLav:null,oreViaggio:null,nottOrd:null,nottStr:null,goldenOrd:null,goldenNott:null,golden6:null,mancataPausa:false};
+  const isTrasf=!!par&&par.trim()!=='';
+  let r={oreLav:null,oreViaggio:null,nottOrd:null,nottStr:null,goldenOrd:null,goldenNott:null,golden6:null,mancataPausa:false,isSesto:isSestoGiorno};
   if(!ini||!fin)return r;
   const iniM=ttToMin(ini),finM=ttToMin(fin);
   if(iniM===null||finM===null||finM<=iniM)return r;
   r.oreLav=finM-iniM;
-  const soglia=ttMeta.tipoGiornata*60;
+  // Soglia: sesto giorno sempre 7h, altrimenti tipoGiornata
+  const soglia=isSestoGiorno?420:ttMeta.tipoGiornata*60;
   const goldenRaw=Math.max(0,r.oreLav-soglia);
   let mancataG=0;
   if(pau&&pau.trim()){const pM=ttToMin(pau);if(pM!==null&&(pM-iniM)>360){r.mancataPausa=true;mancataG=60;}}
+  // Ore viaggio: calcolo grezzo poi sottrai franchigia
   if(isTrasf){
     const parM=ttToMin(par),rieM=rie&&rie.trim()?ttToMin(rie):null;
     let v=0;
     if(parM!==null)v+=Math.max(0,iniM-parM);
     if(rieM!==null)v+=Math.max(0,rieM-finM);
-    r.oreViaggio=Math.min(v,60);
+    const viaggioLordo=Math.min(v,120); // cap fisico a 2h
+    const netto=Math.max(0,viaggioLordo-ttMeta.viaggioConcesso);
+    r.oreViaggio=netto>0?netto:null;
   }
   if(ttMeta.maggiorazioniNott){
     const N1=23*60,N2=24*60+150;
@@ -5862,24 +5891,37 @@ function ttCalcDay(d,orari){
   const isNott=finM>(24*60+150);
   let gMin=goldenRaw+mancataG;
   if(gMin>0){
-    if(isSab)r.golden6=gMin;
+    if(isSestoGiorno)r.golden6=gMin;
     else if(isNott)r.goldenNott=gMin;
     else r.goldenOrd=gMin;
   }
   return r;
 }
+
+function ttGetSestoIdx(orari){
+  // Conta i giorni con INIZIO compilato, restituisce l'indice del 6° o -1
+  const compiled=TT_DAYS.map((_,i)=>orari.inizio[i]&&orari.inizio[i].trim()!='');
+  const count=compiled.filter(Boolean).length;
+  if(count<6)return -1;
+  // Il 6° giorno lavorato (in ordine LUN→SAB)
+  let n=0;
+  for(let i=0;i<6;i++){if(compiled[i]){n++;if(n===6)return i;}}
+  return -1;
+}
+
 function ttApplyRd(v){
   if(ttMeta.raddoppio===0||!v||v<=0)return v;
   const s=ttMeta.raddoppio*60;
   return v<=s?v:s+(v-s)*2;
 }
 function ttCalcTab(orari){
-  const days=TT_DAYS.map((_,i)=>ttCalcDay(i,orari));
+  const sestoIdx=ttGetSestoIdx(orari);
+  const days=TT_DAYS.map((_,i)=>ttCalcDay(i,orari,i===sestoIdx));
   if(ttMeta.raddoppio>0&&ttMeta.applicazione==='giornaliero')
     days.forEach(d=>{if(d.goldenOrd)d.goldenOrd=ttApplyRd(d.goldenOrd);if(d.goldenNott)d.goldenNott=ttApplyRd(d.goldenNott);if(d.golden6)d.golden6=ttApplyRd(d.golden6);});
   const tot={oreViaggio:ttSum(days.map(d=>d.oreViaggio)),nottOrd:ttSum(days.map(d=>d.nottOrd)),nottStr:ttSum(days.map(d=>d.nottStr)),goldenOrd:ttSum(days.map(d=>d.goldenOrd)),goldenNott:ttSum(days.map(d=>d.goldenNott)),golden6:ttSum(days.map(d=>d.golden6))};
   if(ttMeta.raddoppio>0&&ttMeta.applicazione==='settimanale'){tot.goldenOrd=ttApplyRd(tot.goldenOrd);tot.goldenNott=ttApplyRd(tot.goldenNott);tot.golden6=ttApplyRd(tot.golden6);}
-  return{days,tot};
+  return{days,tot,sestoIdx};
 }
 
 function ttRenderAll(){
@@ -5892,19 +5934,31 @@ function ttRenderAll(){
 }
 
 function ttRenderTab(tab){
-  const{days,tot}=ttCalcTab(tab.orari);
+  const{days,tot,sestoIdx}=ttCalcTab(tab.orari);
   const mancDays=days.map((d,i)=>d.mancataPausa?TT_DAYS[i]:null).filter(Boolean);
   const mancBadge=mancDays.length>0?`<span onclick="ttShowMancata('${mancDays.join(',')}')" style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,85,85,0.15);border:1px solid rgba(255,85,85,0.3);color:var(--danger);border-radius:999px;padding:2px 9px;font-size:9px;cursor:pointer;margin-left:8px">⚠ Mancata pausa</span>`:'';
+  // Badge sesto giorno se c'è golden6
+  const sestoBadge=tot.golden6?`<span onclick="ttShowSestoPopup('${tab.id}')" style="display:inline-flex;align-items:center;gap:4px;background:rgba(245,166,35,0.15);border:1px solid rgba(245,166,35,0.4);color:var(--orange);border-radius:999px;padding:2px 9px;font-size:9px;cursor:pointer;margin-left:8px">★ Golden 6°g. — raddoppiare?</span>`:'';
   const wLabel=tab.workers.length>0?tab.workers.join(', '):`<span style="color:var(--muted)">Nessun lavoratore</span>`;
   const chips=tab.workers.map((w,i)=>`<span class="tt-chip">${w}<button class="tt-chip-x" onclick="ttRemoveW('${tab.id}',${i})">×</button></span>`).join('');
   const iRows=[{k:'partenza',l:'Partenza'},{k:'inizio',l:'Inizio'},{k:'pausa',l:'Pausa'},{k:'stop',l:'Stop'},{k:'fine',l:'Fine'},{k:'rientro',l:'Rientro'}];
   const cRows=[{k:'oreViaggio',l:'Ore viaggio 55%',c:''},{k:'nottOrd',l:'Magg. nott. 55%',c:'nott2'},{k:'nottStr',l:'Magg. nott. 80%',c:'nott2'},{k:'goldenOrd',l:'Golden ord.',c:'gold2'},{k:'goldenNott',l:'Golden nott.',c:'gold2'},{k:'golden6',l:'Golden 6°g.',c:'gold2'}];
-  let th=`<table class="tt2"><thead><tr><th class="lbl2"></th><th>LUN</th><th>MAR</th><th>MER</th><th>GIO</th><th>VEN</th><th class="sat2">SAB<br><span style="font-size:8px;opacity:0.7;font-weight:400">6°g.</span></th><th style="width:82px;min-width:82px">TOTALE</th></tr></thead><tbody>`;
+  // Header colonne — evidenzia il sesto giorno reale
+  const dayHeaders=TT_DAYS.map((d,i)=>{
+    const isSesto=i===sestoIdx;
+    const isSat=i===5;
+    const label=isSesto?`${d}<br><span style="font-size:8px;opacity:0.7;font-weight:400">6°g.</span>`:d;
+    const cls=isSat&&isSesto?'sat2':isSat?'sat2':'';
+    return `<th class="${cls}" style="${isSesto?'color:var(--orange)':''}">${label}</th>`;
+  }).join('');
+  let th=`<table class="tt2"><thead><tr><th class="lbl2"></th>${dayHeaders}<th style="width:82px;min-width:82px">TOTALE</th></tr></thead><tbody>`;
   th+=`<tr class="secrow2"><td colspan="8">orari</td></tr>`;
   iRows.forEach(r=>{
     th+=`<tr><td class="lbl2">${r.l}</td>`;
     TT_DAYS.forEach((_,i)=>{
-      const cl=i===5?'sat2':'',v=tab.orari[r.k][i]||'';
+      const isSesto=i===sestoIdx;
+      const cl=[i===5?'sat2':'',isSesto?'sesto2':''].filter(Boolean).join(' ');
+      const v=tab.orari[r.k][i]||'';
       th+=`<td class="${cl}"><input class="ti" type="text" placeholder="—" value="${v}" onchange="ttSetO('${tab.id}','${r.k}',${i},this.value)" onblur="ttSetO('${tab.id}','${r.k}',${i},this.value)"></td>`;
     });
     th+=`<td class="tot2">—</td></tr>`;
@@ -5913,7 +5967,7 @@ function ttRenderTab(tab){
   cRows.forEach(r=>{
     const dv=days.map(d=>d[r.k]||null),tv=tot[r.k]||null;
     th+=`<tr><td class="lbl2 calc2">${r.l}</td>`;
-    dv.forEach((v,i)=>{const cl=[i===5?'sat2':'','comp2',v&&r.c?r.c:'',v?'hv':''].filter(Boolean).join(' ');th+=`<td class="${cl}">${v?ttToHM(v):'—'}</td>`;});
+    dv.forEach((v,i)=>{const isSesto=i===sestoIdx;const cl=[i===5?'sat2':'',isSesto?'sesto2':'','comp2',v&&r.c?r.c:'',v?'hv':''].filter(Boolean).join(' ');th+=`<td class="${cl}">${v?ttToHM(v):'—'}</td>`;});
     th+=`<td class="${['tot2',tv&&r.c?r.c:''].filter(Boolean).join(' ')}">${tv?ttToHM(tv):'—'}</td></tr>`;
   });
   th+=`</tbody></table>`;
@@ -5921,8 +5975,8 @@ function ttRenderTab(tab){
   return `<div id="ttb-${tab.id}" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)">
       <div>
-        <div style="font-size:11px;color:var(--white);font-weight:500">${wLabel}${mancBadge}</div>
-        <div style="font-size:9px;color:var(--muted);margin-top:2px">${tab.workers.length} lavorator${tab.workers.length===1?'e':'i'}</div>
+        <div style="font-size:11px;color:var(--white);font-weight:500">${wLabel}${mancBadge}${sestoBadge}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">${tab.workers.length} lavorator${tab.workers.length===1?'e':'i'}${sestoIdx>=0?' · 6°g: '+TT_DAYS[sestoIdx]:''}</div>
       </div>
       <div style="display:flex;gap:6px">
         <button onclick="ttOpenScorporo('${tab.id}')" style="padding:5px 12px;background:none;border:1px solid var(--border-l);color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;border-radius:6px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--yellow)';this.style.color='var(--yellow)'" onmouseout="this.style.borderColor='var(--border-l)';this.style.color='var(--muted)'">⊕ Scorporo</button>
@@ -5979,6 +6033,40 @@ function ttShowMancata(daysStr){
   document.getElementById('tt-mancataOv').style.display='flex';
 }
 
+function ttShowSestoPopup(tabId){
+  const tab=ttTabelle.find(t=>t.id==tabId);if(!tab)return;
+  const{tot,sestoIdx}=ttCalcTab(tab.orari);
+  if(!tot.golden6)return;
+  const dayName=sestoIdx>=0?TT_DAYS[sestoIdx]:'SAB';
+  document.getElementById('tt-sestoInfo').innerHTML=
+    `<div style="font-size:12px;color:var(--white-dim);margin-bottom:4px">Giorno: <strong style="color:var(--orange)">${dayName}</strong></div>
+     <div style="font-size:12px;color:var(--white-dim)">Golden 6°g. rilevata: <strong style="color:var(--orange)">${ttToHM(tot.golden6)}</strong></div>
+     <div style="font-size:10px;color:var(--muted);margin-top:6px">Lo straordinario sul 6° giorno è doppio per contratto CCNL. Raddoppiare il valore?</div>`;
+  ttSestoPopupCb=function(raddoppia){
+    if(raddoppia){
+      // Trova il giorno sesto e raddoppia il golden6
+      const sestoDay=tab.orari.inizio[sestoIdx];
+      if(sestoDay){
+        // Salva il raddoppio come override per questo tab/giorno
+        if(!tab.sestoRaddoppio)tab.sestoRaddoppio={};
+        tab.sestoRaddoppio[sestoIdx]=true;
+      }
+      ttRenderAll();
+      showToast('Golden 6°g. raddoppiata.');
+    }
+    document.getElementById('tt-sestoOv').style.display='none';
+    ttSestoPopupCb=null;
+  };
+  document.getElementById('tt-sestoOv').style.display='flex';
+}
+
+function ttSetViaggio(mins){
+  ttMeta.viaggioConcesso=mins;
+  document.querySelectorAll('.tt-vtog').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tt-vtog').forEach(b=>{if(parseInt(b.dataset.mins)===mins)b.classList.add('active');});
+  ttRenderAll();
+}
+
 function ttSetGiornata(h){
   ttMeta.tipoGiornata=h;
   document.getElementById('tt-tg10').classList.toggle('active',h===10);
@@ -6014,7 +6102,8 @@ function ttSave(){
     al:document.getElementById('tt-al').value,
     note:ttMeta.note||'',
     tipoGiornata:ttMeta.tipoGiornata,raddoppio:ttMeta.raddoppio,
-    applicazione:ttMeta.applicazione,maggiorazioniNott:ttMeta.maggiorazioniNott
+    applicazione:ttMeta.applicazione,maggiorazioniNott:ttMeta.maggiorazioniNott,
+    viaggioConcesso:ttMeta.viaggioConcesso
   },tabelle:JSON.parse(JSON.stringify(ttTabelle))};
   const saved=JSON.parse(localStorage.getItem('sa_tt3')||'[]');
   const ex=saved.findIndex(s=>s.meta.settimana===rec.meta.settimana&&s.meta.film===rec.meta.film&&s.meta.reparto===rec.meta.reparto);
@@ -6068,6 +6157,7 @@ function ttLoad(si){
   ttSetGiornata(ttMeta.tipoGiornata);
   ttSetRaddoppio(ttMeta.raddoppio);
   ttSetNott(ttMeta.maggiorazioniNott);
+  ttSetViaggio(ttMeta.viaggioConcesso||60);
   ttRenderAll();showToast('Settimana caricata.');
 }
 function ttDelS(si){
