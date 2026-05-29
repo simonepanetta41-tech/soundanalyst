@@ -439,7 +439,7 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
 
 @media print {
   body { background:#fff !important; color:#000 !important; font-family: Arial, sans-serif; }
-  header, nav, #homePage, #settingsPage, #progressPanel, #chatSection, .res-actions, footer { display: none !important; }
+  header, nav, #homePage, #settingsPage, #systemPage, #progressPanel, #chatSection, .res-actions, footer { display: none !important; }
   #resultsPage { display: block !important; }
   .stat-box, .cat { border: 1px solid #ccc !important; background: #fff !important; break-inside: avoid; }
   .stat-num { color: #000 !important; }
@@ -617,9 +617,61 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
     <nav class="nav-tabs" id="mainNav">
       <button class="nav-tab active" onclick="showPage('home')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9L10 3l7 6v8a1 1 0 01-1 1H4a1 1 0 01-1-1V9z"/><path d="M7 20v-7h6v7"/></svg> Home</button>
       <button class="nav-tab" onclick="showPage('settings')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2l6.5 3.75v7.5L10 17 3.5 13.25V5.75L10 2z"/><circle cx="10" cy="9.5" r="2.5"/></svg> Impostazioni</button>
+      <button class="nav-tab" id="navSystem" style="display:none" onclick="showPage('system')"><svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="16" height="12" rx="2"/><path d="M6 17h8M10 15v2"/><path d="M5 7h2M5 10h6"/></svg> System</button>
+      <button class="nav-tab" id="navSystem" onclick="showPage('system')" style="display:none"><svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="16" height="12" rx="2"/><path d="M6 7h8M6 10h5M2 15h16"/><circle cx="15" cy="10" r="1.5" fill="currentColor" stroke="none"/></svg> System</button>
     </nav>
 
-    <!-- HOME PAGE -->
+    <!-- SYSTEM PAGE (admin only) -->
+    <div id="systemPage" style="display:none;padding:20px;max-width:700px;margin:0 auto">
+      <div class="panel">
+        <div class="panel-label">Utenti registrati</div>
+        <div id="systemUserList" style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+          <div style="font-size:12px;color:var(--muted)">Caricamento...</div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-label">Pulizia dati</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+
+          <div style="background:var(--surface2);border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--white)">Analisi</div>
+              <div id="sysCountAnalyses" style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">—</div>
+            </div>
+            <button onclick="sysDelete('analyses')" style="padding:7px 14px;background:none;border:1px solid rgba(239,68,68,0.4);border-radius:7px;color:rgba(239,68,68,0.7);font-size:11px;cursor:pointer">Elimina tutte</button>
+          </div>
+
+          <div style="background:var(--surface2);border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--white)">PDL</div>
+              <div id="sysCountPdl" style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">—</div>
+            </div>
+            <button onclick="sysDelete('pdl_versions')" style="padding:7px 14px;background:none;border:1px solid rgba(239,68,68,0.4);border-radius:7px;color:rgba(239,68,68,0.7);font-size:11px;cursor:pointer">Elimina tutti</button>
+          </div>
+
+          <div style="background:var(--surface2);border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--white)">Cast List</div>
+              <div id="sysCountCast" style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">—</div>
+            </div>
+            <button onclick="sysDelete('cast_list')" style="padding:7px 14px;background:none;border:1px solid rgba(239,68,68,0.4);border-radius:7px;color:rgba(239,68,68,0.7);font-size:11px;cursor:pointer">Elimina tutti</button>
+          </div>
+
+          <div style="background:var(--surface2);border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--white)">Storage (PDF + testi)</div>
+              <div id="sysCountStorage" style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">—</div>
+            </div>
+            <button onclick="sysDeleteStorage()" style="padding:7px 14px;background:none;border:1px solid rgba(239,68,68,0.4);border-radius:7px;color:rgba(239,68,68,0.7);font-size:11px;cursor:pointer">Elimina tutti</button>
+          </div>
+
+          <button onclick="sysDeleteAll()" style="padding:12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.5);border-radius:10px;color:rgba(239,68,68,0.9);font-size:13px;font-weight:700;cursor:pointer;width:100%">
+            Elimina tutto (analisi + PDL + cast + storage)
+          </button>
+        </div>
+      </div>
+    </div>
     <div id="homePage">
       <div class="panel">
         <div class="panel-label">Analisi Precedenti</div>
@@ -723,6 +775,35 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
             <div class="settings-row-label">SoundAnalyst</div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- SYSTEM PAGE (admin only) -->
+    <div id="systemPage" style="display:none;padding:16px;display:none">
+      <div class="panel">
+        <div class="panel-label">Utenti registrati</div>
+        <div id="systemUserList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+          <div style="font-size:12px;color:var(--muted)">Caricamento...</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">Pulizia dati</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.6">
+            Elimina per utente selezionato: analisi, PDL, cast list e file Storage.<br>Le recensioni Wrap non vengono toccate.
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="systemTargetUser" style="flex:1;padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:12px;font-family:'DM Mono',monospace">
+              <option value="">Seleziona utente...</option>
+            </select>
+            <button onclick="systemDeleteUser()" style="padding:8px 16px;background:none;border:1px solid rgba(239,68,68,0.5);border-radius:8px;color:rgba(239,68,68,0.8);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">Elimina dati</button>
+          </div>
+          <button onclick="systemDeleteAll()" style="padding:10px;background:none;border:1px solid rgba(239,68,68,0.5);border-radius:8px;color:rgba(239,68,68,0.8);font-size:12px;font-weight:700;cursor:pointer">Elimina tutto (tutti gli utenti)</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">Log operazioni</div>
+        <div id="systemLog" style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.8;max-height:200px;overflow-y:auto">—</div>
       </div>
     </div>
 
@@ -1602,6 +1683,7 @@ function showApp() {
   document.getElementById('app').style.display = 'block';
   document.getElementById('userEmail').textContent = currentUser.email;
   document.getElementById('settingsEmail').textContent = currentUser.email;
+  systemInit();
   loadHistory();
 }
 
@@ -1627,6 +1709,8 @@ sb.auth.getSession().then(({ data: { session } }) => {
 function showPage(page) {
   document.getElementById('homePage').style.display    = page === 'home' ? '' : 'none';
   document.getElementById('settingsPage').style.display = page === 'settings' ? '' : 'none';
+  document.getElementById('systemPage').style.display = page === 'system' ? '' : 'none';
+  if (page === 'system') loadSystemPage();
   document.querySelectorAll('.nav-tab').forEach((t,i) =>
     t.classList.toggle('active', (i===0 && page==='home') || (i===1 && page==='settings')));
   if (page === 'settings') { initOffsetDisplay(); }
@@ -2640,7 +2724,172 @@ function resetApp() {
   showPage('home');
 }
 
-// ══ TOAST SYSTEM ══
+// ══ SYSTEM ADMIN ══
+const ADMIN_EMAIL = 'simonepanetta41@gmail.com';
+
+function isAdmin() {
+  return currentUser?.email === ADMIN_EMAIL;
+}
+
+function systemInit() {
+  if (isAdmin()) document.getElementById('navSystem').style.display = '';
+}
+
+async function loadSystemPage() {
+  // Load user list from analyses (distinct user_id + email via auth)
+  const { data: analyses } = await sb.from('analyses').select('user_id, created_at').order('created_at', { ascending: false });
+  const { data: pdl } = await sb.from('pdl_versions').select('id', { count: 'exact', head: true });
+  const { data: cast } = await sb.from('cast_list').select('id', { count: 'exact', head: true });
+  const { count: pdlCount } = await sb.from('pdl_versions').select('*', { count: 'exact', head: true });
+  const { count: castCount } = await sb.from('cast_list').select('*', { count: 'exact', head: true });
+  const { count: analysesCount } = await sb.from('analyses').select('*', { count: 'exact', head: true });
+
+  document.getElementById('sysCountAnalyses').textContent = `${analysesCount || 0} record`;
+  document.getElementById('sysCountPdl').textContent = `${pdlCount || 0} record`;
+  document.getElementById('sysCountCast').textContent = `${castCount || 0} record`;
+
+  // Storage count
+  const { data: storageList } = await sb.storage.from('Screenplays').list('', { limit: 500 });
+  document.getElementById('sysCountStorage').textContent = `${storageList?.length || 0} file`;
+
+  // User list — group by user_id
+  const userMap = {};
+  (analyses || []).forEach(a => {
+    if (!userMap[a.user_id]) userMap[a.user_id] = { count: 0, last: a.created_at };
+    userMap[a.user_id].count++;
+  });
+
+  const listEl = document.getElementById('systemUserList');
+  const entries = Object.entries(userMap);
+  if (!entries.length) {
+    listEl.innerHTML = '<div style="font-size:12px;color:var(--muted)">Nessun utente trovato</div>';
+    return;
+  }
+
+  listEl.innerHTML = entries.map(([uid, info]) => `
+    <div style="background:var(--surface2);border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--white)">${uid}</div>
+        <div style="font-size:10px;color:var(--muted)">${info.count} analisi · ultimo: ${new Date(info.last).toLocaleDateString('it-IT')}</div>
+      </div>
+      <button onclick="sysDeleteUser('${uid}')" style="padding:5px 10px;background:none;border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:rgba(239,68,68,0.6);font-size:10px;cursor:pointer">Elimina dati</button>
+    </div>`).join('');
+}
+
+async function sysDelete(table) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;max-width:320px;width:100%;text-align:center">
+      <div style="font-weight:700;font-size:15px;color:var(--white);margin-bottom:8px">Eliminare tutti i record da "${table}"?</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Azione irreversibile.</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="this.closest('div[style]').remove()" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:13px">Annulla</button>
+        <button id="sysConfirmBtn" style="flex:1;padding:10px;border-radius:8px;border:none;background:rgba(239,68,68,0.8);color:#fff;font-weight:700;cursor:pointer;font-size:13px">Elimina</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#sysConfirmBtn').onclick = async () => {
+    modal.remove();
+    const { error } = await sb.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (error) showToast('Errore: ' + error.message, 'default');
+    else { showToast(`${table} eliminati`, 'yellow', 3000); loadSystemPage(); }
+  };
+}
+
+async function sysDeleteStorage() {
+  const { data: files } = await sb.storage.from('Screenplays').list('', { limit: 500 });
+  if (!files?.length) { showToast('Nessun file trovato', 'default'); return; }
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;max-width:320px;width:100%;text-align:center">
+      <div style="font-weight:700;font-size:15px;color:var(--white);margin-bottom:8px">Eliminare ${files.length} file dallo storage?</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Azione irreversibile.</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="this.closest('div[style]').remove()" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:13px">Annulla</button>
+        <button id="sysConfirmStorage" style="flex:1;padding:10px;border-radius:8px;border:none;background:rgba(239,68,68,0.8);color:#fff;font-weight:700;cursor:pointer;font-size:13px">Elimina</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#sysConfirmStorage').onclick = async () => {
+    modal.remove();
+    // Delete in batches — root level files
+    const paths = files.map(f => f.name);
+    const { error } = await sb.storage.from('Screenplays').remove(paths);
+    // Also check subfolders (user_id/filename structure)
+    const { data: folders } = await sb.storage.from('Screenplays').list('', { limit: 500 });
+    for (const folder of (folders || [])) {
+      if (!folder.name.includes('.')) {
+        const { data: subfiles } = await sb.storage.from('Screenplays').list(folder.name, { limit: 500 });
+        if (subfiles?.length) {
+          await sb.storage.from('Screenplays').remove(subfiles.map(f => `${folder.name}/${f.name}`));
+        }
+      }
+    }
+    if (error) showToast('Errore: ' + error.message, 'default');
+    else { showToast('Storage pulito', 'yellow', 3000); loadSystemPage(); }
+  };
+}
+
+async function sysDeleteAll() {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border:1px solid rgba(239,68,68,0.5);border-radius:14px;padding:24px;max-width:320px;width:100%;text-align:center">
+      <div style="font-weight:700;font-size:15px;color:rgba(239,68,68,0.9);margin-bottom:8px">Eliminare TUTTO?</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Analisi, PDL, Cast e Storage verranno cancellati definitivamente.</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="this.closest('div[style]').remove()" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:13px">Annulla</button>
+        <button id="sysConfirmAll" style="flex:1;padding:10px;border-radius:8px;border:none;background:rgba(239,68,68,0.9);color:#fff;font-weight:700;cursor:pointer;font-size:13px">Elimina tutto</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#sysConfirmAll').onclick = async () => {
+    modal.remove();
+    await sb.from('analyses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await sb.from('pdl_versions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await sb.from('cast_list').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await sysDeleteStorageSilent();
+    showToast('Pulizia completata', 'yellow', 3000);
+    loadSystemPage();
+  };
+}
+
+async function sysDeleteStorageSilent() {
+  const { data: files } = await sb.storage.from('Screenplays').list('', { limit: 500 });
+  if (!files?.length) return;
+  const paths = files.filter(f => f.name.includes('.')).map(f => f.name);
+  if (paths.length) await sb.storage.from('Screenplays').remove(paths);
+  for (const folder of files.filter(f => !f.name.includes('.'))) {
+    const { data: sub } = await sb.storage.from('Screenplays').list(folder.name, { limit: 500 });
+    if (sub?.length) await sb.storage.from('Screenplays').remove(sub.map(f => `${folder.name}/${f.name}`));
+  }
+}
+
+async function sysDeleteUser(userId) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;max-width:320px;width:100%;text-align:center">
+      <div style="font-weight:700;font-size:14px;color:var(--white);margin-bottom:6px">Eliminare tutti i dati di questo utente?</div>
+      <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:16px;word-break:break-all">${userId}</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="this.closest('div[style]').remove()" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:13px">Annulla</button>
+        <button id="sysConfirmUser" style="flex:1;padding:10px;border-radius:8px;border:none;background:rgba(239,68,68,0.8);color:#fff;font-weight:700;cursor:pointer;font-size:13px">Elimina</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#sysConfirmUser').onclick = async () => {
+    modal.remove();
+    await sb.from('analyses').delete().eq('user_id', userId);
+    await sb.from('pdl_versions').delete().eq('user_id', userId);
+    await sb.from('cast_list').delete().eq('user_id', userId);
+    showToast('Dati utente eliminati', 'yellow', 3000);
+    loadSystemPage();
+  };
+}
+// ══ END SYSTEM ADMIN ══
 function showToast(msg, type = 'default', duration = 3000) {
   const container = (() => {
     let el = document.getElementById('toastContainer');
