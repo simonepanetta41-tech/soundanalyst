@@ -778,35 +778,6 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       </div>
     </div>
 
-    <!-- SYSTEM PAGE (admin only) -->
-    <div id="systemPage" style="display:none;padding:16px;display:none">
-      <div class="panel">
-        <div class="panel-label">Utenti registrati</div>
-        <div id="systemUserList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
-          <div style="font-size:12px;color:var(--muted)">Caricamento...</div>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="panel-label">Pulizia dati</div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.6">
-            Elimina per utente selezionato: analisi, PDL, cast list e file Storage.<br>Le recensioni Wrap non vengono toccate.
-          </div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <select id="systemTargetUser" style="flex:1;padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:12px;font-family:'DM Mono',monospace">
-              <option value="">Seleziona utente...</option>
-            </select>
-            <button onclick="systemDeleteUser()" style="padding:8px 16px;background:none;border:1px solid rgba(239,68,68,0.5);border-radius:8px;color:rgba(239,68,68,0.8);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">Elimina dati</button>
-          </div>
-          <button onclick="systemDeleteAll()" style="padding:10px;background:none;border:1px solid rgba(239,68,68,0.5);border-radius:8px;color:rgba(239,68,68,0.8);font-size:12px;font-weight:700;cursor:pointer">Elimina tutto (tutti gli utenti)</button>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="panel-label">Log operazioni</div>
-        <div id="systemLog" style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.8;max-height:200px;overflow-y:auto">—</div>
-      </div>
-    </div>
-
     <!-- PROGRESS -->
     <div class="panel progress-panel" id="progressPanel">
       <div class="prog-label" id="progLabel">Inizializzazione...</div>
@@ -1671,7 +1642,7 @@ function showAuth() {
   document.getElementById('app').style.display = 'none';
 }
 
-function showApp() {
+async function showApp() {
   // Check if there's a pending share token
   const pendingToken = sessionStorage.getItem('pendingShareToken');
   if (pendingToken) {
@@ -1684,6 +1655,13 @@ function showApp() {
   document.getElementById('userEmail').textContent = currentUser.email;
   document.getElementById('settingsEmail').textContent = currentUser.email;
   systemInit();
+  // Upsert profile
+  await sb.from('profiles').upsert({
+    id: currentUser.id,
+    email: currentUser.email,
+    provider: currentUser.app_metadata?.provider || 'email',
+    last_seen: new Date().toISOString()
+  }, { onConflict: 'id' });
   loadHistory();
 }
 
@@ -2736,23 +2714,23 @@ function systemInit() {
 }
 
 async function loadSystemPage() {
-  // Load user list from analyses (distinct user_id + email via auth)
-  const { data: analyses } = await sb.from('analyses').select('user_id, created_at').order('created_at', { ascending: false });
-  const { data: pdl } = await sb.from('pdl_versions').select('id', { count: 'exact', head: true });
-  const { data: cast } = await sb.from('cast_list').select('id', { count: 'exact', head: true });
+  const { count: analysesCount } = await sb.from('analyses').select('*', { count: 'exact', head: true });
   const { count: pdlCount } = await sb.from('pdl_versions').select('*', { count: 'exact', head: true });
   const { count: castCount } = await sb.from('cast_list').select('*', { count: 'exact', head: true });
-  const { count: analysesCount } = await sb.from('analyses').select('*', { count: 'exact', head: true });
+  const { data: storageList } = await sb.storage.from('Screenplays').list('', { limit: 500 });
 
   document.getElementById('sysCountAnalyses').textContent = `${analysesCount || 0} record`;
   document.getElementById('sysCountPdl').textContent = `${pdlCount || 0} record`;
   document.getElementById('sysCountCast').textContent = `${castCount || 0} record`;
-
-  // Storage count
-  const { data: storageList } = await sb.storage.from('Screenplays').list('', { limit: 500 });
   document.getElementById('sysCountStorage').textContent = `${storageList?.length || 0} file`;
 
-  // User list — group by user_id
+  // Get analyses grouped by user_id
+  const { data: analyses } = await sb.from('analyses').select('user_id, created_at').order('created_at', { ascending: false });
+  // Get profiles for emails
+  const { data: profiles } = await sb.from('profiles').select('id, email, provider, last_seen');
+  const profileMap = {};
+  (profiles || []).forEach(p => { profileMap[p.id] = p; });
+
   const userMap = {};
   (analyses || []).forEach(a => {
     if (!userMap[a.user_id]) userMap[a.user_id] = { count: 0, last: a.created_at };
@@ -2766,14 +2744,20 @@ async function loadSystemPage() {
     return;
   }
 
-  listEl.innerHTML = entries.map(([uid, info]) => `
-    <div style="background:var(--surface2);border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--white)">${uid}</div>
-        <div style="font-size:10px;color:var(--muted)">${info.count} analisi · ultimo: ${new Date(info.last).toLocaleDateString('it-IT')}</div>
+  listEl.innerHTML = entries.map(([uid, info]) => {
+    const profile = profileMap[uid];
+    const isMe = uid === currentUser?.id;
+    const email = profile?.email || `${uid.slice(0,8)}...`;
+    const provider = profile?.provider || '?';
+    const lastSeen = profile?.last_seen ? new Date(profile.last_seen).toLocaleDateString('it') : new Date(info.last).toLocaleDateString('it');
+    return `<div style="background:var(--surface2);border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-family:'DM Mono',monospace;color:${isMe?'var(--yellow)':'var(--white)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${email} ${isMe?'(tu)':''}</div>
+        <div style="font-size:10px;color:var(--muted)">${info.count} analisi · ${provider} · ultimo: ${lastSeen}</div>
       </div>
-      <button onclick="sysDeleteUser('${uid}')" style="padding:5px 10px;background:none;border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:rgba(239,68,68,0.6);font-size:10px;cursor:pointer">Elimina dati</button>
-    </div>`).join('');
+      <button onclick="sysDeleteUser('${uid}')" style="padding:5px 10px;background:none;border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:rgba(239,68,68,0.6);font-size:10px;cursor:pointer;flex-shrink:0">Elimina</button>
+    </div>`;
+  }).join('');
 }
 
 async function sysDelete(table) {
