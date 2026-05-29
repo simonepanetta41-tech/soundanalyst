@@ -6165,9 +6165,192 @@ function ttDelS(si){
   saved.splice(si,1);localStorage.setItem('sa_tt3',JSON.stringify(saved));ttRenderStorico();
 }
 function ttExportModal(){document.getElementById('tt-exportOv').style.display='flex';}
-function ttDoExport(tipo){
+
+async function ttDoExport(tipo){
   document.getElementById('tt-exportOv').style.display='none';
-  showToast(tipo==='unico'?'PDF unico — export in arrivo.':'PDF separati — export in arrivo.');
+  showToast('Generazione PDF...');
+
+  // Carica jsPDF + autoTable se non già presenti
+  await ttLoadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  await ttLoadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+
+  const {jsPDF} = window.jspdf;
+  const produzione = document.getElementById('tt-produzione').value || '';
+  const film       = document.getElementById('tt-film').value || '';
+  const reparto    = document.getElementById('tt-reparto').value || '';
+  const settimana  = document.getElementById('tt-settimana').value || '';
+  const dal        = document.getElementById('tt-dal').value || '';
+  const al         = document.getElementById('tt-al').value || '';
+  const note       = ttMeta.note || '';
+
+  const tabelleDaStampare = tipo === 'unico' ? ttTabelle : ttTabelle; // stesso array, gestiamo sotto
+
+  if(tipo==='separati' && ttTabelle.length>1){
+    // Un PDF per tabella
+    for(let i=0;i<ttTabelle.length;i++){
+      const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+      ttBuildPdfPage(doc, ttTabelle[i], produzione, film, reparto, settimana, dal, al, note);
+      const workers=ttTabelle[i].workers.join('_').replace(/\s/g,'').slice(0,30)||'tabella'+(i+1);
+      doc.save(`timetable_sett${settimana||i+1}_${workers}.pdf`);
+      await new Promise(r=>setTimeout(r,300));
+    }
+    showToast(`${ttTabelle.length} PDF generati!`);
+  } else {
+    // PDF unico con tutte le tabelle
+    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    ttTabelle.forEach((tab,i)=>{
+      if(i>0) doc.addPage();
+      ttBuildPdfPage(doc, tab, produzione, film, reparto, settimana, dal, al, note);
+    });
+    const fname=`timetable_sett${settimana||''}_${film.replace(/\s/g,'').slice(0,20)||'orari'}.pdf`;
+    doc.save(fname);
+    showToast('PDF generato!');
+  }
+}
+
+function ttLoadScript(src){
+  return new Promise((res,rej)=>{
+    if(document.querySelector(`script[src="${src}"]`)){res();return;}
+    const s=document.createElement('script');
+    s.src=src;s.onload=res;s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+
+function ttBuildPdfPage(doc, tab, produzione, film, reparto, settimana, dal, al, note){
+  const{days,tot,sestoIdx}=ttCalcTab(tab.orari);
+  const W=297, mg=12;
+  let y=mg;
+
+  // ── Intestazione ──
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(11);
+  doc.text('PRODUZIONE', mg, y);
+  doc.setFont('helvetica','normal');
+  doc.text(produzione, mg+28, y);
+
+  doc.setFont('helvetica','bold');
+  doc.text('FILM', 130, y);
+  doc.setFont('helvetica','normal');
+  doc.text(film, 142, y);
+
+  // Linea sotto intestazione
+  doc.setDrawColor(0);doc.setLineWidth(0.4);
+  doc.line(mg, y+2, W-mg, y+2);
+  y+=7;
+
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  doc.text(`ORARI SETTIMANA   N° ${settimana}`, mg, y);
+  if(dal||al) doc.text(`dal ${dal.split('-').reverse().join('/')}   al ${al.split('-').reverse().join('/')}`, mg+60, y);
+  y+=5;
+  doc.line(mg, y, W-mg, y);
+  y+=5;
+
+  doc.setFont('helvetica','bold');doc.setFontSize(9);
+  doc.text(`REPARTO: ${reparto}`, mg, y);
+  y+=5;
+  doc.setFont('helvetica','normal');
+  if(tab.workers.length>0)
+    doc.text(`LAVORATORE/I: ${tab.workers.join(', ')}`, mg, y);
+  y+=3;
+  doc.line(mg, y, W-mg, y);
+  y+=3;
+
+  // ── Tabella ──
+  const ROWS_INPUT = ['Partenza','Inizio','Pausa','Stop','Fine','Rientro'];
+  const ROWS_CALC  = ['Ore viaggio 55%','Magg. nott. 55%','Magg. nott. 80%','Golden ord.','Golden nott.','Golden 6°g.','Golden festiva'];
+  const KEYS_INPUT = ['partenza','inizio','pausa','stop','fine','rientro'];
+  const KEYS_CALC  = ['oreViaggio','nottOrd','nottStr','goldenOrd','goldenNott','golden6','goldenFest'];
+
+  // Intestazioni colonne
+  const sestoLabel=(i)=>i===sestoIdx?`${['LUN','MAR','MER','GIO','VEN','SAB'][i]}\n6°g.`:['LUN','MAR','MER','GIO','VEN','SAB'][i];
+  const head=[['', 'LUN','MAR','MER','GIO','VEN','SAB','TOTALE']];
+
+  // Righe input
+  const bodyInput = ROWS_INPUT.map((label,ri)=>{
+    const row=[label];
+    for(let d=0;d<6;d++) row.push(tab.orari[KEYS_INPUT[ri]][d]||'');
+    row.push(''); // tot colonna vuota per input
+    return row;
+  });
+
+  // Righe calcolate
+  const bodyCalc = ROWS_CALC.map((label,ri)=>{
+    const key=KEYS_CALC[ri];
+    const row=[label];
+    for(let d=0;d<6;d++) row.push(days[d][key]?ttToHM(days[d][key]):'');
+    row.push(tot[key]?ttToHM(tot[key]):'');
+    return row;
+  });
+
+  // Colonna TOTALE verticale — scritta ruotata nella cella
+  // Usiamo autoTable con didDrawCell per il testo verticale
+  const allRows=[...bodyInput,...bodyCalc];
+  const totalRows=allRows.length;
+  const inputCount=bodyInput.length;
+
+  // Stili colonne
+  const colW=30; const lblW=38; const totW=20;
+  const dayColW=(W-mg*2-lblW-totW)/6;
+
+  doc.autoTable({
+    startY: y,
+    margin:{left:mg,right:mg},
+    head: head,
+    body: allRows,
+    theme: 'grid',
+    styles:{
+      font:'helvetica', fontSize:8, cellPadding:2,
+      lineColor:[0,0,0], lineWidth:0.3,
+      textColor:[0,0,0], halign:'center', valign:'middle'
+    },
+    headStyles:{
+      fillColor:[255,255,255], fontStyle:'bold', fontSize:8,
+      lineColor:[0,0,0], lineWidth:0.3
+    },
+    columnStyles:{
+      0:{halign:'left', fontStyle:'normal', cellWidth:lblW, fillColor:[255,255,255]},
+      1:{cellWidth:dayColW},2:{cellWidth:dayColW},3:{cellWidth:dayColW},
+      4:{cellWidth:dayColW},5:{cellWidth:dayColW},
+      6:{cellWidth:dayColW, fillColor:[255,248,235]}, // SAB colore tenue
+      7:{cellWidth:totW, fontStyle:'bold', fillColor:[245,245,245]}
+    },
+    didParseCell(data){
+      // Righe calcolate — sfondo leggermente grigio
+      if(data.row.index>=inputCount && data.section==='body'){
+        if(data.column.index===0){
+          data.cell.styles.fontStyle='italic';
+          data.cell.styles.textColor=[100,100,100];
+        }
+        if(data.column.index>0 && data.column.index<7){
+          data.cell.styles.fillColor=[248,248,248];
+        }
+        // Golden — testo arancione
+        const ri=data.row.index-inputCount;
+        if(ri>=3&&ri<=6&&data.cell.text[0]&&data.cell.text[0]!==''){
+          data.cell.styles.textColor=[180,90,0];
+          data.cell.styles.fontStyle='bold';
+        }
+        // Nott — testo blu
+        if((ri===1||ri===2)&&data.cell.text[0]&&data.cell.text[0]!==''){
+          data.cell.styles.textColor=[30,80,160];
+        }
+      }
+      // Sesto giorno — header arancione
+      if(data.section==='head'&&data.column.index===sestoIdx+1){
+        data.cell.styles.textColor=[180,90,0];
+      }
+    }
+  });
+
+  // Note
+  if(note){
+    const finalY = doc.lastAutoTable.finalY + 4;
+    doc.setFont('helvetica','italic');doc.setFontSize(8);
+    doc.setTextColor(100,100,100);
+    doc.text('Note: '+note, mg, finalY, {maxWidth: W-mg*2});
+    doc.setTextColor(0,0,0);
+  }
 }
 // ══════════════════════════════════════════════
 // END TIMETABLE ENGINE
