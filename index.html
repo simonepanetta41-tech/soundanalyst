@@ -969,11 +969,27 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       <div id="pdlSection">
         <div id="pdlUploadArea">
           <div class="panel" style="text-align:center;padding:40px 24px">
-            <div style="font-size:32px;margin-bottom:12px">📋</div>
+            <div style="margin-bottom:12px;display:flex;justify-content:center">
+              <svg width="56" height="56" viewBox="0 0 56 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0" y="8" width="56" height="56" rx="4" stroke="currentColor" stroke-width="2"/>
+                <rect x="0" y="8" width="56" height="14" rx="4" fill="currentColor"/>
+                <rect x="0" y="16" width="56" height="6" fill="currentColor"/>
+                <circle cx="8" cy="15" r="3" fill="#f0e040"/>
+                <circle cx="48" cy="15" r="3" fill="#f0e040"/>
+                <line x1="18" y1="22" x2="18" y2="64" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+                <line x1="32" y1="22" x2="32" y2="64" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+                <line x1="46" y1="22" x2="46" y2="64" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+                <line x1="0" y1="34" x2="56" y2="34" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+                <line x1="0" y1="46" x2="56" y2="46" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+                <rect x="19" y="23" width="12" height="10" rx="1" fill="#f0e040" opacity="0.9"/>
+                <rect x="33" y="35" width="12" height="10" rx="1" fill="#f0e040" opacity="0.9"/>
+                <rect x="1" y="47" width="16" height="10" rx="1" fill="currentColor" opacity="0.15"/>
+              </svg>
+            </div>
             <div style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;margin-bottom:6px">Carica il PDL</div>
             <div style="font-size:11px;color:var(--muted);margin-bottom:20px"></div>
             <label style="display:inline-flex;align-items:center;gap:8px;background:var(--yellow);color:#000;padding:12px 24px;border-radius:10px;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:800;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='#fff'" onmouseout="this.style.background='var(--yellow)'">
-              📋 Seleziona PDF
+              <svg width="14" height="14" viewBox="0 0 56 64" fill="none" style="vertical-align:middle;margin-right:6px"><rect x="0" y="8" width="56" height="56" rx="4" stroke="currentColor" stroke-width="4"/><rect x="0" y="8" width="56" height="14" rx="4" fill="currentColor"/><rect x="0" y="16" width="56" height="6" fill="currentColor"/><circle cx="8" cy="15" r="4" fill="#000"/><circle cx="48" cy="15" r="4" fill="#000"/><line x1="18" y1="22" x2="18" y2="64" stroke="currentColor" stroke-width="2" opacity="0.3"/><line x1="32" y1="22" x2="32" y2="64" stroke="currentColor" stroke-width="2" opacity="0.3"/><line x1="0" y1="34" x2="56" y2="34" stroke="currentColor" stroke-width="2" opacity="0.3"/><line x1="0" y1="46" x2="56" y2="46" stroke="currentColor" stroke-width="2" opacity="0.3"/><rect x="19" y="23" width="12" height="10" rx="1" fill="#000" opacity="0.5"/><rect x="33" y="35" width="12" height="10" rx="1" fill="#000" opacity="0.5"/></svg> Seleziona PDF
               <input type="file" accept=".pdf" style="display:none" onchange="loadPdlFile(this)">
             </label>
           </div>
@@ -986,7 +1002,7 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
               <div style="font-size:11px;color:var(--muted);margin-top:2px" id="pdlFilmInfo">—</div>
             </div>
             <label style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:8px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--yellow)';this.style.color='var(--yellow)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
-              📋 Carica PDL aggiornato
+              <svg width="13" height="13" viewBox="0 0 56 64" fill="none" style="vertical-align:middle;margin-right:5px"><rect x="0" y="8" width="56" height="56" rx="4" stroke="currentColor" stroke-width="4"/><rect x="0" y="8" width="56" height="14" rx="4" fill="currentColor"/><rect x="0" y="16" width="56" height="6" fill="currentColor"/><circle cx="8" cy="15" r="4" fill="var(--yellow,#f0e040)"/><circle cx="48" cy="15" r="4" fill="var(--yellow,#f0e040)"/><line x1="18" y1="22" x2="18" y2="64" stroke="currentColor" stroke-width="2" opacity="0.3"/><line x1="32" y1="22" x2="32" y2="64" stroke="currentColor" stroke-width="2" opacity="0.3"/><line x1="0" y1="34" x2="56" y2="34" stroke="currentColor" stroke-width="2" opacity="0.3"/><line x1="0" y1="46" x2="56" y2="46" stroke="currentColor" stroke-width="2" opacity="0.3"/><rect x="19" y="23" width="12" height="10" rx="1" fill="var(--yellow,#f0e040)" opacity="0.9"/><rect x="33" y="35" width="12" height="10" rx="1" fill="var(--yellow,#f0e040)" opacity="0.9"/></svg> Carica PDL aggiornato
               <input type="file" accept=".pdf" style="display:none" onchange="loadUpdatedPdlFile(this)">
             </label>
           </div>
@@ -5373,7 +5389,7 @@ async function loadPdlFile(input) {
   input.value = '';
 
   const label = input.parentElement;
-  label.innerHTML = '⏳ Analisi PDL...';
+  label.innerHTML = '<svg width="13" height="13" viewBox="0 0 20 20" fill="none" style="vertical-align:middle;margin-right:6px;animation:spin 1s linear infinite"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2z" stroke="currentColor" stroke-width="1.5" opacity="0.2"/><path d="M10 2a8 8 0 018 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Analisi in corso...';
   try {
     const buf = await f.arrayBuffer();
     const bytes = new Uint8Array(buf);
@@ -5415,14 +5431,14 @@ async function loadPdlFile(input) {
     processPdlCast(b64);
   } catch(err) {
     label.innerHTML = '⚠ '+err.message;
-    setTimeout(()=>{label.innerHTML='📋 Seleziona PDF<input type="file" accept=".pdf" style="display:none" onchange="loadPdlFile(this)">';},3000);
+    setTimeout(()=>{label.innerHTML='<svg width="13" height="13" viewBox="0 0 56 64" fill="none" style="vertical-align:middle;margin-right:5px"><rect x="0" y="8" width="56" height="56" rx="4" stroke="currentColor" stroke-width="4"/><rect x="0" y="8" width="56" height="14" rx="4" fill="currentColor"/><rect x="0" y="16" width="56" height="6" fill="currentColor"/><circle cx="8" cy="15" r="4" fill="#000"/><circle cx="48" cy="15" r="4" fill="#000"/><line x1="18" y1="22" x2="18" y2="64" stroke="currentColor" stroke-width="2" opacity="0.3"/><line x1="32" y1="22" x2="32" y2="64" stroke="currentColor" stroke-width="2" opacity="0.3"/><line x1="0" y1="34" x2="56" y2="34" stroke="currentColor" stroke-width="2" opacity="0.3"/><line x1="0" y1="46" x2="56" y2="46" stroke="currentColor" stroke-width="2" opacity="0.3"/><rect x="19" y="23" width="12" height="10" rx="1" fill="#000" opacity="0.5"/><rect x="33" y="35" width="12" height="10" rx="1" fill="#000" opacity="0.5"/></svg> Seleziona PDF<input type="file" accept=".pdf" style="display:none" onchange="loadPdlFile(this)">';},3000);
   }
 }
 
 async function loadUpdatedPdlFile(input) {
   const f = input.files[0]; if(!f) return; input.value='';
   const btn = input.parentElement;
-  btn.innerHTML = '⏳ Analisi...';
+  btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 20 20" fill="none" style="vertical-align:middle;margin-right:6px;animation:spin 1s linear infinite"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2z" stroke="currentColor" stroke-width="1.5" opacity="0.2"/><path d="M10 2a8 8 0 018 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Analisi in corso...';
   try {
     const buf=await f.arrayBuffer(); const bytes=new Uint8Array(buf);
     let bin=''; const chunk=8192;
@@ -5451,7 +5467,7 @@ async function loadUpdatedPdlFile(input) {
     processPdlCast(b64);
     showToast('PDL aggiornato — '+(pdlData.versione||'nuova versione'), 'yellow', 4000);
   } catch(err) { alert('⚠ '+err.message); }
-  btn.innerHTML='📋 Carica PDL aggiornato<input type="file" accept=".pdf" style="display:none" onchange="loadUpdatedPdlFile(this)">';
+  btn.innerHTML='<svg width="13" height="13" viewBox="0 0 56 64" fill="none" style="vertical-align:middle;margin-right:5px"><rect x="0" y="8" width="56" height="56" rx="4" stroke="currentColor" stroke-width="4"/><rect x="0" y="8" width="56" height="14" rx="4" fill="currentColor"/><rect x="0" y="16" width="56" height="6" fill="currentColor"/><circle cx="8" cy="15" r="4" fill="var(--yellow,#f0e040)"/><circle cx="48" cy="15" r="4" fill="var(--yellow,#f0e040)"/><line x1="18" y1="22" x2="18" y2="64" stroke="currentColor" stroke-width="2" opacity="0.3"/><line x1="32" y1="22" x2="32" y2="64" stroke="currentColor" stroke-width="2" opacity="0.3"/><line x1="0" y1="34" x2="56" y2="34" stroke="currentColor" stroke-width="2" opacity="0.3"/><line x1="0" y1="46" x2="56" y2="46" stroke="currentColor" stroke-width="2" opacity="0.3"/><rect x="19" y="23" width="12" height="10" rx="1" fill="var(--yellow,#f0e040)" opacity="0.9"/><rect x="33" y="35" width="12" height="10" rx="1" fill="var(--yellow,#f0e040)" opacity="0.9"/></svg> Carica PDL aggiornato<input type="file" accept=".pdf" style="display:none" onchange="loadUpdatedPdlFile(this)">';
 }
 
 function renderPdlDashboard() {
