@@ -298,12 +298,18 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(0.6);cursor:
 .pdl-chip.standby { border-style:dashed!important;opacity:0.75; }
 .pdl-chip.critical::after { content:'🎙️';font-size:8px;margin-left:2px; }
 .pdl-chip-num { font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:12px; }
-.type-int-day { background:rgba(245,230,66,0.15);color:#f5e642;border-color:rgba(245,230,66,0.5); }
-.type-ext-day { background:rgba(245,166,35,0.15);color:#f5a623;border-color:rgba(245,166,35,0.5); }
+.type-int-day { background:rgba(245,230,66,0.15);color:#c8aa00;border-color:rgba(245,230,66,0.5); }
+.type-ext-day { background:rgba(245,166,35,0.15);color:#d4820a;border-color:rgba(245,166,35,0.5); }
 .type-int-night { background:rgba(123,156,204,0.15);color:#7b9ccc;border-color:rgba(123,156,204,0.5); }
 .type-ext-night { background:rgba(42,74,127,0.3);color:#a8c4e8;border-color:rgba(42,74,127,0.7); }
 .type-mixed { background:rgba(136,136,136,0.15);color:#aaa;border-color:rgba(136,136,136,0.4); }
-.type-morning { background:rgba(240,192,112,0.15);color:#f0c070;border-color:rgba(240,192,112,0.5); }
+.type-morning { background:rgba(240,192,112,0.15);color:#d4920a;border-color:rgba(240,192,112,0.5); }
+body.light .type-int-day { color:#8a7000; }
+body.light .type-ext-day { color:#b8620a; }
+body.light .type-int-night { background:rgba(123,156,204,0.2);color:#1a4a8e;border-color:rgba(123,156,204,0.6); }
+body.light .type-ext-night { background:rgba(42,74,127,0.15);color:#1a3a7a;border-color:rgba(42,74,127,0.5); }
+body.light .type-mixed { color:#555; }
+body.light .type-morning { color:#9a6200; }
 .res-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
 .res-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 800; }
 .res-title span { color: var(--yellow); }
@@ -5704,13 +5710,13 @@ function renderPdlModalChips(g) {
     const crit = isSceneCritical(sc.numero);
 
     const sceneIds = (sc.cast||[]).slice().sort((a,b) => Number(a)-Number(b));
-    const castBlock = sceneIds.length ? `<div style="margin-top:6px;display:flex;flex-direction:column;gap:2px;border-top:1px solid rgba(255,255,255,0.08);padding-top:5px">${
+    const castBlock = sceneIds.length ? `<div style="margin-top:6px;display:flex;flex-direction:column;gap:2px;border-top:1px solid rgba(0,0,0,0.1);padding-top:5px">${
       sceneIds.map(id => {
         const c = castMap.get(String(id));
         const nome = c ? c.nome : '';
         const isM = c?.minore;
         return `<div style="display:flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:9px;white-space:nowrap">
-          <span style="color:var(--yellow);font-weight:700;min-width:16px">${id}</span>${nome?`<span style="color:rgba(255,255,255,0.5)">${nome}${isM?' M':''}</span>`:''}
+          <span style="color:var(--orange);font-weight:700;min-width:16px">${id}</span>${nome?`<span style="color:var(--white);font-weight:500;opacity:0.9">${nome}${isM?' M':''}</span>`:''}
         </div>`;
       }).join('')
     }</div>` : '';
@@ -5718,8 +5724,8 @@ function renderPdlModalChips(g) {
     return `<div class="pdl-chip ${typeClass} ${stato==='done'?'girato':''} ${stato==='standby'?'standby':''} ${crit?'critical':''}" style="${crit?'box-shadow:0 0 0 1.5px #e53e3e;':''}" onclick="cyclePdlSceneModal('${sc.numero}')" title="${sc.location||''} — ${sc.int_ext||''} ${sc.momento||''}">
       <div style="display:flex;align-items:center;gap:4px;width:100%">
         ${icon?`<span style="font-size:11px;font-weight:700">${icon}</span>`:''}
-        <span class="pdl-chip-num" onclick="openSceneFromPdl('${sc.numero}',event)" style="text-decoration:underline;text-decoration-color:rgba(255,255,255,0.3);text-underline-offset:2px">${sc.numero}</span>
-        <span style="font-size:9px;opacity:0.7">${sc.int_ext||''} ${sc.momento||''}</span>
+        <span class="pdl-chip-num" onclick="openSceneFromPdl('${sc.numero}',event)" style="text-decoration:underline;text-decoration-color:currentColor;text-underline-offset:2px;opacity:0.9">${sc.numero}</span>
+        <span style="font-size:9px;opacity:0.65;font-weight:500">${sc.int_ext||''} ${sc.momento||''}</span>
       </div>
       ${castBlock}
     </div>`;
