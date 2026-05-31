@@ -388,6 +388,7 @@ body.light .type-morning { color:#9a6200; }
 .compare-loading { display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;padding:32px 0;justify-content:center; }
 .spin { animation:spin 1s linear infinite;display:inline-block; }
 @keyframes spin { to { transform:rotate(360deg); } }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
 .cat-note-toggle { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--border); cursor: pointer; user-select: none; }
 .cat-note-toggle:hover .cat-note-label { color: var(--yellow); }
 .cat-note-label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); flex: 1; transition: color 0.15s; }
@@ -1386,6 +1387,83 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       </div>
 
     </div><!-- end resultsPage -->
+
+    <!-- ── GENNARO FAB ── -->
+    <button id="gennaroFab" onclick="toggleGennaroDrawer()" title="Chiedi a Gennaro"
+      style="display:none;position:fixed;bottom:calc(108px + env(safe-area-inset-bottom));left:16px;z-index:150;
+             width:46px;height:46px;border-radius:50%;border:none;background:var(--surface);
+             box-shadow:0 2px 12px rgba(0,0,0,0.4);cursor:pointer;padding:0;
+             border:1.5px solid var(--border-l);transition:transform 0.15s,box-shadow 0.15s"
+      onmouseover="this.style.transform='scale(1.08)';this.style.boxShadow='0 4px 18px rgba(0,0,0,0.5)'"
+      onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 2px 12px rgba(0,0,0,0.4)'">
+      <svg viewBox="0 0 100 110" width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:auto">
+        <path d="M38 95 Q36 108 50 110 Q64 108 62 95 Q57 99 50 100 Q43 99 38 95z" fill="#f5e642"/>
+        <ellipse cx="50" cy="68" rx="22" ry="24" fill="#f5e642"/>
+        <path d="M28 60 Q28 44 50 42 Q72 44 72 60 Q68 52 50 52 Q32 52 28 60z" fill="#f5e642"/>
+        <path d="M28 58 Q27 48 30 44 Q28 52 29 61z" fill="#000"/>
+        <path d="M72 58 Q73 48 70 44 Q72 52 71 61z" fill="#000"/>
+        <path d="M30 55 Q30 38 44 32 Q52 28 60 31 Q68 34 70 44 Q62 36 50 37 Q38 38 33 48z" fill="#000" stroke="#f5e642" stroke-width="0.5"/>
+        <path d="M32 60 Q38 57 44 58" stroke="#f5e642" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M56 58 Q62 57 68 60" stroke="#f5e642" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <rect x="27" y="62" width="20" height="11" rx="1.5" stroke="#f5e642" stroke-width="1.3" fill="#000"/>
+        <rect x="53" y="62" width="20" height="11" rx="1.5" stroke="#f5e642" stroke-width="1.3" fill="#000"/>
+        <path d="M42 84 Q46 82.5 50 83 Q54 82.5 58 84" stroke="#f5e642" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      </svg>
+      <!-- badge notifica messaggi non letti -->
+      <span id="gennaroFabBadge" style="display:none;position:absolute;top:-2px;right:-2px;
+        background:var(--danger);color:#fff;border-radius:50%;width:16px;height:16px;
+        font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;
+        font-family:'DM Mono',monospace;border:2px solid var(--bg)">!</span>
+    </button>
+
+    <!-- ── GENNARO DRAWER ── -->
+    <div id="gennaroDrawer"
+      style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;
+             background:var(--surface);border-top:1px solid var(--border-l);
+             border-radius:16px 16px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,0.4);
+             transition:transform 0.25s cubic-bezier(0.32,0.72,0,1);
+             transform:translateY(100%);max-height:70vh;display:flex;flex-direction:column">
+      <!-- handle + header -->
+      <div style="padding:10px 16px 0;flex-shrink:0">
+        <div style="width:36px;height:4px;background:var(--border-l);border-radius:2px;margin:0 auto 10px"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <svg viewBox="0 0 100 110" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M38 95 Q36 108 50 110 Q64 108 62 95 Q57 99 50 100 Q43 99 38 95z" fill="#f5e642"/>
+              <ellipse cx="50" cy="68" rx="22" ry="24" fill="#f5e642"/>
+              <path d="M28 60 Q28 44 50 42 Q72 44 72 60 Q68 52 50 52 Q32 52 28 60z" fill="#f5e642"/>
+              <path d="M30 55 Q30 38 44 32 Q52 28 60 31 Q68 34 70 44 Q62 36 50 37 Q38 38 33 48z" fill="#000"/>
+              <path d="M32 60 Q38 57 44 58" stroke="#f5e642" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M56 58 Q62 57 68 60" stroke="#f5e642" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <rect x="27" y="62" width="20" height="11" rx="1.5" stroke="#f5e642" stroke-width="1.3" fill="#000"/>
+              <rect x="53" y="62" width="20" height="11" rx="1.5" stroke="#f5e642" stroke-width="1.3" fill="#000"/>
+            </svg>
+            <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px">Gennaro</span>
+          </div>
+          <button onclick="closeGennaroDrawer()"
+            style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px 8px">✕</button>
+        </div>
+      </div>
+      <!-- messages -->
+      <div id="gennaroDrawerMessages" style="flex:1;overflow-y:auto;padding:0 16px 8px;display:flex;flex-direction:column;gap:8px;min-height:0"></div>
+      <!-- input -->
+      <div style="padding:8px 12px;padding-bottom:calc(8px + env(safe-area-inset-bottom));border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0">
+        <textarea id="gennaroDrawerInput" rows="1" placeholder="Chiedi a Gennaro..."
+          style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+                 padding:10px 14px;color:var(--white);font-family:'DM Mono',monospace;font-size:12px;
+                 outline:none;resize:none;min-height:40px;max-height:100px;line-height:1.4"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendGennaroDrawer();}"
+          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"
+          onfocus="this.style.borderColor='var(--yellow)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        <button onclick="sendGennaroDrawer()" id="gennaroDrawerSendBtn"
+          style="width:40px;height:40px;border-radius:10px;background:var(--yellow);border:none;
+                 cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2L2 7l5 2 2 5 5-12z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
 
     <footer>
       <div class="fl">Sound<em>Analyst</em></div>
@@ -2878,6 +2956,7 @@ function renderResults(d) {
   document.getElementById('resultsPage').classList.add('on');
   setTimeout(activateRefs, 50);
   initChat(d);
+  showGennaroFab();
 }
 
 function resetApp() {
@@ -2894,6 +2973,8 @@ function resetApp() {
   document.getElementById('riassuntoBox').style.display = 'none';
   document.getElementById('maxInfo').style.display = 'none';
   chatHistory = []; analysisData = null; currentAnalysisId = null; catNotesData = {}; castData = [];
+  gennaroDrawerHistory = [];
+  hideGennaroFab();
   checkReady();
   showPage('home');
 }
@@ -3785,6 +3866,51 @@ function buildPdlContext() {
   return `SCENE→GIORNO: ${sceneIndex}\n\nGIORNI:\n${daySummary}`;
 }
 
+function buildCastContext() {
+  if (!castData || castData.length === 0) return '';
+  const list = castData.map(c =>
+    `${c.id_ufficiale ?? c.character_id}. ${c.nome}${c.minore ? ' (M)' : ''}`
+  ).join(' | ');
+  return `CAST UFFICIALE (reparto regia):\n${list}`;
+}
+
+function buildTimetableContext() {
+  if (!ttTabelle || ttTabelle.length === 0) return '';
+  const film = document.getElementById('tt-film')?.value || '';
+  const sett = document.getElementById('tt-settimana')?.value || '';
+  const dal  = document.getElementById('tt-dal')?.value || '';
+  const al   = document.getElementById('tt-al')?.value || '';
+  const TT_DAYS = ['LUN','MAR','MER','GIO','VEN','SAB'];
+
+  let lines = [`TIMETABLE${film?' — '+film:''} Sett.${sett||'?'} (${dal||'?'} → ${al||'?'})`];
+  lines.push(`Tipo giornata: ${ttMeta.tipoGiornata}h | Raddoppio: ${ttMeta.raddoppio>0?'dopo '+ttMeta.raddoppio+'h':'off'} | Magg.nott: ${ttMeta.maggiorazioniNott?'on':'off'}`);
+
+  ttTabelle.forEach((tab, ti) => {
+    const workers = tab.workers.length > 0 ? tab.workers.join(', ') : 'Nessun lavoratore';
+    lines.push(`\nTabella ${ti+1} — ${workers}:`);
+    const { days, tot } = ttCalcTab(tab.orari);
+    TT_DAYS.forEach((d, i) => {
+      const ini = tab.orari.inizio[i], fin = tab.orari.fine[i];
+      if (!ini && !fin) return;
+      const day = days[i];
+      let dayStr = `  ${d}: ${ini||'—'}→${fin||'—'}`;
+      if (day.goldenOrd)  dayStr += ` | Golden ord: ${ttToHM(day.goldenOrd)}`;
+      if (day.goldenNott) dayStr += ` | Golden nott: ${ttToHM(day.goldenNott)}`;
+      if (day.golden6)    dayStr += ` | Golden 6°g: ${ttToHM(day.golden6)}`;
+      if (day.oreViaggio) dayStr += ` | Viaggio: ${ttToHM(day.oreViaggio)}`;
+      if (day.mancataPausa) dayStr += ` | ⚠ Mancata pausa`;
+      lines.push(dayStr);
+    });
+    const totParts = [];
+    if (tot.goldenOrd)  totParts.push(`Golden ord tot: ${ttToHM(tot.goldenOrd)}`);
+    if (tot.goldenNott) totParts.push(`Golden nott tot: ${ttToHM(tot.goldenNott)}`);
+    if (tot.golden6)    totParts.push(`Golden 6°g tot: ${ttToHM(tot.golden6)}`);
+    if (tot.oreViaggio) totParts.push(`Viaggio tot: ${ttToHM(tot.oreViaggio)}`);
+    if (totParts.length) lines.push(`  TOT: ${totParts.join(' | ')}`);
+  });
+  return lines.join('\n');
+}
+
 function buildChatContext(d) {
   const lines = [`FILM: ${d.titolo} | Scene: ${d.totale_scene} (INT:${d.scene_interno} EXT:${d.scene_esterno}) | Max att: ${d.max_attori_parlanti?.numero} | Media: ${d.media_attori_parlanti}`];
   const cats = [
@@ -4115,11 +4241,11 @@ Gergo del set che conosci e usi naturalmente:
 - "convocazione" = orario di inizio giornata, quando tutti devono essere sul set
 - "fegatelli" = piccoli pezzi di scena, dettagli brevi e facili da girare, spesso senza audio diretto
 
-Spoglio:\n${buildChatContext(analysisData)}${pdlData ? "\n\nPDL (dall'aiuto regia):\n" + buildPdlContext() : "\n\n(Il PDL non è ancora caricato — se ti chiedono quando si gira una scena o info sul piano di lavorazione, di' che devono prima caricare il PDL nella sezione apposita)"}${ragText ? "\n\nTESTO SCENEGGIATURA (pagine rilevanti):\n" + ragText : ""}
+Spoglio:\n${buildChatContext(analysisData)}${pdlData ? "\n\nPDL (dall'aiuto regia):\n" + buildPdlContext() : "\n\n(Il PDL non è ancora caricato — se ti chiedono quando si gira una scena o info sul piano di lavorazione, di' che devono prima caricare il PDL nella sezione apposita)"}${castData?.length ? "\n\n" + buildCastContext() : ""}${ttTabelle?.length && ttTabelle.some(t=>t.orari.inizio.some(x=>x)) ? "\n\n" + buildTimetableContext() : ""}${ragText ? "\n\nTESTO SCENEGGIATURA (pagine rilevanti):\n" + ragText : ""}
 
 Regole: risposte BREVI di default (max 3-4 righe), ma se la domanda richiede un elenco, dati strutturati o una spiegazione articolata puoi espanderti quanto serve — meglio una risposta completa che una troncata. Parla da collega di set, non da professore. Se ti fanno domande scherzose rispondi al gioco con humour napoletano.
 Se l'utente dice "Grazie" (o simili ringraziamenti), includi SEMPRE nella risposta "ma grazie a te".
-Se hai la mappa PERSONAGGI→SCENE nel contesto, usala per rispondere a domande su quali scene coinvolgono uno o più personaggi, se si incontrano, quante scene hanno insieme — senza bisogno del testo della sceneggiatura.${ragText ? ' Quando rispondi su scene specifiche, usa il testo della sceneggiatura fornito sopra.' : ''}`;
+Se hai la mappa PERSONAGGI→SCENE nel contesto, usala per rispondere a domande su quali scene coinvolgono uno o più personaggi, se si incontrano, quante scene hanno insieme — senza bisogno del testo della sceneggiatura. Se hai il CAST UFFICIALE, usalo per abbinare i numeri ID ai nomi reali. Se hai la TIMETABLE, usala per rispondere a domande su orari, golden, viaggi e convocazioni della settimana.${ragText ? ' Quando rispondi su scene specifiche, usa il testo della sceneggiatura fornito sopra.' : ''}`;
 
   let reply = '';
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -5860,7 +5986,136 @@ document.getElementById('pdlDayModal').addEventListener('click',e=>{if(e.target=
 </script>
 <script>
 // ══════════════════════════════════════════════
-// TIMETABLE ENGINE v1.0
+// GENNARO FAB + DRAWER
+// ══════════════════════════════════════════════
+let gennaroDrawerOpen = false;
+let gennaroDrawerHistory = [];
+let gennaroDrawerTyping = false;
+
+function showGennaroFab() {
+  const fab = document.getElementById('gennaroFab');
+  if (fab) fab.style.display = 'flex';
+}
+function hideGennaroFab() {
+  const fab = document.getElementById('gennaroFab');
+  if (fab) fab.style.display = 'none';
+  closeGennaroDrawer();
+}
+
+function toggleGennaroDrawer() {
+  if (gennaroDrawerOpen) closeGennaroDrawer();
+  else openGennaroDrawer();
+}
+
+function openGennaroDrawer() {
+  const drawer = document.getElementById('gennaroDrawer');
+  drawer.style.display = 'flex';
+  // trigger animation next frame
+  requestAnimationFrame(() => {
+    drawer.style.transform = 'translateY(0)';
+  });
+  gennaroDrawerOpen = true;
+  document.getElementById('gennaroFabBadge').style.display = 'none';
+  setTimeout(() => document.getElementById('gennaroDrawerInput')?.focus(), 300);
+}
+
+function closeGennaroDrawer() {
+  const drawer = document.getElementById('gennaroDrawer');
+  drawer.style.transform = 'translateY(100%)';
+  setTimeout(() => { drawer.style.display = 'none'; }, 260);
+  gennaroDrawerOpen = false;
+}
+
+function gennaroDrawerAddMsg(role, text) {
+  const box = document.getElementById('gennaroDrawerMessages');
+  if (!box) return;
+  const isUser = role === 'user';
+  const div = document.createElement('div');
+  div.style.cssText = `display:flex;flex-direction:${isUser?'row-reverse':'row'};align-items:flex-end;gap:6px`;
+  const bubble = document.createElement('div');
+  bubble.style.cssText = `max-width:80%;padding:9px 12px;border-radius:${isUser?'12px 12px 2px 12px':'12px 12px 12px 2px'};
+    font-size:12px;line-height:1.5;font-family:'DM Mono',monospace;
+    background:${isUser?'var(--yellow)':'var(--surface2)'};
+    color:${isUser?'#000':'var(--white)'};
+    border:1px solid ${isUser?'transparent':'var(--border)'};`;
+  bubble.innerHTML = text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  div.appendChild(bubble);
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function gennaroDrawerAddTyping() {
+  const box = document.getElementById('gennaroDrawerMessages');
+  if (!box) return;
+  const div = document.createElement('div');
+  div.id = 'gennaroDrawerTyping';
+  div.style.cssText = 'display:flex;align-items:flex-end;gap:6px';
+  div.innerHTML = `<div style="padding:9px 14px;border-radius:12px 12px 12px 2px;background:var(--surface2);border:1px solid var(--border)">
+    <span style="display:flex;gap:3px;align-items:center">
+      <span style="width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bounce 1s ease-in-out infinite"></span>
+      <span style="width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bounce 1s ease-in-out 0.15s infinite"></span>
+      <span style="width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bounce 1s ease-in-out 0.3s infinite"></span>
+    </span>
+  </div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function sendGennaroDrawer() {
+  if (gennaroDrawerTyping) return;
+  if (!analysisData) { gennaroDrawerAddMsg('assistant', 'Uagliò, carica prima una sceneggiatura!'); return; }
+  const inp = document.getElementById('gennaroDrawerInput');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = ''; inp.style.height = 'auto';
+  document.getElementById('gennaroDrawerSendBtn').disabled = true;
+  gennaroDrawerTyping = true;
+  gennaroDrawerHistory.push({ role: 'user', content: text });
+  gennaroDrawerAddMsg('user', text);
+  gennaroDrawerAddTyping();
+
+  try {
+    const ragText = await buildRagContext(text);
+    const SYS = `Sei Gennaro Esposito, fonico di presa diretta napoletano con 20 anni di set alle spalle. Parli italiano ma ogni tanto ti scappa qualche espressione napoletana ("uagliò", "mamm mia", "mo vediamo", "azz", "e che vuo'", "jamm bell'", "statte buono"). Sei simpatico, diretto, un po' brontolone ma sempre disponibile.
+
+Gergo del set che conosci e usi naturalmente:
+- "un'orata" = un'ora di straordinario
+- "cestini" = pasti sul set
+- "craft" = tavolo snack e caffè
+- "split" = seconda unità
+- "wrap" = fine delle riprese
+- "camion chiusi" = termine della giornata
+- "PDL" = piano di lavorazione
+- "ODG" = ordine del giorno
+- "convocazione" = orario di inizio giornata
+- "fegatelli" = piccoli pezzi di scena senza audio
+
+Spoglio:\n${buildChatContext(analysisData)}${pdlData ? "\n\nPDL:\n" + buildPdlContext() : ""}${castData?.length ? "\n\n" + buildCastContext() : ""}${ttTabelle?.length && ttTabelle.some(t=>t.orari.inizio.some(x=>x)) ? "\n\n" + buildTimetableContext() : ""}${ragText ? "\n\nSCENEGGIATURA:\n" + ragText : ""}
+
+Regole: risposte BREVI di default (max 3-4 righe), espanditi solo se serve. Se l'utente dice "Grazie", includi SEMPRE "ma grazie a te".`;
+
+    const data = await callApi('api/chat', { model:'claude-sonnet-4-6', max_tokens:1024, system:SYS, messages:gennaroDrawerHistory });
+    const reply = data.content.map(b=>b.text||'').join('').trim();
+    gennaroDrawerHistory.push({ role: 'assistant', content: reply });
+    document.getElementById('gennaroDrawerTyping')?.remove();
+    gennaroDrawerAddMsg('assistant', reply);
+    // Se il drawer è chiuso, mostra badge
+    if (!gennaroDrawerOpen) {
+      const badge = document.getElementById('gennaroFabBadge');
+      if (badge) badge.style.display = 'flex';
+    }
+  } catch(e) {
+    document.getElementById('gennaroDrawerTyping')?.remove();
+    gennaroDrawerAddMsg('assistant', '⚠ ' + e.message);
+  }
+  gennaroDrawerTyping = false;
+  document.getElementById('gennaroDrawerSendBtn').disabled = false;
+}
+
+// Mostra/nascondi FAB insieme alla resultsPage
+const _origShowPage = typeof showPage === 'function' ? showPage : null;
+// ══════════════════════════════════════════════
+// END GENNARO FAB + DRAWER
 // ══════════════════════════════════════════════
 const TT_DAYS=['LUN','MAR','MER','GIO','VEN','SAB'];
 let ttMeta={tipoGiornata:10,raddoppio:0,applicazione:'giornaliero',maggiorazioniNott:true,note:'',viaggioConcesso:60};
