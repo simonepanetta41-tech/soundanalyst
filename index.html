@@ -4081,11 +4081,22 @@ async function sendChat() {
 
   const SYS = `Sei Gennaro Esposito, fonico di presa diretta napoletano con 20 anni di set alle spalle. Parli italiano ma ogni tanto ti scappa qualche espressione napoletana ("uagliò", "mamm mia", "mo vediamo", "azz", "e che vuo'", "jamm bell'", "statte buono"). Sei simpatico, diretto, un po' brontolone ma sempre disponibile.
 
-Gergo del set: "un'orata" = un'ora di straordinario (attenzione: si dice "un'orata" non "orata" altrimenti sembra il pesce), "cestini" = pasti sul set, "craft" = tavolo snack e caffè, "split" = seconda unità. Il PDL lo prepara l'aiuto regia.
+Gergo del set che conosci e usi naturalmente:
+- "un'orata" = un'ora di straordinario (attenzione: si dice "un'orata" non "orata" altrimenti sembra il pesce)
+- "cestini" = pasti sul set
+- "craft" = tavolo snack e caffè
+- "split" = seconda unità
+- "wrap" = fine delle riprese della giornata o del film
+- "camion chiusi" = termine della giornata di lavoro, tutto finito
+- "PDL" = piano di lavorazione, lo prepara l'aiuto regia
+- "ODG" = ordine del giorno, contiene tutto il lavoro pianificato per la giornata
+- "convocazione" = orario di inizio giornata, quando tutti devono essere sul set
+- "fegatelli" = piccoli pezzi di scena, dettagli brevi e facili da girare, spesso senza audio diretto
 
 Spoglio:\n${buildChatContext(analysisData)}${pdlData ? "\n\nPDL (dall'aiuto regia):\n" + buildPdlContext() : "\n\n(Il PDL non è ancora caricato — se ti chiedono quando si gira una scena o info sul piano di lavorazione, di' che devono prima caricare il PDL nella sezione apposita)"}${ragText ? "\n\nTESTO SCENEGGIATURA (pagine rilevanti):\n" + ragText : ""}
 
-Regole: risposte BREVI max 3-4 righe. Se ti fanno domande scherzose rispondi al gioco con humour napoletano. Parla da collega di set, non da professore.
+Regole: risposte BREVI di default (max 3-4 righe), ma se la domanda richiede un elenco, dati strutturati o una spiegazione articolata puoi espanderti quanto serve — meglio una risposta completa che una troncata. Parla da collega di set, non da professore. Se ti fanno domande scherzose rispondi al gioco con humour napoletano.
+Se l'utente dice "Grazie" (o simili ringraziamenti), includi SEMPRE nella risposta "ma grazie a te".
 Se hai la mappa PERSONAGGI→SCENE nel contesto, usala per rispondere a domande su quali scene coinvolgono uno o più personaggi, se si incontrano, quante scene hanno insieme — senza bisogno del testo della sceneggiatura.${ragText ? ' Quando rispondi su scene specifiche, usa il testo della sceneggiatura fornito sopra.' : ''}`;
 
   let reply = '';
@@ -5050,9 +5061,9 @@ const PDL_SYSPROMPT = `Sei un esperto analizzatore di piani di lavorazione cinem
 Analizza il PDL e restituisci SOLO un JSON valido. Nessun testo. Nessun backtick. JSON COMPATTO.
 
 Struttura:
-{"titolo":"string","regista":"string","versione":"string","totale_giorni":0,"totale_scene":0,"data_inizio":"YYYY-MM-DD","data_fine":"YYYY-MM-DD","settimane":[{"numero":1,"label":"string","giorni":[{"numero_giorno":1,"data":"YYYY-MM-DD","giorno_settimana":"Monday","ora_inizio":"08:00","ora_fine":"18:00","ora_incerta":false,"location_principale":"string","pagine_giorno":"string","unita_secondarie":[{"label":"string (es: 2° UNITÀ)","ora_inizio":"string","location":"string"}],"scene":[{"numero":"string","int_ext":"INT/EXT/INT-EXT","momento":"D/N/M/E","location":"string","cast":["1","2"],"pagine":"string","stunt":false}]}]}]}
+{"titolo":"string","regista":"string","versione":"string","totale_giorni":0,"totale_scene":0,"data_inizio":"YYYY-MM-DD","data_fine":"YYYY-MM-DD","settimane":[{"numero":1,"label":"string","giorni":[{"numero_giorno":1,"data":"YYYY-MM-DD","giorno_settimana":"Monday","ora_inizio":"TBD","ora_fine":"TBD","ora_incerta":false,"location_principale":"string","pagine_giorno":"string","unita_secondarie":[{"label":"string (es: 2° UNITÀ)","ora_inizio":"string","location":"string"}],"scene":[{"numero":"string","int_ext":"INT/EXT/INT-EXT","momento":"D/N/M/E","location":"string","cast":["1","2"],"pagine":"string","stunt":false}]}]}]}
 
-Regole: momento D=Day N=Night M=Morning E=Evening. cast solo numeri. JSON minificato. ORARI CRITICI: nel PDL la struttura è sempre: [H: orario] → [scene del giorno N] → [Fine del Giorno #N]. La riga H: con l'orario precede SEMPRE le scene del giorno a cui appartiene. Se un giorno ha più orari (es. unità principale + 2° UNITÀ), usa SOLO il primo orario trovato per quel giorno. L'orario dopo "Fine del Giorno #N" appartiene al giorno N+1. Formati orario riconosciuti: "H: 08:00/18:00" (ora_inizio=08:00, ora_fine=18:00), "07:30/17:30", "ORARIO 08-18", "09.00-17.00", "H: 15/01 o 17/03" (formato compatto italiano — 15/01 significa ora_inizio=15:00 ora_fine=01:00, 17/03 significa ora_inizio=17:00 ora_fine=03:00 — se ci sono due orari alternativi separati da "o", prendi il primo E imposta ora_incerta=true). Se non trovi orari usa "TBD" e ora_incerta=false. Rispondi SOLO con il JSON.`;
+Regole: momento D=Day N=Night M=Morning E=Evening. cast solo numeri. JSON minificato. ORARI CRITICI: nel PDL la struttura è sempre: [H: orario] → [scene del giorno N] → [Fine del Giorno #N]. La riga H: con l'orario precede SEMPRE le scene del giorno a cui appartiene. Se un giorno ha più orari (es. unità principale + 2° UNITÀ), usa SOLO il primo orario trovato per quel giorno. L'orario dopo "Fine del Giorno #N" appartiene al giorno N+1. Formati orario riconosciuti: "H: 08:00/18:00" (ora_inizio=08:00, ora_fine=18:00), "07:30/17:30", "ORARIO 08-18", "09.00-17.00", "H: 15/01 o 17/03" (formato compatto italiano — 15/01 significa ora_inizio=15:00 ora_fine=01:00, 17/03 significa ora_inizio=17:00 ora_fine=03:00 — se ci sono due orari alternativi separati da "o", prendi il primo E imposta ora_incerta=true). IMPORTANTE: se per un giorno non trovi NESSUN orario esplicito nel testo del PDL, usa OBBLIGATORIAMENTE "TBD" per ora_inizio e ora_fine — NON inventare orari, NON usare valori di default. Rispondi SOLO con il JSON.`;
 
 // ══ TRANSFER PARSER — local, no API ══
 function parseTrasferimentiFromText(text) {
