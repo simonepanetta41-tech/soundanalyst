@@ -6159,7 +6159,7 @@ function gennaroDrawerAddTyping() {
 
 async function sendGennaroDrawer() {
   if (gennaroDrawerTyping) return;
-  if (!analysisData) { gennaroDrawerAddMsg('assistant', 'Uagliò, carica prima una sceneggiatura!'); return; }
+  if (!window.analysisData) { gennaroDrawerAddMsg('assistant', 'Uagliò, carica prima una sceneggiatura!'); return; }
   const inp = document.getElementById('gennaroDrawerInput');
   const text = inp.value.trim();
   if (!text) return;
@@ -6186,7 +6186,7 @@ Gergo del set che conosci e usi naturalmente:
 - "convocazione" = orario di inizio giornata
 - "fegatelli" = piccoli pezzi di scena senza audio
 
-Spoglio:\n${buildChatContext(analysisData)}${pdlData ? "\n\nPDL:\n" + buildPdlContext() : ""}${castData?.length ? "\n\n" + buildCastContext() : ""}${ttTabelle?.length && ttTabelle.some(t=>t.orari.inizio.some(x=>x)) ? "\n\n" + buildTimetableContext() : ""}${ragText ? "\n\nSCENEGGIATURA:\n" + ragText : ""}
+Spoglio:\n${buildChatContext(window.analysisData)}${window.pdlData ? "\n\nPDL:\n" + buildPdlContext() : ""}${window.castData?.length ? "\n\n" + buildCastContext() : ""}${window.ttTabelle?.length && window.ttTabelle.some(t=>t.orari.inizio.some(x=>x)) ? "\n\n" + buildTimetableContext() : ""}${ragText ? "\n\nSCENEGGIATURA:\n" + ragText : ""}
 
 Regole: risposte BREVI di default (max 3-4 righe), espanditi solo se serve. Se l'utente dice "Grazie", includi SEMPRE "ma grazie a te".`;
 
