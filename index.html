@@ -1640,7 +1640,7 @@ async function handleShareRoute(token) {
   try {
     const { data, error } = await sb
       .from('analyses')
-      .select('id, data, created_at, share_token, share_pdl')
+      .select('id, data, created_at, share_token')
       .eq('share_token', token)
       .eq('is_shared', true)
       .single();
@@ -1656,7 +1656,14 @@ async function handleShareRoute(token) {
 
     sharedAnalysisData = data.data;
     window._sharedAnalysisId = data.id;
-    window._sharedIncludesPdl = !!data.share_pdl;
+
+    // Prova a leggere share_pdl separatamente — colonna potrebbe non esistere ancora
+    let sharePdl = false;
+    try {
+      const { data: pdlFlag } = await sb.from('analyses').select('share_pdl').eq('id', data.id).single();
+      sharePdl = !!pdlFlag?.share_pdl;
+    } catch(e) {}
+    window._sharedIncludesPdl = sharePdl;
 
     // Populate minimal UI
     const title = data.data?.titolo || 'Analisi senza titolo';
@@ -1844,12 +1851,14 @@ function goToAppLogin() { sessionStorage.setItem('pendingShare', '1'); window.lo
 async function openShareModal() {
   if (!currentAnalysisId) return;
 
-  // Enable sharing if not already
-  const { data } = await sb.from('analyses')
+  // Enable sharing — select solo share_token (colonna sicuramente esistente)
+  const { data, error } = await sb.from('analyses')
     .update({ is_shared: true })
     .eq('id', currentAnalysisId)
-    .select('share_token, share_pdl')
+    .select('share_token')
     .single();
+
+  if (error) { console.error('openShareModal error:', error); return; }
 
   if (data?.share_token) {
     currentShareToken = data.share_token;
@@ -1857,19 +1866,30 @@ async function openShareModal() {
     document.getElementById('shareLinkInput').value = link;
     document.getElementById('shareCopied').classList.remove('show');
 
-    // Show PDL checkbox only if PDL is loaded
+    // PDL checkbox — mostra solo se PDL è caricato
     const pdlRow = document.getElementById('sharePdlRow');
     const pdlCheck = document.getElementById('sharePdlCheck');
-    if (pdlData && pdlRow) {
-      pdlRow.style.display = 'block';
-      pdlCheck.checked = !!data.share_pdl;
-      pdlCheck.onchange = async () => {
-        await sb.from('analyses')
-          .update({ share_pdl: pdlCheck.checked })
-          .eq('id', currentAnalysisId);
-      };
-    } else if (pdlRow) {
-      pdlRow.style.display = 'none';
+    if (pdlRow) {
+      if (pdlData) {
+        pdlRow.style.display = 'block';
+        // Prova a leggere share_pdl — se la colonna non esiste, ignora
+        try {
+          const { data: row } = await sb.from('analyses')
+            .select('share_pdl')
+            .eq('id', currentAnalysisId)
+            .single();
+          pdlCheck.checked = !!row?.share_pdl;
+        } catch(e) { pdlCheck.checked = false; }
+        pdlCheck.onchange = async () => {
+          try {
+            await sb.from('analyses')
+              .update({ share_pdl: pdlCheck.checked })
+              .eq('id', currentAnalysisId);
+          } catch(e) { console.log('share_pdl update failed — colonna mancante?', e.message); }
+        };
+      } else {
+        pdlRow.style.display = 'none';
+      }
     }
 
     document.getElementById('shareModal').classList.add('open');
