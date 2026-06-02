@@ -5227,18 +5227,37 @@ function parseTrasferimentiFromText(text) {
     lastIdx = m.index + m[0].length;
   }
 
-  // Match transfer lines — max 6 words after keyword to avoid grabbing schedule content
-  const transferRe = /(?:TRASFERIMENTO|SPOSTAMENTO TROUPE|TRASFER\.)\s+(?:[A-ZÀÈÉÌÒÙ][A-ZÀÈÉÌÒÙa-zàèéìòù\s]{0,40}?)(?=\s{2,}|\n|Fine|$)/g;
+  // Match transfer lines — cerca TRASFERIMENTO nel testo del blocco
+  // Il trasferimento appare DOPO le scene del giorno, prima del marker "Fine del giorno #N+1"
+  // Quindi va assegnato al giorno N (il blocco tra Fine#N e Fine#N+1)
+  const transferRe = /TRASFERIMENTO(?:\s+(?:A|DA|AL|DEL|DELLA|DI))?\s+([A-ZÀÈÉÌÒÙ][A-ZÀÈÉÌÒÙa-zàèéìòùA-Z0-9\s\-\']{1,50}?)(?=\s*(?:Fine|\-{3,}|$|\n))/gi;
 
   blocks.forEach(({ dayNum, start, end }) => {
     const chunk = text.slice(start, end);
     transferRe.lastIndex = 0;
     const match = transferRe.exec(chunk);
     if (match) {
-      const label = match[0].trim().replace(/\s+/g, ' ').slice(0, 50);
-      if (label.length > 6) result[dayNum] = label;
+      // match[1] è il gruppo catturato (destinazione), match[0] è tutto
+      const dest = (match[1] || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+      const label = `TRASFERIMENTO ${dest}`.trim();
+      if (label.length > 15) result[dayNum] = label;
     }
   });
+
+  // Fallback: cerca anche nel testo grezzo senza blocchi (per PDL con struttura diversa)
+  if (Object.keys(result).length === 0) {
+    const lines = text.split(/\n/);
+    let currentDay = null;
+    lines.forEach(line => {
+      const dayMatch = line.match(/Fine del giorno\s*#\s*(\d+)/i);
+      if (dayMatch) currentDay = parseInt(dayMatch[1]);
+      const trMatch = line.match(/TRASFERIMENTO(?:\s+(?:A|DA|AL|DEL|DELLA|DI))?\s+([A-ZÀÈÉÌÒÙ][^\n]{1,40})/i);
+      if (trMatch && currentDay !== null) {
+        const dest = trMatch[1].trim().replace(/\s+/g,' ').slice(0,40);
+        result[currentDay] = `TRASFERIMENTO ${dest}`;
+      }
+    });
+  }
 
   return result;
 }
