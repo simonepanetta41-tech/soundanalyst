@@ -1522,7 +1522,7 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
 </div>
 
 <!-- SHARE VIEW (pagina importazione) -->
-<div id="shareView" style="display:none;min-height:100vh;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px">
+<div id="shareView" style="display:none;min-height:100vh;background:var(--bg);align-items:center;justify-content:center;padding:24px">
   <div style="width:100%;max-width:420px">
     <!-- Logo -->
     <div style="text-align:center;margin-bottom:32px">
@@ -5440,6 +5440,7 @@ async function loadPdlFromSupabase(analysisId) {
     if (error) { console.log('PDL load error:', error.message, error.code); return false; }
     if (!data || !data.data) { console.log('PDL: no data found for', analysisId); return false; }
     pdlData = data.data;
+    window.pdlData = pdlData; // accessibile da altri script block
     pdlShootingData = data.shooting_data || {};
     if (pdlData.data_inizio) {
       const d = new Date(pdlData.data_inizio);
@@ -5644,6 +5645,7 @@ async function loadPdlFile(input) {
       newPdl = JSON.parse(attempt);
     }
     pdlData = newPdl;
+    window.pdlData = pdlData; // accessibile da altri script block
     const saved = localStorage.getItem('pdl_sd_'+pdlData.titolo);
     pdlShootingData = saved ? JSON.parse(saved) : {};
     localStorage.setItem('pdl_full_bk_'+pdlData.titolo, JSON.stringify(pdlData));
@@ -6074,7 +6076,7 @@ async function deletePdl() {
       localStorage.removeItem('pdl_full_bk_' + pdlData.titolo);
     }
     // Reset PDL state
-    pdlData = null; pdlShootingData = {};
+    pdlData = null; window.pdlData = null; pdlShootingData = {};
     document.getElementById('pdlDashboard').style.display = 'none';
     document.getElementById('pdlUploadArea').style.display = 'block';
     // Toast
