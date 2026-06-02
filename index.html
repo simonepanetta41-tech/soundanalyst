@@ -1881,9 +1881,9 @@ async function openShareModal() {
     const pdlRow = document.getElementById('sharePdlRow');
     const pdlCheck = document.getElementById('sharePdlCheck');
     if (pdlRow) {
-      if (typeof pdlData !== 'undefined' && pdlData) {
+      const hasPdl = !!window.pdlData;
+      if (hasPdl) {
         pdlRow.style.display = 'block';
-        // Prova a leggere share_pdl — se la colonna non esiste, ignora
         try {
           const { data: row } = await sb.from('analyses')
             .select('share_pdl')
@@ -1896,7 +1896,7 @@ async function openShareModal() {
             await sb.from('analyses')
               .update({ share_pdl: pdlCheck.checked })
               .eq('id', currentAnalysisId);
-          } catch(e) { console.log('share_pdl update failed — colonna mancante?', e.message); }
+          } catch(e) { console.log('share_pdl update failed:', e.message); }
         };
       } else {
         pdlRow.style.display = 'none';
