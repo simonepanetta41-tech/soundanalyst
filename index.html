@@ -1500,12 +1500,20 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
 <div class="share-modal-overlay" id="shareModal">
   <div class="share-modal-box">
     <div class="share-modal-title">🔗 Condividi Analisi</div>
-    <div class="share-modal-sub">Chiunque abbia questo link può vedere l'analisi. Può anche importarla nel proprio account SoundAnalyst.</div>
+    <div class="share-modal-sub">Chiunque abbia il link potrà importare l'analisi nel proprio account SoundAnalyst.</div>
     <div class="share-link-row">
       <input class="share-link-input" id="shareLinkInput" readonly>
       <button class="btn-copy" onclick="copyShareLink()">Copia</button>
     </div>
     <div class="share-copied" id="shareCopied">✓ Link copiato!</div>
+    <!-- PDL toggle — visibile solo se PDL caricato -->
+    <div id="sharePdlRow" style="display:none;margin-top:14px;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px;color:var(--white)">
+        <input type="checkbox" id="sharePdlCheck" style="width:16px;height:16px;accent-color:var(--yellow);cursor:pointer">
+        <span>Includi PDL nella condivisione</span>
+      </label>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;margin-left:26px">Chi importa riceverà anche il piano di lavorazione</div>
+    </div>
     <div class="share-modal-footer">
       <button class="btn-unshare" onclick="disableShare()">🚫 Disattiva link</button>
       <button class="btn-close-share" onclick="closeShareModal()">Chiudi</button>
@@ -1513,76 +1521,67 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
   </div>
 </div>
 
-<!-- SHARE VIEW (pagina pubblica) -->
-<div id="shareView">
-  <div class="container">
-    <header>
-      <div class="brand">
-        <div class="brand-mark"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 310" width="80" height="80">
-<defs><clipPath id="bhc"><circle cx="155" cy="155" r="112"/></clipPath></defs>
+<!-- SHARE VIEW (pagina importazione) -->
+<div id="shareView" style="display:none;min-height:100vh;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px">
+  <div style="width:100%;max-width:420px">
+    <!-- Logo -->
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:800;color:var(--white)">
+        Sound<em style="font-style:normal;color:var(--yellow)">Analyst</em>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:0.06em">by ohsfaccimmarosound</div>
+    </div>
 
-<rect x="152.5" y="31.5" width="5" height="7" rx="1" fill="#f5e642" fill-opacity=".55" transform="rotate(0,155,155)"/>
-<rect x="152.5" y="31.5" width="5" height="7" rx="1" fill="#f5e642" fill-opacity=".55" transform="rotate(24,155,155)"/>
-<rect x="152.5" y="31.5" width="5" height="7" rx="1" fill="#f5e642" fill-opacity=".55" transform="rotate(48,155,155)"/>
-<rect x="152.5" y="31.5" width="5" height="7" rx="1" fill="#f5e642" fill-opacity=".55" transform="rotate(72,155,155)"/>
-<rect x="152.5" y="31.5" width="5" height="7" rx="1" fill="#f5e642" fill-opacity=".55" transform="rotate(96,155,155)"/>
-<rect x="152.5" y="31.5" width="5" height="7" rx="1" fill="#f5e642" fill-opacity=".55" transform="rotate(120,155,155)"/>
-<rect x="152.5" y="31.5" width="5" height="7" rx="1" fill="#f5e642" fill-opacity=".55" transform="rotate(144,155,155)"/>
-<rect x="152.5" y="31.5" width="5" height="7" rx="1" fill="#f5e642" fill-opacity=".55" transform="rotate(168,155,155)"/>
-<rect x="152.5" y="31.5" width="5" height="7" rx="1" fill="#f5e642" fill-opacity=".55" transform="rotate(192,155,155)"/>
-<rect x="152.5" y="31.5" width="5" height="7" rx="1" fill="#f5e642" fill-opacity=".55" transform="rotate(216,155,155)"/>
-<rect x="152.5" y="31.5" width="5" height="7" rx="1" fill="#f5e642" fill-opacity=".55" transform="rotate(240,155,155)"/>
-<rect x="152.5" y="31.5" width="5" height="7" rx="1" fill="#f5e642" fill-opacity=".55" transform="rotate(264,155,155)"/>
-<rect x="152.5" y="31.5" width="5" height="7" rx="1" fill="#f5e642" fill-opacity=".55" transform="rotate(288,155,155)"/>
-<rect x="152.5" y="31.5" width="5" height="7" rx="1" fill="#f5e642" fill-opacity=".55" transform="rotate(312,155,155)"/>
-<rect x="152.5" y="31.5" width="5" height="7" rx="1" fill="#f5e642" fill-opacity=".55" transform="rotate(336,155,155)"/>
-<circle cx="155" cy="155" r="113" fill="none" stroke="#f5e642" stroke-width="1" stroke-opacity=".35"/>
-<g clip-path="url(#bhc)">
-<polygon fill="none" stroke="#f5e642" stroke-width="1.1" points="170,155 162.5,168 147.5,168 140,155 147.5,142 162.5,142"/>
-<polygon fill="#f5e642" fill-opacity=".07" stroke="#f5e642" stroke-width="1.1" points="200,155 192.5,168 177.5,168 170,155 177.5,142 192.5,142"/>
-<polygon fill="none" stroke="#f5e642" stroke-width="1.1" points="140,155 132.5,168 117.5,168 110,155 117.5,142 132.5,142"/>
-<polygon fill="#f5e642" fill-opacity=".2" stroke="#f5e642" stroke-width="1.3" points="185,129 177.5,142 162.5,142 155,129 162.5,116 177.5,116"/>
-<polygon fill="#f5e642" fill-opacity=".07" stroke="#f5e642" stroke-width="1.1" points="215,129 207.5,142 192.5,142 185,129 192.5,116 207.5,116"/>
-<polygon fill="none" stroke="#f5e642" stroke-width="1.1" points="155,129 147.5,142 132.5,142 125,129 132.5,116 147.5,116"/>
-<polygon fill="none" stroke="#f5e642" stroke-width="1.1" points="125,129 117.5,142 102.5,142 95,129 102.5,116 117.5,116"/>
-<polygon fill="none" stroke="#f5e642" stroke-width="1.1" points="170,103 162.5,116 147.5,116 140,103 147.5,90 162.5,90"/>
-<polygon fill="#f5e642" fill-opacity=".07" stroke="#f5e642" stroke-width="1.1" points="200,103 192.5,116 177.5,116 170,103 177.5,90 192.5,90"/>
-<polygon fill="none" stroke="#f5e642" stroke-width="1.1" points="140,103 132.5,116 117.5,116 110,103 117.5,90 132.5,90"/>
-<polygon fill="#f5e642" fill-opacity=".2" stroke="#f5e642" stroke-width="1.3" points="185,181 177.5,194 162.5,194 155,181 162.5,168 177.5,168"/>
-<polygon fill="#f5e642" fill-opacity=".07" stroke="#f5e642" stroke-width="1.1" points="215,181 207.5,194 192.5,194 185,181 192.5,168 207.5,168"/>
-<polygon fill="none" stroke="#f5e642" stroke-width="1.1" points="155,181 147.5,194 132.5,194 125,181 132.5,168 147.5,168"/>
-<polygon fill="none" stroke="#f5e642" stroke-width="1.1" points="125,181 117.5,194 102.5,194 95,181 102.5,168 117.5,168"/>
-<polygon fill="none" stroke="#f5e642" stroke-width="1.1" points="170,207 162.5,220 147.5,220 140,207 147.5,194 162.5,194"/>
-<polygon fill="#f5e642" fill-opacity=".07" stroke="#f5e642" stroke-width="1.1" points="200,207 192.5,220 177.5,220 170,207 177.5,194 192.5,194"/>
-<polygon fill="#f5e642" points="170,155 162.5,168 147.5,168 140,155 147.5,142 162.5,142"/>
-<circle cx="155" cy="155" r="4" fill="#111111"/>
-</g>
-</svg></div>
-        <div class="brand-text">
-          <h1>Sound<em>Analyst</em></h1>
-          <div class="tag">Analisi sceneggiatura — Reparto Suono</div>
+    <!-- Card -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">Analisi condivisa</div>
+      <div id="svTitle" style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:800;color:var(--white);margin-bottom:4px">—</div>
+      <div id="svStats" style="font-size:12px;color:var(--muted);margin-bottom:20px">—</div>
+
+      <!-- PDL badge — visibile se PDL incluso -->
+      <div id="svPdlBadge" style="display:none;margin-bottom:16px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;display:none;align-items:center;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 56 64" fill="none">
+          <rect x="0" y="8" width="56" height="56" rx="4" stroke="var(--yellow)" stroke-width="4"/>
+          <rect x="0" y="8" width="56" height="14" rx="4" fill="var(--yellow)"/>
+          <rect x="0" y="16" width="56" height="6" fill="var(--yellow)"/>
+          <circle cx="8" cy="15" r="4" fill="#000"/>
+          <circle cx="48" cy="15" r="4" fill="#000"/>
+          <line x1="18" y1="22" x2="18" y2="64" stroke="var(--yellow)" stroke-width="2" opacity="0.3"/>
+          <line x1="32" y1="22" x2="32" y2="64" stroke="var(--yellow)" stroke-width="2" opacity="0.3"/>
+          <line x1="0" y1="34" x2="56" y2="34" stroke="var(--yellow)" stroke-width="2" opacity="0.3"/>
+          <line x1="0" y1="46" x2="56" y2="46" stroke="var(--yellow)" stroke-width="2" opacity="0.3"/>
+          <rect x="19" y="23" width="12" height="10" rx="1" fill="var(--yellow)" opacity="0.9"/>
+          <rect x="33" y="35" width="12" height="10" rx="1" fill="var(--yellow)" opacity="0.9"/>
+        </svg>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--yellow)">PDL incluso</div>
+          <div style="font-size:10px;color:var(--muted)">Il piano di lavorazione verrà importato insieme all'analisi</div>
         </div>
       </div>
-      <div style="font-size:10px;color:var(--muted)">by ohsfaccimmarosound</div>
-    </header>
-    <div id="shareBanner" class="share-banner">
-      <div class="share-banner-icon">📤</div>
-      <div class="share-banner-text" style="flex:1">
-        <div class="t">Analisi condivisa</div>
-        <div class="s">Questo spoglio è stato condiviso con te. Puoi importarlo nel tuo account SoundAnalyst.</div>
+
+      <!-- Bottone importa -->
+      <button id="btnImport" onclick="importSharedAnalysis()"
+        style="width:100%;padding:14px;background:var(--yellow);color:#000;border:none;
+               font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;
+               border-radius:10px;cursor:pointer;transition:opacity 0.15s;margin-bottom:10px">
+        ⬇ Importa nella mia libreria
+      </button>
+
+      <!-- Stato importazione -->
+      <div id="svImporting" style="display:none;text-align:center;padding:12px;font-size:12px;color:var(--muted)">
+        <span class="spin" style="display:inline-block;margin-right:6px">⟳</span> Importazione in corso...
       </div>
-      <div id="shareImportArea">
-        <button class="btn-import" id="btnImport" onclick="importSharedAnalysis()">⬇ Importa nella mia libreria</button>
-        <div class="import-success" id="importSuccess">✓ Importata! <a onclick="goToApp()">Apri SoundAnalyst</a></div>
-        <div class="share-auth-note" id="shareAuthNote" style="display:none">Per importare devi <a onclick="goToAppLogin()">accedere a SoundAnalyst</a></div>
+      <div id="svSuccess" style="display:none;text-align:center;padding:12px">
+        <div style="font-size:14px;font-weight:600;color:var(--green);margin-bottom:8px">✓ Importata con successo!</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Verrai reindirizzato alla home tra un momento...</div>
+      </div>
+      <div id="svError" style="display:none;padding:10px 12px;background:rgba(224,80,80,0.1);border:1px solid rgba(224,80,80,0.3);border-radius:8px;font-size:11px;color:var(--danger)"></div>
+
+      <!-- Auth note -->
+      <div id="shareAuthNote" style="display:none;text-align:center;padding:12px;font-size:12px;color:var(--muted)">
+        Per importare devi <a onclick="goToAppLogin()" style="color:var(--yellow);cursor:pointer;text-decoration:underline">accedere a SoundAnalyst</a>
       </div>
     </div>
-    <!-- Results shown here in read-only -->
-    <div id="shareResultsContainer"></div>
-    <footer>
-      <div class="fl">Sound<em>Analyst</em></div>
-      <div class="fr">by ohsfaccimmarosound</div>
-    </footer>
   </div>
 </div>
 
@@ -1641,7 +1640,7 @@ async function handleShareRoute(token) {
   try {
     const { data, error } = await sb
       .from('analyses')
-      .select('id, data, created_at, share_token')
+      .select('id, data, created_at, share_token, share_pdl')
       .eq('share_token', token)
       .eq('is_shared', true)
       .single();
@@ -1657,10 +1656,23 @@ async function handleShareRoute(token) {
 
     sharedAnalysisData = data.data;
     window._sharedAnalysisId = data.id;
+    window._sharedIncludesPdl = !!data.share_pdl;
+
+    // Populate minimal UI
+    const title = data.data?.titolo || 'Analisi senza titolo';
+    const scenes = data.data?.totale_scene || '—';
+    const regista = data.data?.regista ? ` · Regia: ${data.data.regista}` : '';
+    document.getElementById('svTitle').textContent = title;
+    document.getElementById('svStats').textContent = `${scenes} scene${regista}`;
+
+    // Show PDL badge if included
+    if (data.share_pdl) {
+      const badge = document.getElementById('svPdlBadge');
+      badge.style.display = 'flex';
+    }
+
     document.getElementById('shareAuthNote').style.display = 'none';
-    document.getElementById('btnImport').style.display = 'inline-block';
-    renderShareResults(data.data);
-    setTimeout(() => activateShareRefs(), 100);
+    document.getElementById('btnImport').style.display = 'block';
 
     // Try to load PDF — try owner's copy first, then viewer's own copy
     try {
@@ -1774,16 +1786,16 @@ function renderShareResults(d) {
 
 async function importSharedAnalysis() {
   const btn = document.getElementById('btnImport');
-  btn.textContent = 'Importando...';
-  btn.disabled = true;
+  btn.style.display = 'none';
+  document.getElementById('svImporting').style.display = 'block';
+  document.getElementById('svError').style.display = 'none';
+
   try {
-    // Save analysis and get the new analysis ID
     const newId = await saveAnalysis(sharedAnalysisData);
 
-    // Also import PDL if available
-    if (newId && sharedAnalysisData._owner_id) {
+    // Import PDL if included in share
+    if (newId && window._sharedIncludesPdl && sharedAnalysisData._owner_id) {
       try {
-        // Find PDL from original owner's analysis
         const { data: pdlRow } = await sb
           .from('pdl_versions')
           .select('data, shooting_data')
@@ -1794,17 +1806,34 @@ async function importSharedAnalysis() {
             analysis_id: newId,
             user_id: currentUser.id,
             data: pdlRow.data,
-            shooting_data: {} // fresh shooting data for new user
+            shooting_data: {}
           });
         }
       } catch(e) { console.log('PDL import skipped:', e.message); }
     }
 
-    btn.style.display = 'none';
-    document.getElementById('importSuccess').classList.add('show');
+    // Also copy PDF if owner has one
+    if (newId && sharedAnalysisData._owner_id) {
+      try {
+        const ownerPath = `${sharedAnalysisData._owner_id}/${window._sharedAnalysisId}.pdf`;
+        const { data: blob } = await sb.storage.from('Screenplays').download(ownerPath);
+        if (blob) {
+          const viewerPath = `${currentUser.id}/${newId}.pdf`;
+          await sb.storage.from('Screenplays').upload(viewerPath, blob, { upsert: true });
+        }
+      } catch(e) { console.log('PDF copy skipped:', e.message); }
+    }
+
+    document.getElementById('svImporting').style.display = 'none';
+    document.getElementById('svSuccess').style.display = 'block';
+    setTimeout(() => { window.location.href = '/'; }, 2000);
+
   } catch(e) {
-    btn.textContent = '⚠ Errore — riprova';
-    btn.disabled = false;
+    document.getElementById('svImporting').style.display = 'none';
+    btn.style.display = 'block';
+    const errEl = document.getElementById('svError');
+    errEl.textContent = '⚠ ' + e.message;
+    errEl.style.display = 'block';
   }
 }
 
@@ -1819,7 +1848,7 @@ async function openShareModal() {
   const { data } = await sb.from('analyses')
     .update({ is_shared: true })
     .eq('id', currentAnalysisId)
-    .select('share_token')
+    .select('share_token, share_pdl')
     .single();
 
   if (data?.share_token) {
@@ -1827,6 +1856,22 @@ async function openShareModal() {
     const link = `${window.location.origin}/share/${data.share_token}`;
     document.getElementById('shareLinkInput').value = link;
     document.getElementById('shareCopied').classList.remove('show');
+
+    // Show PDL checkbox only if PDL is loaded
+    const pdlRow = document.getElementById('sharePdlRow');
+    const pdlCheck = document.getElementById('sharePdlCheck');
+    if (pdlData && pdlRow) {
+      pdlRow.style.display = 'block';
+      pdlCheck.checked = !!data.share_pdl;
+      pdlCheck.onchange = async () => {
+        await sb.from('analyses')
+          .update({ share_pdl: pdlCheck.checked })
+          .eq('id', currentAnalysisId);
+      };
+    } else if (pdlRow) {
+      pdlRow.style.display = 'none';
+    }
+
     document.getElementById('shareModal').classList.add('open');
     document.getElementById('btnShare').classList.add('active');
     document.getElementById('btnShare').textContent = '🔗 Condivisa';
