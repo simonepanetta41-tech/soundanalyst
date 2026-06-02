@@ -1675,9 +1675,9 @@ async function handleShareRoute(token) {
     document.getElementById('svStats').textContent = `${scenes} scene${regista}`;
 
     // Show PDL badge if included
-    if (data.share_pdl) {
+    if (sharePdl) {
       const badge = document.getElementById('svPdlBadge');
-      badge.style.display = 'flex';
+      if (badge) badge.style.display = 'flex';
     }
 
     document.getElementById('shareAuthNote').style.display = 'none';
@@ -1803,20 +1803,23 @@ async function importSharedAnalysis() {
     const newId = await saveAnalysis(sharedAnalysisData);
 
     // Import PDL if included in share
-    if (newId && window._sharedIncludesPdl && sharedAnalysisData._owner_id) {
+    if (newId && window._sharedIncludesPdl) {
       try {
-        const { data: pdlRow } = await sb
+        const { data: pdlRow, error: pdlErr } = await sb
           .from('pdl_versions')
           .select('data, shooting_data')
           .eq('analysis_id', window._sharedAnalysisId)
           .single();
-        if (pdlRow) {
+        if (!pdlErr && pdlRow?.data) {
           await sb.from('pdl_versions').insert({
             analysis_id: newId,
             user_id: currentUser.id,
             data: pdlRow.data,
             shooting_data: {}
           });
+          console.log('PDL importato con successo');
+        } else {
+          console.log('PDL non trovato:', pdlErr?.message);
         }
       } catch(e) { console.log('PDL import skipped:', e.message); }
     }
