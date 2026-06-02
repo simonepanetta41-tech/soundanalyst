@@ -1849,7 +1849,15 @@ function goToAppLogin() { sessionStorage.setItem('pendingShare', '1'); window.lo
 
 // ══ SHARE FUNCTIONS ══
 async function openShareModal() {
-  if (!currentAnalysisId) return;
+  console.log('[Share] openShareModal chiamato, currentAnalysisId:', currentAnalysisId);
+  if (!currentAnalysisId) {
+    console.warn('[Share] currentAnalysisId è null — analisi non salvata?');
+    alert('Salva prima l\'analisi per poterla condividere.');
+    return;
+  }
+
+  const btn = document.getElementById('btnShare');
+  if (btn) { const orig = btn.textContent; btn.textContent = '...'; }
 
   // Enable sharing — select solo share_token (colonna sicuramente esistente)
   const { data, error } = await sb.from('analyses')
@@ -1858,7 +1866,10 @@ async function openShareModal() {
     .select('share_token')
     .single();
 
-  if (error) { console.error('openShareModal error:', error); return; }
+  console.log('[Share] update result:', { data, error });
+
+  if (btn) btn.textContent = '🔗 Condividi';
+  if (error) { console.error('openShareModal error:', error); alert('Errore: ' + error.message); return; }
 
   if (data?.share_token) {
     currentShareToken = data.share_token;
@@ -1870,7 +1881,7 @@ async function openShareModal() {
     const pdlRow = document.getElementById('sharePdlRow');
     const pdlCheck = document.getElementById('sharePdlCheck');
     if (pdlRow) {
-      if (pdlData) {
+      if (typeof pdlData !== 'undefined' && pdlData) {
         pdlRow.style.display = 'block';
         // Prova a leggere share_pdl — se la colonna non esiste, ignora
         try {
