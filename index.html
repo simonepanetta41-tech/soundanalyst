@@ -1583,6 +1583,8 @@ footer .fr { font-size: 10px; color: var(--muted); text-align: right; line-heigh
       </div>
     </div>
   </div>
+  <!-- Contenitore legacy nascosto — mantiene compatibilità con vecchi riferimenti -->
+  <div id="shareResultsContainer" style="display:none"></div>
 </div>
 
 <!-- PDF MODAL -->
@@ -4449,7 +4451,7 @@ function activateShareRefs() {
   });
 }
 
-document.getElementById('shareResultsContainer').addEventListener('click', e => {
+document.getElementById('shareResultsContainer')?.addEventListener('click', e => {
   const el = e.target.closest('.ref.clickable');
   if (!el) return;
   if (!pdfB64Array.length) {
