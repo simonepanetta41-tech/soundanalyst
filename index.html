@@ -2524,6 +2524,7 @@ async function loadFromHistory(id) {
 
   // Load cast in background
   castData = await loadCastFromSupabase(id);
+  window.castData = castData;
   renderCastTab(castData, castData.length > 0 && castData[0]?.fonte === 'provvisoria');
   // Show version bar
   updateVersionBar();
@@ -3054,7 +3055,7 @@ function resetApp() {
   document.getElementById('errorBox').classList.remove('show');
   document.getElementById('riassuntoBox').style.display = 'none';
   document.getElementById('maxInfo').style.display = 'none';
-  chatHistory = []; analysisData = null; currentAnalysisId = null; catNotesData = {}; castData = [];
+  chatHistory = []; analysisData = null; window.analysisData = null; currentAnalysisId = null; catNotesData = {}; castData = []; window.castData = [];
   gennaroDrawerHistory = [];
   hideGennaroFab();
   checkReady();
@@ -4042,6 +4043,7 @@ function buildChatContext(d) {
 
 function initChat(d) {
   analysisData = d;
+  window.analysisData = d;
   chatHistory  = [];
   rotateChatPlaceholder();
   document.getElementById('chatMessages').innerHTML = '';
@@ -6006,7 +6008,7 @@ async function openSceneFromPdl(scNum, e) {
   if (!analysisData && currentAnalysisId) {
     try {
       const { data } = await sb.from('analyses').select('data').eq('id', currentAnalysisId).single();
-      if (data?.data) analysisData = data.data;
+      if (data?.data) { analysisData = data.data; window.analysisData = data.data; }
       console.log('Loaded analysisData from Supabase, keys:', Object.keys(analysisData||{}));
     } catch(e) { console.log('Could not load analysis data:', e.message); }
   }
