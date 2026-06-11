@@ -6296,7 +6296,32 @@ function initTimetable(){
   if(ttInited)return;
   ttInited=true;
   ttTabelle=[ttMkTab([])];
-  ttRenderAll();ttRenderStorico();
+  ttRenderAll();
+  ttMigrateLocalStorico().then(()=>ttRenderStorico());
+}
+
+// Migrazione one-shot: porta lo storico locale (sa_tt3) su Supabase, poi svuota la chiave
+async function ttMigrateLocalStorico(){
+  try{
+    if(!currentUser)return;
+    const local=JSON.parse(localStorage.getItem('sa_tt3')||'[]');
+    if(!local.length)return;
+    console.log('[ttMigrate] migrazione di',local.length,'settimane locali su Supabase...');
+    for(const rec of local){
+      const{error}=await sb.from('timetable_weeks').upsert({
+        user_id:currentUser.id,
+        settimana:rec.meta?.settimana||'',
+        film:rec.meta?.film||'',
+        reparto:rec.meta?.reparto||'',
+        data:{meta:rec.meta,tabelle:rec.tabelle},
+        updated_at:new Date().toISOString()
+      },{onConflict:'user_id,settimana,film,reparto'});
+      if(error){console.log('[ttMigrate] error su una settimana:',error.message);return;} // non svuotare se fallisce
+    }
+    localStorage.removeItem('sa_tt3');
+    console.log('[ttMigrate] completata, localStorage svuotato.');
+    showToast('Storico settimane sincronizzato sul cloud.','yellow',3500);
+  }catch(e){console.log('[ttMigrate] error:',e.message);}
 }
 
 function ttMkTab(workers,orariSrc){
@@ -6568,8 +6593,12 @@ function ttSetNott(on){
   ttRenderAll();
 }
 
-function ttSave(){
-  const rec={id:Date.now(),meta:{
+// ── Storico settimane su Supabase (sync cross-device) ──
+let ttStoricoCache=[]; // record fetchati, indicizzati per la UI
+
+async function ttSave(){
+  if(!currentUser){showToast('Devi essere loggato per salvare.');return;}
+  const rec={meta:{
     produzione:document.getElementById('tt-produzione').value,
     film:document.getElementById('tt-film').value,
     reparto:document.getElementById('tt-reparto').value,
@@ -6581,16 +6610,25 @@ function ttSave(){
     applicazione:ttMeta.applicazione,maggiorazioniNott:ttMeta.maggiorazioniNott,
     viaggioConcesso:ttMeta.viaggioConcesso
   },tabelle:JSON.parse(JSON.stringify(ttTabelle))};
-  const saved=JSON.parse(localStorage.getItem('sa_tt3')||'[]');
-  const ex=saved.findIndex(s=>s.meta.settimana===rec.meta.settimana&&s.meta.film===rec.meta.film&&s.meta.reparto===rec.meta.reparto);
-  if(ex>=0)saved[ex]=rec;else saved.unshift(rec);
-  localStorage.setItem('sa_tt3',JSON.stringify(saved));
-  ttRenderStorico();showToast('Settimana salvata!');
+  const{error}=await sb.from('timetable_weeks').upsert({
+    user_id:currentUser.id,
+    settimana:rec.meta.settimana||'',
+    film:rec.meta.film||'',
+    reparto:rec.meta.reparto||'',
+    data:rec,
+    updated_at:new Date().toISOString()
+  },{onConflict:'user_id,settimana,film,reparto'});
+  if(error){console.log('[ttSave] error:',error.message);showToast('Errore salvataggio: '+error.message);return;}
+  await ttRenderStorico();showToast('Settimana salvata!');
 }
 
-function ttRenderStorico(){
-  const saved=JSON.parse(localStorage.getItem('sa_tt3')||'[]');
+async function ttRenderStorico(){
   const el=document.getElementById('tt-storico');if(!el)return;
+  if(!currentUser){el.innerHTML='<div style="font-size:11px;color:var(--muted)">Accedi per vedere lo storico.</div>';return;}
+  const{data:rows,error}=await sb.from('timetable_weeks').select('id,data,updated_at').eq('user_id',currentUser.id).order('updated_at',{ascending:false});
+  if(error){console.log('[ttStorico] error:',error.message);el.innerHTML='<div style="font-size:11px;color:var(--danger)">Errore caricamento storico.</div>';return;}
+  ttStoricoCache=(rows||[]).map(r=>({dbId:r.id,...r.data}));
+  const saved=ttStoricoCache;
   if(saved.length===0){el.innerHTML='<div style="font-size:11px;color:var(--muted)">Nessuna settimana salvata.</div>';return;}
   el.innerHTML=saved.map((s,si)=>{
     const m=s.meta;
@@ -6618,8 +6656,7 @@ function ttTogS(i){
   document.getElementById(`ttst-${i}`).classList.toggle('open');
 }
 function ttLoad(si){
-  const saved=JSON.parse(localStorage.getItem('sa_tt3')||'[]');
-  const s=saved[si];if(!s)return;
+  const s=ttStoricoCache[si];if(!s)return;
   const m=s.meta;
   document.getElementById('tt-produzione').value=m.produzione||'';
   document.getElementById('tt-film').value=m.film||'';
@@ -6636,9 +6673,11 @@ function ttLoad(si){
   ttSetViaggio(ttMeta.viaggioConcesso||60);
   ttRenderAll();showToast('Settimana caricata.');
 }
-function ttDelS(si){
-  const saved=JSON.parse(localStorage.getItem('sa_tt3')||'[]');
-  saved.splice(si,1);localStorage.setItem('sa_tt3',JSON.stringify(saved));ttRenderStorico();
+async function ttDelS(si){
+  const s=ttStoricoCache[si];if(!s)return;
+  const{error}=await sb.from('timetable_weeks').delete().eq('id',s.dbId);
+  if(error){console.log('[ttDelS] error:',error.message);showToast('Errore eliminazione: '+error.message);return;}
+  ttRenderStorico();
 }
 function ttExportModal(){document.getElementById('tt-exportOv').style.display='flex';}
 
