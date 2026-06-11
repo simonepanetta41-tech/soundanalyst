@@ -5297,6 +5297,63 @@ Struttura:
 
 Regole: momento D=Day N=Night M=Morning E=Evening. cast solo numeri. JSON minificato. ORARI CRITICI: la struttura standard di un PDL è: [ORARIO] → [scene del giorno N] → [Fine del Giorno #N]. L'orario precede SEMPRE le scene del giorno a cui appartiene. L'orario che appare DOPO "Fine del Giorno #N" appartiene al giorno N+1, non al giorno N. CASO SPECIALE — GIORNO SENZA ORARIO: alcuni giorni (tipicamente il primo, spesso un giorno di trasferimento troupe o prelight) NON hanno nessun orario prima delle loro scene — il PDL passa direttamente dal titolo del giorno alle scene, e poi a "Fine del Giorno #1". In questo caso il giorno 1 ha ora_inizio="TBD" e ora_fine="TBD". L'orario che segue "Fine del Giorno #1" appartiene al giorno 2. NON spostare l'orario del giorno 2 sul giorno 1 solo perché il giorno 1 non ne ha uno. Se un giorno ha più orari (es. unità principale + 2° UNITÀ), usa SOLO il primo orario trovato per quel giorno. Formati orario riconosciuti: "H: 08:00/18:00" (ora_inizio=08:00, ora_fine=18:00), "07:30/17:30", "ORARIO 08-18", "09.00-17.00", "H: 15/01 o 17/03" (formato compatto italiano — 15/01 significa ora_inizio=15:00 ora_fine=01:00, 17/03 significa ora_inizio=17:00 ora_fine=03:00 — se ci sono due orari alternativi separati da "o", prendi il primo E imposta ora_incerta=true). IMPORTANTE: se per un giorno non trovi NESSUN orario esplicito nel testo del PDL, usa OBBLIGATORIAMENTE "TBD" per ora_inizio e ora_fine — NON inventare orari, NON usare valori di default. Rispondi SOLO con il JSON.`;
 
+// ══ ORARI PARSER — deterministico, no API ══
+// Costruisce una mappa { dayNum: {ora_inizio, ora_fine} } leggendo il testo grezzo del PDF.
+// Ogni segmento è il testo che PRECEDE il marker "Fine del giorno #N", quindi appartiene al giorno N.
+// Questo approccio è immune al bug del modello AI che slittava gli orari di un giorno.
+function parseOrariFromText(text) {
+  const result = {};
+  const markerRe = /Fine del [Gg]iorno\s*#\s*(\d+)/g;
+  const markers = [];
+  let m;
+  while ((m = markerRe.exec(text)) !== null) {
+    markers.push({ dayNum: parseInt(m[1]), index: m.index, len: m[0].length });
+  }
+  if (markers.length === 0) return result;
+
+  // Segmento per giorno N = testo tra il marker del giorno N-1 e il marker del giorno N
+  let prevEnd = 0;
+  for (const marker of markers) {
+    const chunk = text.slice(prevEnd, marker.index);
+    // Regex per orari italiani: 09.00 - 17.00 / 18:00 - 02:00 / ORARIO 9.00 – 17.00 TBC
+    const match = /(?:ORARIO\s+)?(\d{1,2})[.:](\d{2})\s*[-–/]\s*(\d{1,2})[.:](\d{2})/.exec(chunk);
+    if (match) {
+      result[marker.dayNum] = {
+        ora_inizio: match[1].padStart(2,'0') + ':' + match[2],
+        ora_fine:   match[3].padStart(2,'0') + ':' + match[4]
+      };
+    }
+    // Avanza oltre il marker (usa la lunghezza reale del match)
+    prevEnd = marker.index + marker.len;
+  }
+  return result;
+}
+
+function applyOrari(orariMap) {
+  if (!pdlData?.settimane || !Object.keys(orariMap).length) return false;
+  let changed = false;
+  pdlData.settimane.forEach(s => {
+    (s.giorni || []).forEach(g => {
+      const o = orariMap[g.numero_giorno];
+      if (o) {
+        // Orario trovato deterministicamente → sovrascriviamo sempre
+        g.ora_inizio = o.ora_inizio;
+        g.ora_fine   = o.ora_fine;
+        g.ora_incerta = false;
+        changed = true;
+      } else {
+        // Nessun orario nel segmento di questo giorno → forziamo TBD
+        // (previene il caso in cui il modello abbia inventato/slittato un orario)
+        g.ora_inizio = 'TBD';
+        g.ora_fine   = 'TBD';
+        g.ora_incerta = false;
+        changed = true;
+      }
+    });
+  });
+  return changed;
+}
+
 // ══ TRANSFER PARSER — local, no API ══
 function parseTrasferimentiFromText(text) {
   const result = {};
@@ -5371,12 +5428,18 @@ async function extractAndApplyTrasferimenti(b64) {
     const transferMap = parseTrasferimentiFromText(fullText);
     console.log('[TransferParser] trovati:', transferMap);
     applyTrasferimenti(transferMap);
-    if (Object.keys(transferMap).length) {
+
+    // Orari deterministici — sovrascrive i valori AI con quelli letti dal PDF
+    const orariMap = parseOrariFromText(fullText);
+    console.log('[OrariParser] trovati:', orariMap);
+    const orariChanged = applyOrari(orariMap);
+
+    if (Object.keys(transferMap).length || orariChanged) {
       renderPdlCalendar();
       savePdlToSupabase();
     }
   } catch(e) {
-    console.log('[TransferParser] error:', e.message);
+    console.log('[TransferParser/OrariParser] error:', e.message);
   }
 }
 
