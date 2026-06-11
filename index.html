@@ -5316,7 +5316,7 @@ function parseOrariFromText(text) {
   for (const marker of markers) {
     const chunk = text.slice(prevEnd, marker.index);
     // Regex per orari italiani: 09.00 - 17.00 / 18:00 - 02:00 / ORARIO 9.00 – 17.00 TBC
-    const match = /(?:ORARIO\s+)?(\d{1,2})[.:](\d{2})\s*[-–/]\s*(\d{1,2})[.:](\d{2})/.exec(chunk);
+    const match = /(?:ORARIO\s+)?(\d{1,2})\s*[.:]\s*(\d{2})\s*[-–/]\s*(\d{1,2})\s*[.:]\s*(\d{2})/.exec(chunk);
     if (match) {
       result[marker.dayNum] = {
         ora_inizio: match[1].padStart(2,'0') + ':' + match[2],
