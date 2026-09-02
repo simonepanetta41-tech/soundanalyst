@@ -1,8 +1,9 @@
 {
   "functions": {
     "api/analyze.js": { "maxDuration": 180 },
-    "api/chat.js": { "maxDuration": 30 },
-    "api/pdl.js": { "maxDuration": 60 }
+    "api/chat.js": { "maxDuration": 60 },
+    "api/pdl.js": { "maxDuration": 120 },
+    "api/wrap.js": { "maxDuration": 30 }
   },
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/:path*" },

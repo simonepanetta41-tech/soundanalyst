@@ -2533,13 +2533,13 @@ async function loadFromHistory(id) {
 
 async function deleteAnalysis(id, e) {
   e.stopPropagation();
-  if (!confirm('Eliminare questa analisi?')) return;
+  if (!await askConfirm('Eliminare questa analisi?')) return;
   await sb.from('analyses').delete().eq('id', id);
   loadHistory();
 }
 
 async function clearAllHistory() {
-  if (!confirm('Sei sicuro? Tutte le analisi verranno eliminate.')) return;
+  if (!await askConfirm('Eliminare tutte le analisi? L\u2019operazione non e\u0300 reversibile.', { conferma: 'Elimina tutto' })) return;
   await sb.from('analyses').delete().eq('user_id', currentUser.id);
   loadHistory();
 }
@@ -3234,6 +3234,33 @@ async function sysDeleteUser(userId) {
   };
 }
 // ══ END SYSTEM ADMIN ══
+// Conferma inline riutilizzabile — sostituisce confirm() nativo.
+// Ritorna una Promise<boolean>. Stile coerente con le card dell'app (border-radius 14px).
+function askConfirm(msg, { conferma = 'Elimina', annulla = 'Annulla', pericolo = true } = {}) {
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(2px);z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px';
+    const accent = pericolo ? 'rgba(239,68,68,0.9)' : 'var(--yellow)';
+    const fg = pericolo ? '#fff' : '#000';
+    ov.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border-l);border-radius:14px;padding:20px;max-width:340px;width:100%">
+      <div style="font-size:13px;color:var(--white);line-height:1.5;margin-bottom:18px">${esc(msg)}</div>
+      <div style="display:flex;gap:8px">
+        <button data-act="no" style="flex:1;padding:9px;background:none;border:1px solid var(--border-l);border-radius:8px;color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer">${esc(annulla)}</button>
+        <button data-act="si" style="flex:1;padding:9px;background:${accent};border:none;border-radius:8px;color:${fg};font-family:'DM Mono',monospace;font-size:11px;font-weight:700;cursor:pointer">${esc(conferma)}</button>
+      </div>
+    </div>`;
+    const close = v => { ov.remove(); document.removeEventListener('keydown', onKey); resolve(v); };
+    const onKey = e => { if (e.key === 'Escape') close(false); };
+    ov.addEventListener('click', e => {
+      if (e.target === ov) return close(false);
+      const act = e.target.closest('button')?.dataset.act;
+      if (act) close(act === 'si');
+    });
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(ov);
+  });
+}
+
 function showToast(msg, type = 'default', duration = 3000) {
   const container = (() => {
     let el = document.getElementById('toastContainer');
@@ -4311,25 +4338,7 @@ async function sendChat() {
   // ── RAG: extract relevant scene pages ──
   const ragText = await buildRagContext(text);
 
-  const SYS = `Sei Gennaro Esposito, fonico di presa diretta napoletano con 20 anni di set alle spalle. Parli italiano ma ogni tanto ti scappa qualche espressione napoletana ("uagliò", "mamm mia", "mo vediamo", "azz", "e che vuo'", "jamm bell'", "statte buono"). Sei simpatico, diretto, un po' brontolone ma sempre disponibile.
-
-Gergo del set che conosci e usi naturalmente:
-- "un'orata" = un'ora di straordinario (attenzione: si dice "un'orata" non "orata" altrimenti sembra il pesce)
-- "cestini" = pasti sul set
-- "craft" = tavolo snack e caffè
-- "split" = seconda unità
-- "wrap" = fine delle riprese della giornata o del film
-- "camion chiusi" = termine della giornata di lavoro, tutto finito
-- "PDL" = piano di lavorazione, lo prepara l'aiuto regia
-- "ODG" = ordine del giorno, contiene tutto il lavoro pianificato per la giornata
-- "convocazione" = orario di inizio giornata, quando tutti devono essere sul set
-- "fegatelli" = piccoli pezzi di scena, dettagli brevi e facili da girare, spesso senza audio diretto
-
-Spoglio:\n${buildChatContext(analysisData)}${pdlData ? "\n\nPDL (dall'aiuto regia):\n" + buildPdlContext() : "\n\n(Il PDL non è ancora caricato — se ti chiedono quando si gira una scena o info sul piano di lavorazione, di' che devono prima caricare il PDL nella sezione apposita)"}${castData?.length ? "\n\n" + buildCastContext() : ""}${ttTabelle?.length && ttTabelle.some(t=>t.orari.inizio.some(x=>x)) ? "\n\n" + buildTimetableContext() : ""}${ragText ? "\n\nTESTO SCENEGGIATURA (pagine rilevanti):\n" + ragText : ""}
-
-Regole: risposte BREVI di default (max 3-4 righe), ma se la domanda richiede un elenco, dati strutturati o una spiegazione articolata puoi espanderti quanto serve — meglio una risposta completa che una troncata. Parla da collega di set, non da professore. Se ti fanno domande scherzose rispondi al gioco con humour napoletano.
-Se l'utente dice "Grazie" (o simili ringraziamenti), includi SEMPRE nella risposta "ma grazie a te".
-Se hai la mappa PERSONAGGI→SCENE nel contesto, usala per rispondere a domande su quali scene coinvolgono uno o più personaggi, se si incontrano, quante scene hanno insieme — senza bisogno del testo della sceneggiatura. Se hai il CAST UFFICIALE, usalo per abbinare i numeri ID ai nomi reali. Se hai la TIMETABLE, usala per rispondere a domande su orari, golden, viaggi e convocazioni della settimana.${ragText ? ' Quando rispondi su scene specifiche, usa il testo della sceneggiatura fornito sopra.' : ''}`;
+  const SYS = buildGennaroSys(ragText);
 
   let reply = '';
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -4834,11 +4843,11 @@ async function wrapOpenReviews(placeId, name, mapsUrl) {
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
           <span style="font-size:11px;font-weight:600;color:var(--yellow)">La tua recensione</span>
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="color:var(--yellow);font-size:13px">${'★'.repeat(myReview.rating)}${'☆'.repeat(5-myReview.rating)}</span>
-            <button onclick="saShowEditForm('${placeId}','${name.replace(/'/g,String.fromCharCode(39))}','${username}',${myReview.rating})" style="padding:3px 8px;background:none;border:1px solid var(--border);border-radius:5px;color:var(--muted);font-size:10px;cursor:pointer">Modifica</button>
+            <span style="color:var(--yellow);font-size:13px">${saStars(myReview.rating)}</span>
+            <button onclick="saShowEditForm('${encodeURIComponent(placeId)}','${encodeURIComponent(name)}','${encodeURIComponent(username)}',${Number(myReview.rating)||0})" style="padding:3px 8px;background:none;border:1px solid var(--border);border-radius:5px;color:var(--muted);font-size:10px;cursor:pointer">Modifica</button>
           </div>
         </div>
-        ${myReview.note ? `<div style="font-size:12px;color:var(--muted)">${myReview.note}</div>` : ''}
+        ${myReview.note ? `<div style="font-size:12px;color:var(--muted)">${esc(myReview.note)}</div>` : ''}
       </div>`;
     } else {
       html += saReviewForm(0, '', false, placeId, name, username);
@@ -4848,10 +4857,10 @@ async function wrapOpenReviews(placeId, name, mapsUrl) {
     if (others.length) {
       html += others.map(r => `<div style="padding:10px;background:var(--surface2);border-radius:8px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <span style="font-size:11px;font-weight:600;color:var(--white)">${r.anonymous?'Anonimo':r.username}</span>
-          <span style="color:var(--yellow);font-size:12px">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+          <span style="font-size:11px;font-weight:600;color:var(--white)">${r.anonymous?'Anonimo':esc(r.username)}</span>
+          <span style="color:var(--yellow);font-size:12px">${saStars(r.rating)}</span>
         </div>
-        ${r.note?`<div style="font-size:12px;color:var(--muted)">${r.note}</div>`:''}</div>`).join('');
+        ${r.note?`<div style="font-size:12px;color:var(--muted)">${esc(r.note)}</div>`:''}</div>`).join('');
     } else if (!myReview) {
       html += `<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px 0">Sii il primo a recensire!</div>`;
     }
@@ -4859,11 +4868,11 @@ async function wrapOpenReviews(placeId, name, mapsUrl) {
       html += `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;color:var(--muted);text-transform:uppercase;margin:8px 0 4px">Recensioni Google</div>`;
       html += data.reviews.map(r => `<div style="padding:12px;background:var(--surface2);border-radius:8px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <span style="font-size:12px;font-weight:600;color:var(--white)">${r.authorName}</span>
-          <span style="font-size:11px;color:var(--yellow)">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+          <span style="font-size:12px;font-weight:600;color:var(--white)">${esc(r.authorName)}</span>
+          <span style="font-size:11px;color:var(--yellow)">${saStars(r.rating)}</span>
         </div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">${r.text||'—'}</div>
-        <div style="font-size:10px;color:var(--border);margin-top:4px">${r.relativeTime||''}</div></div>`).join('');
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">${esc(r.text)||'—'}</div>
+        <div style="font-size:10px;color:var(--border);margin-top:4px">${esc(r.relativeTime)}</div></div>`).join('');
     }
     body.innerHTML = html;
   } catch(e) {
@@ -4871,12 +4880,21 @@ async function wrapOpenReviews(placeId, name, mapsUrl) {
   }
 }
 
+// Escape per testo inserito in innerHTML (recensioni, nomi utente, dati Google).
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+// Rating difensivo: un valore nullo o fuori range faceva esplodere String.repeat con RangeError.
+function saStars(n){
+  const r=Math.max(0,Math.min(5,Math.round(Number(n)||0)));
+  return '\u2605'.repeat(r)+'\u2606'.repeat(5-r);
+}
 function saReviewForm(rating, note, anon, placeId, name, username) {
   return `<div id="saEditForm" data-place-id="${placeId}" data-place-name="${encodeURIComponent(name)}" data-username="${encodeURIComponent(username)}" style="background:var(--surface2);border-radius:10px;padding:12px">
     <div id="saStars" data-rating="${rating}" style="display:flex;gap:4px;margin-bottom:8px">
       ${[1,2,3,4,5].map(i=>`<span onclick="saSetStar(${i})" style="font-size:22px;cursor:pointer;color:${i<=rating?'#f5e642':'#444'}">★</span>`).join('')}
     </div>
-    <textarea id="saNote" placeholder="Lascia una nota..." style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:7px;color:var(--white);font-size:12px;resize:none;height:60px;box-sizing:border-box;font-family:'DM Mono',monospace">${note}</textarea>
+    <textarea id="saNote" placeholder="Lascia una nota..." style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:7px;color:var(--white);font-size:12px;resize:none;height:60px;box-sizing:border-box;font-family:'DM Mono',monospace">${esc(note)}</textarea>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
       <div style="display:flex;align-items:center;gap:8px">
         <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);cursor:pointer">
@@ -4890,6 +4908,8 @@ function saReviewForm(rating, note, anon, placeId, name, username) {
 }
 
 function saShowEditForm(placeId, name, username, rating) {
+  // Gli argomenti arrivano URI-encoded dall'attributo onclick (nomi con apostrofo, es. "L'Antica Trattoria")
+  placeId=decodeURIComponent(placeId); name=decodeURIComponent(name); username=decodeURIComponent(username);
   // Find the own review card and replace with edit form
   const body = document.getElementById('wrapReviewsBody');
   // Get current note from the card text if any
@@ -5316,7 +5336,12 @@ function parseOrariFromText(text) {
   for (const marker of markers) {
     const chunk = text.slice(prevEnd, marker.index);
     // Regex per orari italiani: 09.00 - 17.00 / 18:00 - 02:00 / ORARIO 9.00 – 17.00 TBC
-    const match = /(?:ORARIO\s+)?(\d{1,2})\s*[.:]\s*(\d{2})\s*[-–/]\s*(\d{1,2})\s*[.:]\s*(\d{2})/.exec(chunk);
+    // Prima si cerca il match con prefisso ORARIO (quello autorevole), poi si ripiega
+    // sul primo range del segmento: senza questa priorita' un orario qualsiasi che
+    // compare prima nel chunk (note, appuntamenti) vinceva su quello vero.
+    const RANGE = '(\\d{1,2})\\s*[.:]\\s*(\\d{2})\\s*[-\u2013\u2014/]\\s*(\\d{1,2})\\s*[.:]\\s*(\\d{2})';
+    const match = new RegExp('ORARIO\\s*:?\\s*' + RANGE, 'i').exec(chunk)
+               || new RegExp(RANGE).exec(chunk);
     if (match) {
       result[marker.dayNum] = {
         ora_inizio: match[1].padStart(2,'0') + ':' + match[2],
@@ -5331,6 +5356,15 @@ function parseOrariFromText(text) {
 
 function applyOrari(orariMap) {
   if (!pdlData?.settimane || !Object.keys(orariMap).length) return false;
+  // Guardia di copertura: il parser deterministico sovrascrive gli orari dell'AI solo se
+  // i marker "Fine del giorno #N" coprono almeno meta' dei giorni. Su un PDL con dicitura
+  // diversa cancellerebbe altrimenti tutti gli orari validi trovati dal modello.
+  const totGiorni = pdlData.settimane.reduce((a,s) => a + (s.giorni?.length || 0), 0);
+  const copertura = totGiorni ? Object.keys(orariMap).length / totGiorni : 0;
+  if (copertura < 0.5) {
+    console.log('[applyOrari] copertura marker troppo bassa (' + Math.round(copertura*100) + '%), orari AI mantenuti');
+    return false;
+  }
   let changed = false;
   pdlData.settimane.forEach(s => {
     (s.giorni || []).forEach(g => {
@@ -6130,7 +6164,7 @@ function savePdlDayModal() {
 }
 
 async function deletePdl() {
-  if (!confirm('Eliminare il PDL associato a questa analisi? I dati di avanzamento andranno persi.')) return;
+  if (!await askConfirm('Eliminare il PDL associato a questa analisi? I dati di avanzamento andranno persi.')) return;
   try {
     if (currentAnalysisId) {
       await sb.from('pdl_versions').delete().eq('analysis_id', currentAnalysisId);
@@ -6244,23 +6278,7 @@ async function sendGennaroDrawer() {
 
   try {
     const ragText = await buildRagContext(text);
-    const SYS = `Sei Gennaro Esposito, fonico di presa diretta napoletano con 20 anni di set alle spalle. Parli italiano ma ogni tanto ti scappa qualche espressione napoletana ("uagliò", "mamm mia", "mo vediamo", "azz", "e che vuo'", "jamm bell'", "statte buono"). Sei simpatico, diretto, un po' brontolone ma sempre disponibile.
-
-Gergo del set che conosci e usi naturalmente:
-- "un'orata" = un'ora di straordinario
-- "cestini" = pasti sul set
-- "craft" = tavolo snack e caffè
-- "split" = seconda unità
-- "wrap" = fine delle riprese
-- "camion chiusi" = termine della giornata
-- "PDL" = piano di lavorazione
-- "ODG" = ordine del giorno
-- "convocazione" = orario di inizio giornata
-- "fegatelli" = piccoli pezzi di scena senza audio
-
-Spoglio:\n${buildChatContext(window.analysisData)}${window.pdlData ? "\n\nPDL:\n" + buildPdlContext() : ""}${window.castData?.length ? "\n\n" + buildCastContext() : ""}${window.ttTabelle?.length && window.ttTabelle.some(t=>t.orari.inizio.some(x=>x)) ? "\n\n" + buildTimetableContext() : ""}${ragText ? "\n\nSCENEGGIATURA:\n" + ragText : ""}
-
-Regole: risposte BREVI di default (max 3-4 righe), espanditi solo se serve. Se l'utente dice "Grazie", includi SEMPRE "ma grazie a te".`;
+    const SYS = buildGennaroSys(ragText);
 
     const data = await callApi('api/chat', { model:'claude-sonnet-4-6', max_tokens:1024, system:SYS, messages:gennaroDrawerHistory });
     const reply = data.content.map(b=>b.text||'').join('').trim();
@@ -6285,6 +6303,30 @@ const _origShowPage = typeof showPage === 'function' ? showPage : null;
 // ══════════════════════════════════════════════
 // END GENNARO FAB + DRAWER
 // ══════════════════════════════════════════════
+// ══ GENNARO — system prompt unico (chat principale + drawer) ══
+function buildGennaroSys(ragText) {
+  ragText = ragText || '';
+  return `Sei Gennaro Esposito, fonico di presa diretta napoletano con 20 anni di set alle spalle. Parli italiano ma ogni tanto ti scappa qualche espressione napoletana ("uagliò", "mamm mia", "mo vediamo", "azz", "e che vuo'", "jamm bell'", "statte buono"). Sei simpatico, diretto, un po' brontolone ma sempre disponibile.
+
+Gergo del set che conosci e usi naturalmente:
+- "un'orata" = un'ora di straordinario (attenzione: si dice "un'orata" non "orata" altrimenti sembra il pesce)
+- "cestini" = pasti sul set
+- "craft" = tavolo snack e caffè
+- "split" = seconda unità
+- "wrap" = fine delle riprese della giornata o del film
+- "camion chiusi" = termine della giornata di lavoro, tutto finito
+- "PDL" = piano di lavorazione, lo prepara l'aiuto regia
+- "ODG" = ordine del giorno, contiene tutto il lavoro pianificato per la giornata
+- "convocazione" = orario di inizio giornata, quando tutti devono essere sul set
+- "fegatelli" = piccoli pezzi di scena, dettagli brevi e facili da girare, spesso senza audio diretto
+
+Spoglio:\n${buildChatContext(analysisData)}${pdlData ? "\n\nPDL (dall'aiuto regia):\n" + buildPdlContext() : "\n\n(Il PDL non è ancora caricato — se ti chiedono quando si gira una scena o info sul piano di lavorazione, di' che devono prima caricare il PDL nella sezione apposita)"}${castData?.length ? "\n\n" + buildCastContext() : ""}${ttTabelle?.length && ttTabelle.some(t=>t.orari.inizio.some(x=>x)) ? "\n\n" + buildTimetableContext() : ""}${ragText ? "\n\nTESTO SCENEGGIATURA (pagine rilevanti):\n" + ragText : ""}
+
+Regole: risposte BREVI di default (max 3-4 righe), ma se la domanda richiede un elenco, dati strutturati o una spiegazione articolata puoi espanderti quanto serve — meglio una risposta completa che una troncata. Parla da collega di set, non da professore. Se ti fanno domande scherzose rispondi al gioco con humour napoletano.
+Se l'utente dice "Grazie" (o simili ringraziamenti), includi SEMPRE nella risposta "ma grazie a te".
+Se hai la mappa PERSONAGGI→SCENE nel contesto, usala per rispondere a domande su quali scene coinvolgono uno o più personaggi, se si incontrano, quante scene hanno insieme — senza bisogno del testo della sceneggiatura. Se hai il CAST UFFICIALE, usalo per abbinare i numeri ID ai nomi reali. Se hai la TIMETABLE, usala per rispondere a domande su orari, golden, viaggi e convocazioni della settimana.${ragText ? ' Quando rispondi su scene specifiche, usa il testo della sceneggiatura fornito sopra.' : ''}`;
+}
+
 const TT_DAYS=['LUN','MAR','MER','GIO','VEN','SAB'];
 let ttMeta={tipoGiornata:10,raddoppio:0,applicazione:'giornaliero',maggiorazioniNott:true,note:'',viaggioConcesso:60};
 let ttTabelle=[];
@@ -6338,6 +6380,21 @@ function ttToMin(t){
   if(h<6)h+=24;
   return h*60+mn;
 }
+// PARTENZA precede sempre INIZIO: se il rollover l'ha portata dopo, torna indietro di 24h.
+// Es. partenza 05:00 -> 1740 con inizio 07:00 -> 420  =>  1740-1440 = 300 (corretto)
+function ttNormPre(t,refM){
+  let m=ttToMin(t);
+  if(m===null||refM===null)return m;
+  if(m>refM)m-=1440;
+  return m;
+}
+// RIENTRO segue sempre FINE: se risulta precedente, e' del giorno dopo.
+function ttNormPost(t,refM){
+  let m=ttToMin(t);
+  if(m===null||refM===null)return m;
+  if(m<refM)m+=1440;
+  return m;
+}
 function ttToHM(mins){
   if(!mins||mins<=0)return'—';
   const h=Math.floor(mins/60),m=mins%60;
@@ -6360,7 +6417,10 @@ function ttCalcDay(d,orari,isSestoGiorno){
   if(pau&&pau.trim()){const pM=ttToMin(pau);if(pM!==null&&(pM-iniM)>360){r.mancataPausa=true;mancataG=60;}}
   // Ore viaggio: calcolo grezzo poi sottrai franchigia
   if(isTrasf){
-    const parM=ttToMin(par),rieM=rie&&rie.trim()?ttToMin(rie):null;
+    // PARTENZA e RIENTRO vanno normalizzati rispetto a INIZIO/FINE:
+    // ttToMin applica il rollover +24h sotto le 06:00, corretto per FINE/RIENTRO
+    // ma sbagliato per una PARTENZA all'alba (es. 05:00 con inizio 07:00).
+    const parM=ttNormPre(par,iniM), rieM=rie&&rie.trim()?ttNormPost(rie,finM):null;
     let v=0;
     if(parM!==null)v+=Math.max(0,iniM-parM);
     if(rieM!==null)v+=Math.max(0,rieM-finM);
@@ -6482,8 +6542,8 @@ function ttRenderTab(tab){
 }
 
 function ttAddFirst(){ttTabelle.push(ttMkTab([]));ttRenderAll();}
-function ttClear(){
-  if(!confirm('Resettare tutti i campi? I dati non salvati andranno persi.'))return;
+async function ttClear(){
+  if(!await askConfirm('Resettare tutti i campi? I dati non salvati andranno persi.', { conferma: 'Resetta' }))return;
   document.getElementById('tt-produzione').value='';
   document.getElementById('tt-film').value='';
   document.getElementById('tt-film').dataset.manuallyEdited='';
@@ -6496,7 +6556,7 @@ function ttClear(){
   ttRenderAll();
   showToast('Campi resettati.');
 }
-function ttDelTab(id){if(ttTabelle.length<=1)return;if(!confirm('Eliminare questa tabella?'))return;ttTabelle=ttTabelle.filter(t=>t.id!=id);ttRenderAll();}
+async function ttDelTab(id){if(ttTabelle.length<=1)return;if(!await askConfirm('Eliminare questa tabella?'))return;ttTabelle=ttTabelle.filter(t=>t.id!=id);ttRenderAll();}
 function ttSetO(tabId,field,di,val){const t=ttTabelle.find(t=>t.id==tabId);if(!t)return;t.orari[field][di]=val;const el=document.getElementById(`ttb-${tabId}`);if(el)el.outerHTML=ttRenderTab(t);}
 function ttAddW(tabId){const inp=document.getElementById(`ttawi-${tabId}`);if(!inp)return;const n=inp.value.trim();if(!n)return;const t=ttTabelle.find(t=>t.id==tabId);if(!t)return;t.workers.push(n);ttRenderAll();}
 function ttRemoveW(tabId,wi){const t=ttTabelle.find(t=>t.id==tabId);if(!t)return;t.workers.splice(wi,1);ttRenderAll();}

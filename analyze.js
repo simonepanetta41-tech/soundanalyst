@@ -18,16 +18,18 @@ export default async function handler(req, res) {
   const { data: { user }, error } = await sb.auth.getUser(token);
   if (error || !user) return res.status(401).json({ error: 'Token non valido' });
 
-  // Rate limit
+  // Quota consumata in modo atomico lato DB: evita la race condition
+  // di leggi-count / scrivi-count+1 su richieste concorrenti.
   const today = new Date().toISOString().split('T')[0];
-  const { data: rows } = await sb.from('usage_limits').select('permanent_plan').eq('user_id', user.id).limit(1);
-  const isFounder = rows?.[0]?.permanent_plan === 'founder';
-  const { data: dayData } = await sb.from('usage_limits').select('analyses_count, plan').eq('user_id', user.id).eq('date', today).single();
-  const plan = isFounder ? 'founder' : (dayData?.plan || 'free');
-  const count = dayData?.analyses_count || 0;
-  const limit = PLAN_LIMITS[plan] || 3;
-  if (!isFounder && count >= limit) return res.status(429).json({ error: `Limite giornaliero raggiunto (${limit} analisi/giorno).` });
-  await sb.from('usage_limits').upsert({ user_id: user.id, date: today, analyses_count: count + 1, plan, permanent_plan: isFounder ? 'founder' : null }, { onConflict: 'user_id,date' });
+  const { data: quota, error: quotaErr } = await sb.rpc('consume_analysis_quota', {
+    p_user_id: user.id, p_date: today, p_limit: PLAN_LIMITS.free
+  });
+  if (quotaErr) return res.status(500).json({ error: 'Errore verifica quota: ' + quotaErr.message });
+  const q = Array.isArray(quota) ? quota[0] : quota;
+  if (!q?.allowed) {
+    const lim = PLAN_LIMITS[q?.plan] || PLAN_LIMITS.free;
+    return res.status(429).json({ error: `Limite giornaliero raggiunto (${lim} analisi/giorno).` });
+  }
 
   const { messages, system, model, max_tokens } = req.body;
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
