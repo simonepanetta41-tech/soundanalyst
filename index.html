@@ -4540,10 +4540,17 @@ async function initWrap() {
 }
 
 async function wrapRefreshLocation() {
-  document.getElementById('wrapLocationLabel').textContent = 'Rilevamento posizione...';
+  const lbl = document.getElementById('wrapLocationLabel');
+  if (lbl) lbl.textContent = 'Rilevamento posizione...';
   try {
+    if (!navigator.geolocation) throw { code: 0, message: 'API non supportata dal browser' };
+    if (!window.isSecureContext) throw { code: 0, message: 'Serve HTTPS per la geolocalizzazione' };
     const pos = await new Promise((res, rej) =>
-      navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000 })
+      // timeout piu' largo: su desktop il fix arriva da triangolazione WiFi, non dal GPS,
+      // e alla prima chiamata 8s non bastano. maximumAge riusa un fix recente se c'e'.
+      navigator.geolocation.getCurrentPosition(res, rej, {
+        timeout: 20000, maximumAge: 300000, enableHighAccuracy: false
+      })
     );
     wrapLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: null };
 
@@ -4559,7 +4566,16 @@ async function wrapRefreshLocation() {
       updateWrapLocationLabel();
     }
   } catch(e) {
-    document.getElementById('wrapLocationLabel').textContent = '⚠ Posizione non disponibile — abilita GPS';
+    // I tre codici di GeolocationPositionError vogliono messaggi diversi:
+    // schiacciarli tutti su "abilita GPS" mandava fuori strada quando il permesso c'era gia'.
+    console.log('[wrap] geolocation error', e?.code, e?.message);
+    const msg = {
+      1: '\u26a0 Permesso posizione negato — sbloccalo dall\u2019icona del lucchetto nella barra indirizzi',
+      2: '\u26a0 Posizione non rilevabile — controlla i servizi di localizzazione del sistema operativo',
+      3: '\u26a0 Rilevamento troppo lento — riprova'
+    }[e?.code] || ('\u26a0 Posizione non disponibile' + (e?.message ? ' \u2014 ' + e.message : ''));
+    if (lbl) lbl.textContent = msg;
+    if (typeof showToast === 'function') showToast('Puoi comunque cercare inserendo una citta\u0300 a mano', 'default', 4000);
   }
 }
 
