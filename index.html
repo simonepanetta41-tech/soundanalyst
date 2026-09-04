@@ -2787,12 +2787,13 @@ async function startAnalysis() {
     // Extract text from all PDFs
     const textsArray = [];
     let totalPages = 0;
+    const paginePerFile = [];   // serve al parser deterministico per il numero di pagina
     for (const p of pdfs) {
       try {
-        const text = await extractFullText(p.data);
-        textsArray.push({ name: p.name, text });
-        const doc = await pdfjsLib.getDocument({ data: atob(p.data) }).promise;
-        totalPages += doc.numPages;
+        const pagine = await extractPages(p.data);
+        paginePerFile.push(...pagine);
+        textsArray.push({ name: p.name, text: pagine.join('\n\n') });
+        totalPages += pagine.length;
       } catch(e) {
         totalPages += 80;
         textsArray.push({ name: p.name, text: '' });
@@ -2808,7 +2809,7 @@ async function startAnalysis() {
     startProgressSimulation(estimatedSeconds);
 
     const blocks = [
-      { type: 'text', text: fullText.slice(0, 120000) },
+      { type: 'text', text: fullText.slice(0, 400000) },
       { type: 'text', text: textsArray.length > 1
         ? `Analizza questi ${textsArray.length} script come corpus unico: ${textsArray.map(t=>t.name).join(', ')}.`
         : 'Analizza questa sceneggiatura.' }
@@ -2862,13 +2863,25 @@ async function startAnalysis() {
       if (data[key] && hasData(data[key])) data[key].presente = true;
     });
 
+    // La scene_list deterministica ha la precedenza su quella dell'AI (vedi applySceneList)
+    const scDet = parseSceneList(paginePerFile);
+    const scEsito = applySceneList(data, scDet);
+    console.log('[scene_list]', scEsito.usato
+      ? `parser: ${scEsito.nParser} scene (AI ne dichiarava ${scEsito.nAI})`
+      : `parser scartato — ${scEsito.motivo}`);
+    if (!scEsito.usato && scDet.length) {
+      showToast(`Formato scene non riconosciuto: uso il risultato AI (${data.scene_list?.length||0} scene)`, 'yellow', 6000);
+    }
+
     // Recalculate INT/EXT/day/night from scene_list (complete list of all scenes)
     if (data.scene_list?.length) {
       let ig=0, in_=0, eg=0, en_=0, it=0, et=0;
-      data.scene_list.forEach(({ie, m}) => {
+      // Le OMISSIS sono scene tagliate o rimandate: restano in lista ma non si contano.
+      const sceneAttive = data.scene_list.filter(s => !s.omissis && s.ie !== 'OMISSIS');
+      sceneAttive.forEach(({ie, m}) => {
         const isI = /^(INT|I)/i.test(ie);
         const isE = /^(EST|EXT|E)/i.test(ie);
-        const isG = /^(D|G|M|T)/i.test(m); // giorno, mattino, tramonto = luce
+        const isG = /^(D|G|M|T)/i.test(m); // giorno, mattino, alba, tramonto = luce
         const isN = /^(N|E)/i.test(m);      // notte, sera = buio
         if (isI) { it++; if(isG) ig++; if(isN) in_++; }
         if (isE) { et++; if(isG) eg++; if(isN) en_++; }
@@ -2876,10 +2889,8 @@ async function startAnalysis() {
       data.scene_interno = it; data.scene_esterno = et;
       data.scene_interno_giorno = ig; data.scene_interno_notte = in_;
       data.scene_esterno_giorno = eg; data.scene_esterno_notte = en_;
-      // Also update totale_scene if scene_list is more accurate
-      if (data.scene_list.length > (data.totale_scene || 0)) {
-        data.totale_scene = data.scene_list.length;
-      }
+      data.scene_omissis = data.scene_list.length - sceneAttive.length;
+      data.totale_scene = sceneAttive.length;
     } else {
       // Fallback: parse from category scene strings
       const allSceneStrs = [];
@@ -3499,18 +3510,119 @@ function removeEpisode(idx) {
 let pendingNewAnalysis = null; // hidden new analysis waiting to be imported
 let pendingNewPdfB64   = null; // b64 of new PDF
 
-async function extractFullText(b64) {
+// pdf.js restituisce quasi sempre UN ITEM PER CARATTERE (misurato: 96-98% degli item
+// su quattro sceneggiature diverse). Il vecchio .join(' ') infilava quindi uno spazio
+// fra ogni lettera: "E S T / I N T .   P O S T O". Testo raddoppiato, token esplosi,
+// comprensione del modello a pezzi, e nessuna struttura di riga (una riga per pagina).
+// Qui le righe si ricostruiscono dalle coordinate degli item.
+function pdfPageToText(items) {
+  const its = items
+    .filter(i => i.str && i.str.trim() !== '')
+    .map(i => ({ x: i.transform[4], y: i.transform[5], s: i.str, w: i.width || 0 }))
+    .sort((a, b) => b.y - a.y || a.x - b.x);
+  // Tolleranza sulla Y: i numeri di scena nei margini stanno spesso una frazione
+  // di unita' sopra il testo dell'header e vanno tenuti sulla stessa riga.
+  const righe = [];
+  let cur = null;
+  for (const it of its) {
+    if (!cur || Math.abs(cur.y - it.y) > 3) { cur = { y: it.y, items: [it] }; righe.push(cur); }
+    else cur.items.push(it);
+  }
+  return righe.map(r => {
+    const ps = r.items.sort((a, b) => a.x - b.x);
+    let out = '', prevEnd = null;
+    for (const p of ps) {
+      // spazio solo se c'e' un vero stacco orizzontale fra un glifo e il successivo
+      if (prevEnd !== null && p.x - prevEnd > 1.2 && !/\s$/.test(out)) out += ' ';
+      out += p.s; prevEnd = p.x + p.w;
+    }
+    return out.replace(/\s{2,}/g, ' ').trim();
+  }).filter(Boolean).join('\n');
+}
+
+// Restituisce un array con il testo di ogni pagina (serve a sapere a che pagina sta una scena)
+async function extractPages(b64) {
   const bin = atob(b64);
   const arr = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
   const doc = await pdfjsLib.getDocument({ data: arr }).promise;
-  let text = '';
+  const pagine = [];
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);
-    const tc   = await page.getTextContent();
-    text += tc.items.map(i => i.str).join(' ') + '\n';
+    pagine.push(pdfPageToText((await page.getTextContent()).items));
   }
-  return text;
+  return pagine;
+}
+
+// ══ PARSER DETERMINISTICO DELLA SCENE_LIST ══
+// Stessa logica adottata per gli orari del PDL: l'estrazione strutturale non viene
+// affidata all'AI ma a una regola esplicita, verificata su quattro formati reali
+// (numero prima o dopo l'header, scene bis "4A", OMISSIS, INT/EST combinato, revisioni "*").
+const SC_TEMPI = {
+  'GIORNO':'D','DAY':'D','POMERIGGIO':'D',
+  'NOTTE':'N','NIGHT':'N',
+  'ALBA':'M','MATTINO':'M','MATTINA':'M','DAWN':'M',
+  'SERA':'E','EVENING':'E',
+  'TRAMONTO':'T','CREPUSCOLO':'T','DUSK':'T','SUNSET':'T'
+};
+const SC_RE_TEMPO = new RegExp('\\b(' + Object.keys(SC_TEMPI).sort((a,b)=>b.length-a.length).join('|') + ')\\b', 'i');
+const SC_RE_IE  = /\b(INT\s*[\/\-]\s*EST|EST\s*[\/\-]\s*INT|INT\s*[\/\-]\s*EXT|I\s*[\/\-]\s*E|INT|EST|EXT)\b\.?/i;
+const SC_RE_NUM = /^(\d{1,4}[A-Z]{0,2})\s+/;
+
+function scNormIE(raw) {
+  const s = raw.toUpperCase().replace(/[\s.]/g, '');
+  if (/^(INT[\/\-]EST|EST[\/\-]INT|INT[\/\-]EXT|I[\/\-]E)$/.test(s)) return 'I-E';
+  return s.startsWith('INT') ? 'INT' : 'EST';
+}
+
+// pagine: array con il testo di ogni pagina PDF (da extractPages)
+function parseSceneList(pagine) {
+  const scene = [], visti = new Set();
+  pagine.forEach((testoPagina, idx) => {
+    const p = idx + 1;
+    for (const rigaRaw of String(testoPagina).split('\n')) {
+      const riga = rigaRaw.replace(/\*+\s*$/, '').trim();   // via i segni di revisione
+      if (riga.length < 6 || riga.length > 140) continue;
+      const mn = SC_RE_NUM.exec(riga);
+      if (!mn) continue;
+      const n = mn[1], resto = riga.slice(mn[0].length);
+      if (visti.has(n)) continue;   // header ripetuto a cavallo di pagina
+
+      // Scene OMISSIS: numerate ma tagliate o rimandate. Restano in lista marcate
+      // (cosi' Gennaro sa rispondere "la 7 e' omissis") ma non entrano nei conteggi.
+      if (/\bOMISSIS\b/i.test(resto)) {
+        visti.add(n);
+        scene.push({ n, ie: 'OMISSIS', m: '?', p, omissis: true });
+        continue;
+      }
+      const mi = SC_RE_IE.exec(resto);
+      if (!mi) continue;
+      // Gli header sono in maiuscolo: scarta le righe d'azione che iniziano con un numero
+      const lettere = resto.replace(/[^A-Za-zÀ-ÿ]/g, '');
+      if (!lettere || lettere.replace(/[^A-ZÀ-Þ]/g, '').length / lettere.length < 0.8) continue;
+      const mt = SC_RE_TEMPO.exec(resto);
+      visti.add(n);
+      scene.push({ n, ie: scNormIE(mi[1]), m: mt ? SC_TEMPI[mt[1].toUpperCase()] : '?', p });
+    }
+  });
+  return scene;
+}
+
+// Il parser sovrascrive l'AI quando trova almeno tante scene quante ne dichiara il modello.
+// Se ne trova sensibilmente meno (<70%) e' un formato di header non riconosciuto: si tiene
+// il risultato dell'AI e si segnala, invece di tagliare scene in silenzio.
+function applySceneList(data, sceneParser) {
+  if (!sceneParser?.length) return { usato: false, motivo: 'nessuna scena riconosciuta' };
+  const nAI = data.scene_list?.length || 0;
+  if (nAI && sceneParser.length < nAI * 0.7) {
+    return { usato: false, motivo: `parser ${sceneParser.length} vs AI ${nAI}` };
+  }
+  data.scene_list = sceneParser;
+  return { usato: true, nParser: sceneParser.length, nAI };
+}
+
+async function extractFullText(b64) {
+  return (await extractPages(b64)).join('\n\n');
 }
 
 async function saveScreenplayText(analysisId, text, isPrev = false) {
