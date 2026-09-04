@@ -4813,7 +4813,9 @@ window.initGoogleMap = function() {
       title: p.displayName?.text
     });
     const infoWindow = new google.maps.InfoWindow({
-      content: `<div style="font-family:sans-serif;max-width:180px"><b>${p.displayName?.text}</b><br><small>${p.formattedAddress||''}</small>${p.rating?`<br>⭐ ${p.rating}`:''}</div>`
+      // Il fumetto di Google ha sfondo bianco fisso: senza un color esplicito il testo
+      // eredita il bianco del tema scuro dell'app e diventa invisibile.
+      content: `<div style="font-family:sans-serif;max-width:200px;color:#111;line-height:1.4"><b style="color:#111">${esc(p.displayName?.text)}</b><br><small style="color:#555">${esc(p.formattedAddress)}</small>${p.rating?`<br><span style="color:#111">\u2b50 ${esc(p.rating)}${p.userRatingCount?` <span style="color:#777">(${esc(p.userRatingCount)})</span>`:''}</span>`:''}</div>`
     });
     marker.addListener('click', () => infoWindow.open(map, marker));
     wrapMarkers.push(marker);
