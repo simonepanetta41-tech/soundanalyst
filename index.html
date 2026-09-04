@@ -4539,20 +4539,40 @@ async function initWrap() {
   await wrapRefreshLocation();
 }
 
+// getCurrentPosition su macOS puo' fallire con kCLErrorLocationUnknown (codice 2) in modo
+// transitorio: CoreLocation triangola sulle reti WiFi e alla prima chiamata puo' non avere
+// dati. Apple documenta l'errore come temporaneo, quindi si riprova invece di arrendersi.
+function wrapGetPosition() {
+  const tentativi = [
+    { timeout: 10000, maximumAge: 300000, enableHighAccuracy: false },
+    { timeout: 15000, maximumAge: 600000, enableHighAccuracy: true  },
+    { timeout: 20000, maximumAge: Infinity, enableHighAccuracy: false }
+  ];
+  return new Promise((resolve, reject) => {
+    let i = 0;
+    const prova = () => {
+      navigator.geolocation.getCurrentPosition(resolve, err => {
+        console.log('[wrap] tentativo ' + (i + 1) + ' fallito:', err.code, err.message);
+        // Permesso negato: inutile insistere, l'esito non cambia.
+        if (err.code === 1 || ++i >= tentativi.length) return reject(err);
+        setTimeout(prova, 1200);
+      }, tentativi[i]);
+    };
+    prova();
+  });
+}
+
 async function wrapRefreshLocation() {
   const lbl = document.getElementById('wrapLocationLabel');
   if (lbl) lbl.textContent = 'Rilevamento posizione...';
   try {
     if (!navigator.geolocation) throw { code: 0, message: 'API non supportata dal browser' };
     if (!window.isSecureContext) throw { code: 0, message: 'Serve HTTPS per la geolocalizzazione' };
-    const pos = await new Promise((res, rej) =>
-      // timeout piu' largo: su desktop il fix arriva da triangolazione WiFi, non dal GPS,
-      // e alla prima chiamata 8s non bastano. maximumAge riusa un fix recente se c'e'.
-      navigator.geolocation.getCurrentPosition(res, rej, {
-        timeout: 20000, maximumAge: 300000, enableHighAccuracy: false
-      })
-    );
+    const pos = await wrapGetPosition();
     wrapLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: null };
+    // Ultima posizione valida: serve da rete di sicurezza quando CoreLocation
+    // fallisce in modo transitorio (kCLErrorLocationUnknown su macOS).
+    localStorage.setItem('sa_wrap_lastfix', JSON.stringify({ lat: wrapLocation.lat, lng: wrapLocation.lng, ts: Date.now() }));
 
     // Check if PDL has today's location
     const today = new Date().toISOString().split('T')[0];
@@ -4574,6 +4594,20 @@ async function wrapRefreshLocation() {
       2: '\u26a0 Posizione non rilevabile — controlla i servizi di localizzazione del sistema operativo',
       3: '\u26a0 Rilevamento troppo lento — riprova'
     }[e?.code] || ('\u26a0 Posizione non disponibile' + (e?.message ? ' \u2014 ' + e.message : ''));
+    // Ripiego sull'ultima posizione valida: meglio una posizione recente ma vecchia
+    // che nessuna posizione, soprattutto sul set dove la rete e' quello che e'.
+    let lastFix = null;
+    try { lastFix = JSON.parse(localStorage.getItem('sa_wrap_lastfix') || 'null'); } catch(_) {}
+    if (e?.code !== 1 && lastFix?.lat != null) {
+      const oreFa = Math.round((Date.now() - (lastFix.ts || 0)) / 3600000);
+      wrapLocation = { lat: lastFix.lat, lng: lastFix.lng, label: 'Ultima posizione nota' };
+      localStorage.setItem('sa_wrap_location', JSON.stringify(wrapLocation));
+      updateWrapLocationLabel();
+      if (typeof showToast === 'function') {
+        showToast('Posizione non rilevata, uso l\u2019ultima nota' + (oreFa > 0 ? ' (' + oreFa + 'h fa)' : ''), 'default', 4000);
+      }
+      return;
+    }
     if (lbl) lbl.textContent = msg;
     if (typeof showToast === 'function') showToast('Puoi comunque cercare inserendo una citta\u0300 a mano', 'default', 4000);
   }
